@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { parseCSV, parseXAF, generateQuestionsWithAI } from "@/lib/audit-service"
 import OpenAI from "openai"
+import type { Session } from "next-auth"
 
 export async function POST(request: NextRequest) {
   try {
     // In Next.js 15, getServerSession kan headers nodig hebben
-    let session
+    let session: Session | null = null
     try {
       session = await getServerSession(authOptions)
     } catch (error) {
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Check eerst of database beschikbaar is
     const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NEXTAUTH_SECRET
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let user: any = null
     
     // Probeer database connectie te testen
@@ -37,6 +39,7 @@ export async function POST(request: NextRequest) {
       // Test database connectie met een simpele query
       await prisma.$queryRaw`SELECT 1`
       dbAvailable = true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (dbError: any) {
       console.log('Database not available:', dbError.message)
       dbAvailable = false
@@ -164,6 +167,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transactions: any[]
 
     try {
@@ -174,6 +178,7 @@ export async function POST(request: NextRequest) {
         transactions = parseCSV(text)
       }
       console.log('Parsing successful, found', transactions.length, 'transactions')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error parsing file:', error)
       return NextResponse.json({ 
@@ -222,6 +227,7 @@ export async function POST(request: NextRequest) {
           }
           
           // Tel alle arrays in de structuur
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const countArrays = (obj: any, depth: number = 0, path: string = ''): { path: string, count: number }[] => {
             const results: { path: string, count: number }[] = []
             if (depth > 5) return results
@@ -295,6 +301,7 @@ export async function POST(request: NextRequest) {
     const questions = await generateQuestionsWithAI(transactions, openai)
 
     // Stuur altijd transacties mee zodat de gebruiker ze kan zien in de tabel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = {
       id: auditCheckId,
       questions,

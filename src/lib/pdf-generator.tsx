@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
 // Create styles
 const styles = StyleSheet.create({
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
 
 interface PdfReportProps {
   title: string
-  scenario: any
-  results: any
+  scenario: Record<string, string | number | boolean>
+  results: Record<string, string | number | boolean>
   generatedAt: Date
 }
 
@@ -113,14 +113,7 @@ export function createPdfReport({ title, scenario, results, generatedAt }: PdfRe
   )
 }
 
-export function generatePdfUrl(title: string, scenario: any, results: any) {
-  const report = createPdfReport({
-    title,
-    scenario,
-    results,
-    generatedAt: new Date()
-  })
-  
+export function generatePdfUrl(title: string, scenario: Record<string, string | number | boolean>, results: Record<string, string | number | boolean>) {
   // In a real implementation, you would generate the PDF server-side
   // and return a URL to the generated file
   return `/api/reports/generate?title=${encodeURIComponent(title)}&scenario=${encodeURIComponent(JSON.stringify(scenario))}&results=${encodeURIComponent(JSON.stringify(results))}`

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { analyzeTransactionsWithAI } from "@/lib/audit-service"
 import OpenAI from "openai"
+import type { Session } from "next-auth"
 
 export async function POST(request: NextRequest) {
   // Declareer variabelen voor error handling
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   
   try {
     // In Next.js 15, getServerSession kan headers nodig hebben
-    let session
+    let session: Session | null = null
     try {
       session = await getServerSession(authOptions)
     } catch (error) {
@@ -33,12 +34,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check eerst of database beschikbaar is
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let user: any = null
     
     // Probeer database connectie te testen
     try {
       await prisma.$queryRaw`SELECT 1`
       dbAvailable = true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (dbError: any) {
       console.log('Database not available:', dbError.message)
       dbAvailable = false
@@ -125,7 +128,9 @@ export async function POST(request: NextRequest) {
     
     const finalAnswers = answers && Object.keys(answers).length > 0 ? answers : defaultAnswers
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let auditCheck: any = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transactions: any[] = []
     
     if (dbAvailable) {
@@ -135,6 +140,7 @@ export async function POST(request: NextRequest) {
         })
         
         if (auditCheck) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           transactions = auditCheck.csvData as any[]
           
           // Start analyse
@@ -154,6 +160,7 @@ export async function POST(request: NextRequest) {
       console.log('Development mode: using transactions from request body')
       if (auditId.startsWith('dev-') && transactionsFromBody && Array.isArray(transactionsFromBody)) {
         transactions = transactionsFromBody
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         auditCheck = { id: auditId, status: "ANALYZING" } as any
         console.log(`Using ${transactions.length} transactions from request body`)
       } else {
@@ -181,7 +188,9 @@ export async function POST(request: NextRequest) {
     console.log(`Starting AI analysis for ${transactions.length} transactions`)
 
     // Voer AI analyse uit
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let findings: any[] = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let recommendations: any = null
     
     try {
@@ -200,6 +209,7 @@ export async function POST(request: NextRequest) {
       findings = result.findings
       recommendations = result.recommendations
       console.log(`AI analysis completed successfully: ${findings.length} findings, ${recommendations.critical?.length || 0} critical issues`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (aiError: any) {
       console.error('AI analysis error in route:', aiError)
       console.error('Error stack:', aiError instanceof Error ? aiError.stack : 'No stack')

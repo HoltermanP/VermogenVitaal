@@ -1,7 +1,9 @@
-import { NextAuthOptions } from "next-auth"
+import { JWT } from "next-auth/jwt"
 import GoogleProvider from "next-auth/providers/google"
+import type { Session } from "next-auth"
 
-export const authOptions: NextAuthOptions = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authOptions: any = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "dummy-client-id",
@@ -9,7 +11,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    session: async ({ session, token }) => {
+    session: async ({ session, token }: { session: Session; token: JWT }) => {
       if (session?.user && token?.sub) {
         session.user.id = token.sub
         session.user.tier = 'FREE'
@@ -17,7 +19,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
-    jwt: async ({ user, token }) => {
+    jwt: async ({ user, token }: { user?: { id: string }; token: JWT }) => {
       if (user) {
         token.sub = user.id
       }

@@ -23,6 +23,14 @@ export interface RAGResult {
   generatedAt: Date
 }
 
+interface KnowledgeArticle {
+  title: string
+  body: string
+  slug: string
+  effectiveFrom: Date
+  version: string
+}
+
 export async function generateRAGSummary(input: RAGInput): Promise<RAGResult> {
   const { scenario, profile } = input
 
@@ -52,7 +60,7 @@ export async function generateRAGSummary(input: RAGInput): Promise<RAGResult> {
   }
 }
 
-async function findRelevantArticles(scenario: string, profile: any) {
+async function findRelevantArticles(scenario: string, profile: RAGInput['profile']) {
   // Zoek artikelen op basis van scenario en profiel
   const searchTerms = extractSearchTerms(scenario, profile)
   
@@ -84,7 +92,7 @@ async function findRelevantArticles(scenario: string, profile: any) {
   return articles
 }
 
-function extractSearchTerms(scenario: string, profile: any): string[] {
+function extractSearchTerms(scenario: string, profile: RAGInput['profile']): string[] {
   const terms: string[] = []
   
   // Scenario-specifieke termen
@@ -116,7 +124,7 @@ function extractSearchTerms(scenario: string, profile: any): string[] {
   return [...new Set(terms)] // Remove duplicates
 }
 
-function generateSummary(scenario: string, profile: any, articles: any[]): string {
+function generateSummary(scenario: string, profile: RAGInput['profile'], articles: KnowledgeArticle[]): string {
   // Vereenvoudigde samenvatting - in productie zou je OpenAI gebruiken
   let summary = `Op basis van uw scenario "${scenario}" en profiel zijn de volgende punten relevant:\n\n`
   
@@ -132,7 +140,7 @@ function generateSummary(scenario: string, profile: any, articles: any[]): strin
   return summary
 }
 
-function extractAttentionPoints(articles: any[]): string[] {
+function extractAttentionPoints(articles: KnowledgeArticle[]): string[] {
   const points: string[] = []
   
   articles.forEach(article => {
