@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(USER)
+  tier      UserTier @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profileFinancials ProfileFinancials?
+  scenarios         Scenario[]
+  documents         Document[]
+  reports           Report[]
+  payments          Payment[]
+  tickets           Ticket[]
+  auditLogs         AuditLog[]
+  auditChecks       AuditCheck[]
+
+  @@map("users")
+}
+
+model ProfileFinancials {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  legalForm    LegalForm
+  revenue      Float?
+  salary       Float?
+  assets       Float?
+  goals        String[]
+  riskProfile  RiskProfile
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile_financials")
+}
+
+model Scenario {
+  id        String      @id @default(cuid())
+  userId    String
+  type      ScenarioType
+  inputs    Json
+  results   Json
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports Report[]
+
+  @@map("scenarios")
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  userId      String
+  type        DocumentType
+  status      DocumentStatus @default(PENDING)
+  storagePath String
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  userId     String
+  scenarioId String
+  url        String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model Knowledge {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  tags          String[]
+  jurisdiction  String
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  version       String
+  body          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("knowledge")
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  userId           String
+  stripeCustomerId String?
+  subscriptionId   String?
+  tier             UserTier
+  status           PaymentStatus @default(PENDING)
+  amount           Int?
+  currency         String        @default("eur")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  userId    String
+  subject   String
+  status    TicketStatus @default(OPEN)
+  messages  Json
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  target    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model AuditCheck {
+  id              String       @id @default(cuid())
+  userId          String
+  fileName        String
+  csvData         Json         // Opgeslagen mutaties
+  status          AuditStatus  @default(UPLOADED)
+  questions       Json?        // Aanvullende vragen en antwoorden
+  findings        Json?        // Bevindingen van AI analyse
+  recommendations Json?        // Concrete aanbevelingen
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_checks")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserTier {
+  FREE
+  BASIC
+  PRO
+  ELITE
+}
+
+enum LegalForm {
+  EMZ
+  BV
+  DGA
+}
+
+enum RiskProfile {
+  CONSERVATIVE
+  MODERATE
+  AGGRESSIVE
+}
+
+enum ScenarioType {
+  BV_VS_EMZ
+  ETF_GROWTH
+  REAL_ESTATE
+  CRYPTO_ALLOCATION
+}
+
+enum DocumentType {
+  TAX_RETURN
+  SALARY
+  YEAR_END_STATEMENT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  UNDER_REVIEW
+  REVIEWED
+  SUBMITTED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum AuditStatus {
+  UPLOADED
+  QUESTIONS_PENDING
+  ANALYZING
+  COMPLETED
+  ERROR
+}
