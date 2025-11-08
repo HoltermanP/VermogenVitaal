@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, CheckCircle, Upload, FileText, Loader2, AlertTriangle, FileCheck, Table as TableIcon } from "lucide-react"
@@ -17,6 +16,41 @@ interface Question {
   answer: string
 }
 
+interface Transaction {
+  nr?: string | number
+  datum?: string
+  type?: string
+  soort?: string
+  bedrag?: number | string
+  categorie?: string
+  rekening?: string
+  tegenrekening?: string
+  factuur?: string
+  omschrijving?: string
+}
+
+interface Finding {
+  severity: string
+  category: string
+  description: string
+  recommendation: string
+  ruleReference?: string
+}
+
+interface Recommendations {
+  summary?: string
+  critical?: string[]
+  important?: string[]
+  suggestions?: string[]
+}
+
+interface AuditResults {
+  id: string
+  findings: Finding[]
+  recommendations: Recommendations
+  status: string
+}
+
 export default function AuditPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -24,9 +58,9 @@ export default function AuditPage() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [analyzing, setAnalyzing] = useState(false)
-  const [results, setResults] = useState<any>(null)
+  const [results, setResults] = useState<AuditResults | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [transactions, setTransactions] = useState<any[]>([]) // Bewaar transacties voor development mode
+  const [transactions, setTransactions] = useState<Transaction[]>([]) // Bewaar transacties voor development mode
   const [showTransactions, setShowTransactions] = useState(false) // Toggle voor transacties tabel
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,8 +115,8 @@ export default function AuditPage() {
         // Als er geen transacties zijn, ga direct naar vragen
         setShowTransactions(false)
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload mislukt")
     } finally {
       setUploading(false)
     }
@@ -119,8 +153,8 @@ export default function AuditPage() {
 
       const data = await response.json()
       setResults(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analyse mislukt")
     } finally {
       setAnalyzing(false)
     }
@@ -154,7 +188,7 @@ export default function AuditPage() {
     }
   }
 
-  const formatCurrency = (value: any): string => {
+  const formatCurrency = (value: number | string | undefined): string => {
     const num = parseFloat(String(value || 0))
     if (isNaN(num)) return "€0,00"
     return new Intl.NumberFormat('nl-NL', {
@@ -294,25 +328,25 @@ export default function AuditPage() {
                         return (
                           <TableRow key={index} className="border-slate-600 hover:bg-slate-700/50">
                             <TableCell className="text-gray-300 font-mono text-xs">
-                              {t.nr || (t as any).nr || index + 1}
+                              {t.nr || index + 1}
                             </TableCell>
                             <TableCell className="text-gray-300">
                               {formatDate(t.datum || '')}
                             </TableCell>
                             <TableCell className="text-gray-300">
-                              {t.type || t.soort || (t as any).soort || '-'}
+                              {t.type || t.soort || '-'}
                             </TableCell>
                             <TableCell className={`text-right font-medium ${isNegative ? 'text-red-400' : 'text-green-400'}`}>
                               {formatCurrency(t.bedrag || 0)}
                             </TableCell>
                             <TableCell className="text-gray-300 font-mono text-xs">
-                              {t.categorie || t.rekening || (t as any).rekening || '-'}
+                              {t.categorie || t.rekening || '-'}
                             </TableCell>
                             <TableCell className="text-gray-300 font-mono text-xs">
-                              {(t as any).tegenrekening || '-'}
+                              {t.tegenrekening || '-'}
                             </TableCell>
                             <TableCell className="text-gray-300">
-                              {(t as any).factuur || '-'}
+                              {t.factuur || '-'}
                             </TableCell>
                             <TableCell className="text-gray-300 text-sm max-w-xs truncate">
                               {t.omschrijving || '-'}
@@ -476,7 +510,7 @@ export default function AuditPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {results.findings.map((finding: any, i: number) => (
+                    {results.findings.map((finding: Finding, i: number) => (
                       <div
                         key={i}
                         className={`p-4 rounded-lg border ${getSeverityColor(finding.severity)}`}

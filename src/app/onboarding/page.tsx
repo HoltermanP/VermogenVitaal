@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { z } from "zod"
-import { Building, User, Target, Shield } from "lucide-react"
 
 const onboardingSchema = z.object({
   // Step 1: Profile

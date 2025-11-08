@@ -36,7 +36,6 @@ export function calculateRealEstate(input: RealEstateInput): RealEstateResult {
     insurance,
     vve,
     management,
-    purchaseCosts,
     ltv,
     interestFixed,
     country,

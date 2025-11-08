@@ -53,9 +53,6 @@ export function calculateEtfGrowth(input: EtfGrowthInput): EtfGrowthResult {
     const grossReturn = expectedReturn / 100
     const netReturn = grossReturn - (ter / 100)
     
-    // Waarde aan begin van jaar
-    const startValue = currentValue
-    
     // Nieuwe inleg + rendement
     currentValue = (currentValue + yearlyContribution) * (1 + netReturn)
     

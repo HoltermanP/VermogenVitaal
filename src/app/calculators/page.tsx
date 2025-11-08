@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calculator, TrendingUp, Home, Coins, ArrowRight, Sparkles, Zap, FileText } from "lucide-react"
+import { Calculator, TrendingUp, Home, Coins, ArrowRight, Sparkles, FileText } from "lucide-react"
 import Link from "next/link"
 
 export default function CalculatorsPage() {

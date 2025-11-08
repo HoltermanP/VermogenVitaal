@@ -33,8 +33,7 @@ export function calculateBvVsEmz(input: BvVsEmzInput): BvVsEmzResult {
     mkbProfitExemption,
     selfEmployedDeduction,
     starterDeduction,
-    pension,
-    dgaPension
+    pension
   } = input
 
   // EMZ berekening
@@ -47,17 +46,12 @@ export function calculateBvVsEmz(input: BvVsEmzInput): BvVsEmzResult {
   // BV berekening
   const bvProfit = revenue - costs - dgaSalary - employerCosts
   const bvCorpTax = calculateCorpTax(bvProfit, mkbProfitExemption)
-  const bvAfterTax = bvProfit - bvCorpTax
   const bvDividendTax = calculateDividendTax(dividend)
   const bvNetIncome = dgaSalary + dividend - bvDividendTax
 
   // Totaal belastingdruk
   const emzTotalTax = emzIncomeTax
   const bvTotalTax = bvCorpTax + bvDividendTax + (dgaSalary * 0.52) // Aanname inkomstenbelasting DGA
-
-  // Gevoeligheidsanalyse
-  const revenuePlus10 = calculateBvVsEmz({ ...input, revenue: revenue * 1.1 })
-  const revenueMinus10 = calculateBvVsEmz({ ...input, revenue: revenue * 0.9 })
 
   const difference = bvNetIncome - emzNetIncome
   const percentageDifference = (difference / emzNetIncome) * 100

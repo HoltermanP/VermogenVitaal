@@ -46,15 +46,15 @@ export default function DisclaimerPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Risico's</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Risico&apos;s</h2>
               <p className="text-gray-700 mb-4">
-                Alle financiële investeringen en beslissingen brengen risico's met zich mee. Het verleden 
+                Alle financiële investeringen en beslissingen brengen risico&apos;s met zich mee. Het verleden 
                 is geen garantie voor de toekomst. Waarden kunnen stijgen en dalen, en u kunt uw 
                 geïnvesteerde kapitaal verliezen.
               </p>
               <p className="text-gray-700 mb-4">
                 Wij adviseren u om alleen te investeren met geld dat u zich kunt veroorloven te verliezen 
-                en om uw risico's te spreiden.
+                en om uw risico&apos;s te spreiden.
               </p>
             </section>
 
@@ -84,9 +84,9 @@ export default function DisclaimerPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Affiliate programma's</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Affiliate programma&apos;s</h2>
               <p className="text-gray-700 mb-4">
-                Tax & Wealth Hub kan deelnemen aan affiliate programma's. Dit betekent dat wij een 
+                Tax & Wealth Hub kan deelnemen aan affiliate programma&apos;s. Dit betekent dat wij een 
                 commissie kunnen ontvangen wanneer u via onze links producten of diensten aanschaft.
               </p>
               <p className="text-gray-700 mb-4">

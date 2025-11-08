@@ -595,7 +595,7 @@ export function parseXAF(xmlText: string): Transaction[] {
         const productDescs: string[] = []
         const projectDescs: string[] = []
         
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         lines.forEach((line: any) => {
           // Probeer verschillende velden voor debit/credit (veel meer opties, inclusief kleine letters)
           const debit = parseAmount(deepGet(line, [

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, Calculator, Download, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 
 type ETFResults = {
   totalInvested: number
@@ -234,7 +234,7 @@ export default function ETFGrowthCalculatorPage() {
                     </div>
                   ) : (
                     <div className="p-4 bg-slate-700/50 border border-slate-600 rounded-xl">
-                      <p className="text-gray-400 text-center">Klik op "Bereken Groei" om resultaten te zien</p>
+                      <p className="text-gray-400 text-center">Klik op &quot;Bereken Groei&quot; om resultaten te zien</p>
                     </div>
                   )}
 
@@ -314,7 +314,7 @@ export default function ETFGrowthCalculatorPage() {
                   ) : (
                     <div className="p-4 bg-slate-700/50 border border-slate-600 rounded-xl text-center hover:bg-slate-700 transition-all duration-300">
                       <p className="text-sm text-gray-400">
-                        📈 Klik op "Bereken Groei" om de groeigrafiek te zien
+                        📈 Klik op &quot;Bereken Groei&quot; om de groeigrafiek te zien
                       </p>
                     </div>
                   )}
@@ -351,7 +351,7 @@ export default function ETFGrowthCalculatorPage() {
 
           {/* ETF Recommendations */}
           <div className="mt-16">
-            <h2 className="text-3xl font-bold text-white mb-8 animate-fade-in delay-500">Aanbevolen ETF's</h2>
+            <h2 className="text-3xl font-bold text-white mb-8 animate-fade-in delay-500">Aanbevolen ETF&apos;s</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 shadow-xl hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 hover:scale-105 animate-fade-in delay-600">
                 <CardHeader>

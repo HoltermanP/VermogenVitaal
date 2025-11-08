@@ -265,7 +265,7 @@ export default function RealEstateCalculatorPage() {
                     </>
                   ) : (
                     <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-gray-600 text-center">Klik op "Bereken Cashflow" om resultaten te zien</p>
+                      <p className="text-gray-600 text-center">Klik op &quot;Bereken Cashflow&quot; om resultaten te zien</p>
                     </div>
                   )}
 

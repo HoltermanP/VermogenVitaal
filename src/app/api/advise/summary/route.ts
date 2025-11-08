@@ -14,7 +14,7 @@ const requestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { scenario, profile } = requestSchema.parse(body)
+    const { scenario } = requestSchema.parse(body)
 
     // Mock RAG response
     const result = {

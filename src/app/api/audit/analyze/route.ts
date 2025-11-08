@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
             console.log('Development mode: created test user')
           } catch (createError) {
             console.error('Failed to create user:', createError)
-            user = { id: 'dev-user-id', email: userEmail } as any
+            user = { id: 'dev-user-id', email: userEmail } as { id: string; email: string }
             console.log('Development mode: using mock user')
           }
         }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     
     // Als database niet beschikbaar is, gebruik mock user in development
     if (!user && !dbAvailable && isDevelopment) {
-      user = { id: 'dev-user-id', email: userEmail } as any
+      user = { id: 'dev-user-id', email: userEmail } as { id: string; email: string }
       console.log('Development mode: using mock user (database unavailable)')
     }
     

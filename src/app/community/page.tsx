@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MessageCircle, Plus, Star, Clock, User, ArrowRight, Sparkles, Zap } from "lucide-react"
+import { MessageCircle, Plus, Star, Clock, User, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 // Mock data - in production this would come from the database
@@ -81,7 +81,6 @@ const categories = [
 
 export default function CommunityPage() {
   // Temporarily disabled authentication for testing
-  const user = { name: "Test Gebruiker", email: "test@example.com", tier: "FREE" }
   const canPost = false // FREE tier can't post
 
   return (

@@ -33,7 +33,7 @@ export default function CryptoAllocationCalculatorPage() {
   const [results, setResults] = useState<CryptoResults | null>(null)
 
   const calculateAllocation = () => {
-    const { totalInvestment, riskTolerance, investmentHorizon, experience, preferredCoins } = formData
+    const { totalInvestment, riskTolerance, preferredCoins } = formData
 
     // Calculate allocation based on risk tolerance and preferences
     let bitcoin, ethereum, altcoins, stablecoins
@@ -324,7 +324,7 @@ export default function CryptoAllocationCalculatorPage() {
                     </>
                   ) : (
                     <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-gray-600 text-center">Klik op "Bereken Allocatie" om resultaten te zien</p>
+                      <p className="text-gray-600 text-center">Klik op &quot;Bereken Allocatie&quot; om resultaten te zien</p>
                     </div>
                   )}
 

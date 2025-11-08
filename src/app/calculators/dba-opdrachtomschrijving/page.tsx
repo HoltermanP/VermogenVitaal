@@ -338,7 +338,7 @@ ${result.disclaimer}
                     <div className="text-center">
                       <FileText className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                       <p className="text-gray-400">
-                        Vul het formulier in en klik op "Genereer Opdrachtomschrijving" om een DBA-proof opdrachtomschrijving te maken
+                        Vul het formulier in en klik op &quot;Genereer Opdrachtomschrijving&quot; om een DBA-proof opdrachtomschrijving te maken
                       </p>
                     </div>
                   </div>

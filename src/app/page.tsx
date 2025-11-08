@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Calculator, FileText, Users, Shield, TrendingUp, ArrowRight, Sparkles, Zap, Target } from "lucide-react"
+import { CheckCircle, Calculator, FileText, Users, Shield, ArrowRight, Sparkles, Zap, Target } from "lucide-react"
 
 export default function HomePage() {
   return (
