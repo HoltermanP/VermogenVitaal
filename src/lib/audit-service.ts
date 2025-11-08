@@ -55,7 +55,7 @@ export function parseXAF(xmlText: string): Transaction[] {
     
     // XAF bestanden hebben verschillende mogelijke structuren
     // Probeer verschillende paden om transacties te vinden
-    let transactions: Transaction[] = []
+    const transactions: Transaction[] = []
     
     // E-boekhouden XAF structuur met kleine letters: auditfile.transactions.journal.transaction
     // Dit is de meest voorkomende structuur in e-Boekhouden XAF bestanden
