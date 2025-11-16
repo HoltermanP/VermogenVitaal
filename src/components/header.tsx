@@ -28,22 +28,29 @@ import { Calculator, Home, FileText, TrendingUp, Menu, Plug } from "lucide-react
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 // Wrapper component voor Clerk hooks
-function ClerkUserWrapper({ children }: { children: (user: ReturnType<typeof useUser>['user'], isLoaded: boolean) => ReactNode }) {
+function ClerkUserWrapper({ children }: { children: (user: ReturnType<typeof useUser>['user'], isLoaded: boolean, isClerkAvailable: boolean) => ReactNode }) {
+  // Check of Clerk beschikbaar is
+  const isClerkAvailable = typeof window !== 'undefined' && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  
   // Altijd de hook aanroepen (React regel), maar vangen we errors op
   let user: ReturnType<typeof useUser>['user'] = null
   let isLoaded = true
   
+  // Altijd useUser aanroepen (React hooks regel)
   try {
     const clerkData = useUser()
-    user = clerkData.user
-    isLoaded = clerkData.isLoaded
+    // Alleen gebruiken als Clerk beschikbaar is
+    if (isClerkAvailable) {
+      user = clerkData.user
+      isLoaded = clerkData.isLoaded
+    }
   } catch {
     // Clerk niet beschikbaar tijdens build of wanneer niet geconfigureerd
     user = null
     isLoaded = true
   }
   
-  return <>{children(user, isLoaded)}</>
+  return <>{children(user, isLoaded, isClerkAvailable)}</>
 }
 
 export function Header() {
@@ -189,7 +196,7 @@ export function Header() {
 
         {/* Right side - Auth & User Menu */}
         <ClerkUserWrapper>
-          {(user, isLoaded) => {
+          {(user, isLoaded, isClerkAvailable) => {
             const isAuthenticated = !!user
             return (
               <div className="flex items-center gap-4">
@@ -205,7 +212,7 @@ export function Header() {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>
-                        {user.firstName?.charAt(0) || user.emailAddresses[0]?.emailAddress?.charAt(0) || "U"}
+                        {user?.firstName?.charAt(0) || user?.emailAddresses?.[0]?.emailAddress?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -214,12 +221,12 @@ export function Header() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user.firstName && user.lastName 
+                        {user?.firstName && user?.lastName 
                           ? `${user.firstName} ${user.lastName}`
-                          : user.firstName || user.username || "Gebruiker"}
+                          : user?.firstName || user?.username || "Gebruiker"}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {user.emailAddresses[0]?.emailAddress}
+                        {user?.emailAddresses?.[0]?.emailAddress}
                       </p>
                       <Badge variant="secondary" className="mt-2 w-fit">
                         {tier} Plan
@@ -253,20 +260,33 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <UserButton afterSignOutUrl="/" />
+              {isClerkAvailable && <UserButton afterSignOutUrl="/" />}
             </>
-          ) : isLoaded ? (
+                ) : isLoaded ? (
             <div className="flex items-center gap-2">
-              <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">
-                  Inloggen
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button size="sm">
-                  Start gratis
-                </Button>
-              </SignUpButton>
+              {isClerkAvailable ? (
+                <>
+                  <SignInButton mode="modal">
+                    <Button variant="ghost" size="sm">
+                      Inloggen
+                    </Button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <Button size="sm">
+                      Start gratis
+                    </Button>
+                  </SignUpButton>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/auth/signin">Inloggen</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/auth/signup">Start gratis</Link>
+                  </Button>
+                </>
+              )}
             </div>
                 ) : (
                   <Skeleton className="h-10 w-20" />
