@@ -1,28 +1,22 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/auth/signin(.*)",
+  "/api/webhooks(.*)",
+])
 
-  // Admin routes - temporarily disabled for testing
-  if (pathname.startsWith('/admin')) {
-    // Allow access for testing
-    return NextResponse.next()
+export default clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect()
   }
-
-  return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/documents/:path*',
-    '/community/:path*',
-    '/tickets/:path*',
-    '/consultation/:path*',
-    '/admin/:path*',
-    '/account/:path*',
-    '/calculators/:path*',
-    '/reports/:path*'
-  ]
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 }

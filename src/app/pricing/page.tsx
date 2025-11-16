@@ -2,184 +2,200 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Separator } from "@/components/ui/separator"
 import { CheckCircle } from "lucide-react"
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-20">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        {/* Financial grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Kies je abonnement
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in">
+            <span className="text-gradient-financial">Kies je abonnement</span>
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200">
             Van gratis tot volledig service - kies wat bij je past
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Gratis */}
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300">
             <CardHeader>
-              <CardTitle className="text-2xl">Gratis</CardTitle>
-              <CardDescription>Perfect om te beginnen</CardDescription>
-              <div className="text-4xl font-bold">€0</div>
-              <p className="text-sm text-gray-500">per maand</p>
+              <CardTitle className="text-2xl text-foreground">Gratis</CardTitle>
+              <CardDescription className="text-muted-foreground">Perfect om te beginnen</CardDescription>
+              <div className="text-4xl font-bold mt-4 text-gradient-financial">€0</div>
+              <p className="text-sm text-muted-foreground">per maand</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>QuickScan Belasting (5 min)</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">QuickScan Belasting (5 min)</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>ETF basisallocatie</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">ETF basisallocatie</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Vastgoed quick cashflow</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Vastgoed quick cashflow</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Crypto-risicoprofiel (educatief)</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Crypto-risicoprofiel (educatief)</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>3 kennisbankartikelen</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">3 kennisbankartikelen</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Community lezen & reageren</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Community lezen & reageren</span>
                 </li>
               </ul>
-              <Button className="w-full" variant="outline" asChild>
+              <Button className="w-full border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" variant="outline" asChild>
                 <Link href="/auth/signin">Start gratis</Link>
               </Button>
             </CardContent>
           </Card>
 
           {/* Basic */}
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-400">
             <CardHeader>
-              <CardTitle className="text-2xl">Basic</CardTitle>
-              <CardDescription>Voor startende ondernemers</CardDescription>
-              <div className="text-4xl font-bold">€12</div>
-              <p className="text-sm text-gray-500">per maand</p>
+              <CardTitle className="text-2xl text-foreground">Basic</CardTitle>
+              <CardDescription className="text-muted-foreground">Voor startende ondernemers</CardDescription>
+              <div className="text-4xl font-bold mt-4 text-gradient-financial">€12</div>
+              <p className="text-sm text-muted-foreground">per maand</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Alles van Gratis</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Alles van Gratis</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Uitgebreide calculators</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Uitgebreide calculators</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>PDF export</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">PDF export</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>RAG-samenvattingen</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">RAG-samenvattingen</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Onbeperkte kennisbank</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Onbeperkte kennisbank</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Community posten</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Community posten</span>
                 </li>
               </ul>
-              <Button className="w-full" asChild>
+              <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/auth/signin">Start Basic</Link>
               </Button>
             </CardContent>
           </Card>
 
           {/* Pro */}
-          <Card className="border-blue-500 border-2 relative">
-            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500">
+          <Card className="bg-card/80 backdrop-blur-sm border-primary border-2 relative shadow-financial-lg hover:shadow-financial-lg transition-all duration-500 animate-fade-in delay-500 group">
+            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 gradient-financial text-white shadow-financial">
               Meest populair
             </Badge>
             <CardHeader>
-              <CardTitle className="text-2xl">Pro</CardTitle>
-              <CardDescription>Voor serieuze ondernemers</CardDescription>
-              <div className="text-4xl font-bold">€39</div>
-              <p className="text-sm text-gray-500">per maand</p>
+              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Pro</CardTitle>
+              <CardDescription className="text-muted-foreground">Voor serieuze ondernemers</CardDescription>
+              <div className="text-4xl font-bold mt-4 text-gradient-financial">€39</div>
+              <p className="text-sm text-muted-foreground">per maand</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Alles van Basic</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Alles van Basic</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Persoonlijke dossieronboarding</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Persoonlijke dossieronboarding</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Document upload</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Document upload</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Scenariovergelijking met dossiers</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Scenariovergelijking met dossiers</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Async Q&A met expert</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Async Q&A met expert</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Aangifte-check (€149 add-on)</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Aangifte-check (€149 add-on)</span>
                 </li>
               </ul>
-              <Button className="w-full" asChild>
+              <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/auth/signin">Start Pro</Link>
               </Button>
             </CardContent>
           </Card>
 
           {/* Elite */}
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-600 group">
             <CardHeader>
-              <CardTitle className="text-2xl">Elite</CardTitle>
-              <CardDescription>Volledig service</CardDescription>
-              <div className="text-4xl font-bold">€99</div>
-              <p className="text-sm text-gray-500">per maand</p>
+              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Elite</CardTitle>
+              <CardDescription className="text-muted-foreground">Volledig service</CardDescription>
+              <div className="text-4xl font-bold mt-4 text-gradient-premium">€99</div>
+              <p className="text-sm text-muted-foreground">per maand</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Alles van Pro</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Alles van Pro</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Aangifte indienen/afhandelen</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Aangifte indienen/afhandelen</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>1 video-consult per kwartaal</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">1 video-consult per kwartaal</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Prioriteitssupport</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Prioriteitssupport</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>Persoonlijke adviseur</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Persoonlijke adviseur</span>
                 </li>
                 <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                  <span>White-label rapporten</span>
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">White-label rapporten</span>
                 </li>
               </ul>
-              <Button className="w-full" asChild>
+              <Button className="w-full gradient-premium text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/auth/signin">Start Elite</Link>
               </Button>
             </CardContent>
@@ -189,45 +205,69 @@ export default function PricingPage() {
         {/* Add-ons */}
         <div className="mt-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4 animate-fade-in delay-700">
               Add-ons
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-800">
               Extra services voor Pro en Elite gebruikers
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-700">
               <CardHeader>
-                <CardTitle>Aangifte Check</CardTitle>
-                <CardDescription>Laat je aangifte controleren door een expert</CardDescription>
-                <div className="text-3xl font-bold">€149</div>
-                <p className="text-sm text-gray-500">per dossier</p>
+                <CardTitle className="text-foreground">Aangifte Check</CardTitle>
+                <CardDescription className="text-muted-foreground">Laat je aangifte controleren door een expert</CardDescription>
+                <div className="text-3xl font-bold mt-4 text-gradient-financial">€149</div>
+                <p className="text-sm text-muted-foreground">per dossier</p>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• Volledige controle van je aangifte</li>
-                  <li>• Expert feedback en tips</li>
-                  <li>• Optimalisatie suggesties</li>
-                  <li>• 48u response tijd</li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Volledige controle van je aangifte</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Expert feedback en tips</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Optimalisatie suggesties</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">48u response tijd</span>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-800">
               <CardHeader>
-                <CardTitle>Due Diligence Vastgoed</CardTitle>
-                <CardDescription>Professionele vastgoed analyse</CardDescription>
-                <div className="text-3xl font-bold">€299</div>
-                <p className="text-sm text-gray-500">per pand</p>
+                <CardTitle className="text-foreground">Due Diligence Vastgoed</CardTitle>
+                <CardDescription className="text-muted-foreground">Professionele vastgoed analyse</CardDescription>
+                <div className="text-3xl font-bold mt-4 text-gradient-financial">€299</div>
+                <p className="text-sm text-muted-foreground">per pand</p>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• Financiële analyse</li>
-                  <li>• Marktonderzoek</li>
-                  <li>• Risico assessment</li>
-                  <li>• Investeringsadvies</li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Financiële analyse</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Marktonderzoek</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Risico assessment</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Investeringsadvies</span>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
@@ -237,55 +277,78 @@ export default function PricingPage() {
         {/* FAQ */}
         <div className="mt-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4 animate-fade-in delay-900">
               Veelgestelde vragen
             </h2>
+            <p className="text-lg text-muted-foreground animate-fade-in delay-1000">
+              Alles wat je moet weten over onze abonnementen
+            </p>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-semibold mb-2">Kan ik mijn abonnement opzeggen?</h3>
-              <p className="text-gray-600">
-                Ja, je kunt je abonnement op elk moment opzeggen via je account pagina. 
-                Je behoudt toegang tot het einde van je betaalperiode.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-semibold mb-2">Wat gebeurt er met mijn data bij opzegging?</h3>
-              <p className="text-gray-600">
-                Je data blijft 30 dagen bewaard na opzegging. Daarna wordt deze veilig verwijderd 
-                volgens onze AVG-richtlijnen.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-semibold mb-2">Zijn er verborgen kosten?</h3>
-              <p className="text-gray-600">
-                Nee, alle prijzen zijn inclusief BTW. Alleen add-ons zoals aangifte-check 
-                zijn extra kosten.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-semibold mb-2">Kan ik upgraden of downgraden?</h3>
-              <p className="text-gray-600">
-                Ja, je kunt op elk moment upgraden of downgraden. Wijzigingen gaan 
-                direct in en je betaalt/ontvangt het verschil.
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto">
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+              <CardContent className="pt-6">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger className="text-left text-foreground">
+                      Kan ik mijn abonnement opzeggen?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Ja, je kunt je abonnement op elk moment opzeggen via je account pagina. 
+                        Je behoudt toegang tot het einde van je betaalperiode.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger className="text-left text-foreground">
+                      Wat gebeurt er met mijn data bij opzegging?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Je data blijft 30 dagen bewaard na opzegging. Daarna wordt deze veilig verwijderd 
+                        volgens onze AVG-richtlijnen.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3">
+                    <AccordionTrigger className="text-left text-foreground">
+                      Zijn er verborgen kosten?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Nee, alle prijzen zijn inclusief BTW. Alleen add-ons zoals aangifte-check 
+                        zijn extra kosten.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-4">
+                    <AccordionTrigger className="text-left text-foreground">
+                      Kan ik upgraden of downgraden?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Ja, je kunt op elk moment upgraden of downgraden. Wijzigingen gaan 
+                        direct in en je betaalt/ontvangt het verschil.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <Separator className="mb-12 max-w-2xl mx-auto bg-slate-700" />
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 animate-fade-in delay-1100">
             Klaar om te beginnen?
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Start vandaag nog met je gratis account
+          <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto animate-fade-in delay-1200">
+            Start vandaag nog met je gratis account en ontdek hoe je belastingen kunt optimaliseren.
           </p>
-          <Button size="lg" asChild>
+          <Button size="lg" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
             <Link href="/auth/signin">Start gratis nu</Link>
           </Button>
         </div>

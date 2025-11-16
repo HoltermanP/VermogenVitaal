@@ -90,33 +90,44 @@ export default function BVvsEMZCalculatorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        {/* Financial grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              BV vs EMZ Calculator
+          <div className="mb-12">
+            <h1 className="text-4xl font-bold text-foreground mb-3 animate-fade-in">
+              <span className="text-gradient-financial">BV vs EMZ Calculator</span>
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Bereken of een BV of EMZ voordeliger is voor jouw situatie
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Form */}
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calculator className="h-5 w-5 mr-2 text-blue-600" />
+                <CardTitle className="flex items-center text-foreground">
+                  <div className="w-10 h-10 gradient-financial rounded-lg flex items-center justify-center mr-3 shadow-financial">
+                    <Calculator className="h-5 w-5 text-white" />
+                  </div>
                   Jouw Situatie
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-muted-foreground">
                   Vul je gegevens in voor een nauwkeurige berekening
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="revenue">Jaarlijkse Omzet</Label>
+                  <Label htmlFor="revenue" className="text-foreground">Jaarlijkse Omzet</Label>
                   <Input
                     id="revenue"
                     type="number"
@@ -127,7 +138,7 @@ export default function BVvsEMZCalculatorPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="costs">Jaarlijkse Kosten</Label>
+                  <Label htmlFor="costs" className="text-foreground">Jaarlijkse Kosten</Label>
                   <Input
                     id="costs"
                     type="number"
@@ -138,9 +149,9 @@ export default function BVvsEMZCalculatorPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="legal-form">Huidige Rechtsvorm</Label>
+                  <Label htmlFor="legal-form" className="text-foreground">Huidige Rechtsvorm</Label>
                   <Select value={formData.legalForm} onValueChange={(value) => handleInputChange('legalForm', value)}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 w-full">
                       <SelectValue placeholder="Selecteer rechtsvorm" />
                     </SelectTrigger>
                     <SelectContent>
@@ -152,7 +163,7 @@ export default function BVvsEMZCalculatorPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="salary">Gewenst Salaris (BV)</Label>
+                  <Label htmlFor="salary" className="text-foreground">Gewenst Salaris (BV)</Label>
                   <Input
                     id="salary"
                     type="number"
@@ -163,7 +174,7 @@ export default function BVvsEMZCalculatorPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="dividend">Dividend Uitkering (BV)</Label>
+                  <Label htmlFor="dividend" className="text-foreground">Dividend Uitkering (BV)</Label>
                   <Input
                     id="dividend"
                     type="number"
@@ -173,7 +184,7 @@ export default function BVvsEMZCalculatorPage() {
                   />
                 </div>
 
-                <Button className="w-full" size="lg" onClick={calculateComparison}>
+                <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" size="lg" onClick={calculateComparison}>
                   <Calculator className="h-4 w-4 mr-2" />
                   Bereken Vergelijking
                 </Button>
@@ -181,10 +192,10 @@ export default function BVvsEMZCalculatorPage() {
             </Card>
 
             {/* Results */}
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-400">
               <CardHeader>
-                <CardTitle>Berekeningsresultaten</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-foreground">Berekeningsresultaten</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Vergelijking tussen BV en EMZ
                 </CardDescription>
               </CardHeader>
@@ -193,69 +204,69 @@ export default function BVvsEMZCalculatorPage() {
                   {results ? (
                     <>
                       {/* EMZ Results */}
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <h3 className="font-semibold text-blue-900 mb-2">Eenmanszaak</h3>
+                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                        <h3 className="font-semibold text-foreground mb-2">Eenmanszaak</h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span>Winst:</span>
-                            <span className="font-medium">€{results.emz.profit.toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Winst:</span>
+                            <span className="font-medium text-foreground">€{results.emz.profit.toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Inkomstenbelasting:</span>
-                            <span className="font-medium">€{Math.round(results.emz.tax).toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Inkomstenbelasting:</span>
+                            <span className="font-medium text-foreground">€{Math.round(results.emz.tax).toLocaleString('nl-NL')}</span>
                           </div>
-                          <div className="flex justify-between border-t pt-2">
-                            <span className="font-semibold">Netto Resultaat:</span>
-                            <span className="font-semibold text-green-600">€{Math.round(results.emz.netResult).toLocaleString('nl-NL')}</span>
+                          <div className="flex justify-between border-t border-primary/20 pt-2">
+                            <span className="font-semibold text-foreground">Netto Resultaat:</span>
+                            <span className="font-semibold text-gradient-financial">€{Math.round(results.emz.netResult).toLocaleString('nl-NL')}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* BV Results */}
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <h3 className="font-semibold text-green-900 mb-2">BV</h3>
+                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                        <h3 className="font-semibold text-foreground mb-2">BV</h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span>Winst:</span>
-                            <span className="font-medium">€{results.bv.profit.toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Winst:</span>
+                            <span className="font-medium text-foreground">€{results.bv.profit.toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Vennootschapsbelasting:</span>
-                            <span className="font-medium">€{Math.round(results.bv.corpTax).toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Vennootschapsbelasting:</span>
+                            <span className="font-medium text-foreground">€{Math.round(results.bv.corpTax).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Inkomstenbelasting (salaris):</span>
-                            <span className="font-medium">€{Math.round(results.bv.salaryTax).toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Inkomstenbelasting (salaris):</span>
+                            <span className="font-medium text-foreground">€{Math.round(results.bv.salaryTax).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Dividendbelasting:</span>
-                            <span className="font-medium">€{Math.round(results.bv.dividendTax).toLocaleString('nl-NL')}</span>
+                            <span className="text-muted-foreground">Dividendbelasting:</span>
+                            <span className="font-medium text-foreground">€{Math.round(results.bv.dividendTax).toLocaleString('nl-NL')}</span>
                           </div>
-                          <div className="flex justify-between border-t pt-2">
-                            <span className="font-semibold">Netto Resultaat:</span>
-                            <span className="font-semibold text-green-600">€{Math.round(results.bv.netResult).toLocaleString('nl-NL')}</span>
+                          <div className="flex justify-between border-t border-primary/20 pt-2">
+                            <span className="font-semibold text-foreground">Netto Resultaat:</span>
+                            <span className="font-semibold text-gradient-financial">€{Math.round(results.bv.netResult).toLocaleString('nl-NL')}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Recommendation */}
-                      <div className="p-4 bg-yellow-50 rounded-lg">
-                        <h3 className="font-semibold text-yellow-900 mb-2">Aanbeveling</h3>
-                        <p className="text-sm text-yellow-800">
-                          Een {results.recommendation} is in jouw situatie €{Math.round(results.difference).toLocaleString('nl-NL')} voordeliger per jaar.
+                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                        <h3 className="font-semibold text-foreground mb-2">Aanbeveling</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Een {results.recommendation} is in jouw situatie <span className="font-semibold text-gradient-financial">€{Math.round(results.difference).toLocaleString('nl-NL')}</span> voordeliger per jaar.
                           {results.recommendation === "BV" && " Overweeg wel de extra administratie en kosten."}
                         </p>
                       </div>
                     </>
                   ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-gray-600 text-center">Klik op &quot;Bereken Vergelijking&quot; om resultaten te zien</p>
+                    <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
+                      <p className="text-muted-foreground text-center">Klik op &quot;Bereken Vergelijking&quot; om resultaten te zien</p>
                     </div>
                   )}
 
                   <div className="flex gap-3">
                     <Button
-                      className="flex-1"
+                      className="flex-1 gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300"
                       onClick={async () => {
                         try {
                           const response = await fetch('/api/reports/generate?type=bv-vs-emz')
@@ -271,7 +282,7 @@ export default function BVvsEMZCalculatorPage() {
                       <Download className="h-4 w-4 mr-2" />
                       Download Rapport
                     </Button>
-                    <Button variant="outline" className="flex-1" asChild>
+                    <Button variant="outline" className="flex-1 border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
                       <Link href="/calculators">
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Andere Calculator
@@ -285,30 +296,30 @@ export default function BVvsEMZCalculatorPage() {
 
           {/* Information */}
           <div className="mt-12 grid md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-500">
               <CardHeader>
-                <CardTitle>Eenmanszaak Voordelen</CardTitle>
+                <CardTitle className="text-foreground">Eenmanszaak Voordelen</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• Eenvoudige administratie</li>
-                  <li>• Geen startkapitaal vereist</li>
-                  <li>• Directe toegang tot winst</li>
-                  <li>• Lagere oprichtingskosten</li>
+                  <li className="text-muted-foreground">• Eenvoudige administratie</li>
+                  <li className="text-muted-foreground">• Geen startkapitaal vereist</li>
+                  <li className="text-muted-foreground">• Directe toegang tot winst</li>
+                  <li className="text-muted-foreground">• Lagere oprichtingskosten</li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-600">
               <CardHeader>
-                <CardTitle>BV Voordelen</CardTitle>
+                <CardTitle className="text-foreground">BV Voordelen</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• Lagere vennootschapsbelasting</li>
-                  <li>• Beperkte aansprakelijkheid</li>
-                  <li>• Flexibiliteit in salaris/dividend</li>
-                  <li>• Professionele uitstraling</li>
+                  <li className="text-muted-foreground">• Lagere vennootschapsbelasting</li>
+                  <li className="text-muted-foreground">• Beperkte aansprakelijkheid</li>
+                  <li className="text-muted-foreground">• Flexibiliteit in salaris/dividend</li>
+                  <li className="text-muted-foreground">• Professionele uitstraling</li>
                 </ul>
               </CardContent>
             </Card>

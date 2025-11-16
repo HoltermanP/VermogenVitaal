@@ -38,56 +38,66 @@ export default function ReportsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Voltooid":
-        return "bg-green-100 text-green-800"
+        return "bg-primary/20 text-primary"
       case "In behandeling":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-muted text-muted-foreground"
       case "Fout":
-        return "bg-red-100 text-red-800"
+        return "bg-destructive/20 text-destructive"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case "Fiscaal":
-        return "bg-blue-100 text-blue-800"
+        return "bg-primary/20 text-primary"
       case "Belegging":
-        return "bg-green-100 text-green-800"
+        return "bg-primary/20 text-primary"
       case "Vastgoed":
-        return "bg-purple-100 text-purple-800"
+        return "bg-primary/20 text-primary"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        {/* Financial grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Mijn Rapporten
+            <h1 className="text-3xl font-bold text-foreground mb-2 animate-fade-in">
+              <span className="text-gradient-financial">Mijn Rapporten</span>
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Bekijk en download je gegenereerde fiscale rapporten
             </p>
           </div>
 
           <div className="space-y-6">
             {reports.map((report) => (
-              <Card key={report.id} className="hover:shadow-md transition-shadow">
+              <Card key={report.id} className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="flex items-center mb-2">
-                        <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                      <CardTitle className="flex items-center mb-2 text-foreground">
+                        <div className="w-10 h-10 gradient-financial rounded-lg flex items-center justify-center mr-3 shadow-financial">
+                          <FileText className="h-5 w-5 text-white" />
+                        </div>
                         {report.title}
                       </CardTitle>
                       <CardDescription className="mb-3">
                         {report.description}
                       </CardDescription>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
                           {new Date(report.date).toLocaleDateString('nl-NL')}
@@ -104,14 +114,14 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-3">
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" className="border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
                       <Link href={`/reports/${report.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         Bekijk
                       </Link>
                     </Button>
                     {report.downloadUrl && (
-                      <Button size="sm" asChild>
+                      <Button size="sm" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                         <Link href={report.downloadUrl}>
                           <Download className="h-4 w-4 mr-2" />
                           Download PDF
@@ -126,14 +136,14 @@ export default function ReportsPage() {
 
           {reports.length === 0 && (
             <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 Nog geen rapporten
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Genereer je eerste rapport door een calculator te gebruiken
               </p>
-              <Button asChild>
+              <Button className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/calculators">
                   Start met Calculators
                 </Link>
@@ -141,11 +151,11 @@ export default function ReportsPage() {
             </div>
           )}
 
-          <div className="mt-12 bg-green-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold text-green-900 mb-3">
+          <div className="mt-12 bg-accent/10 border border-primary/20 p-6 rounded-lg hover:border-primary/40 hover:shadow-financial-lg transition-all duration-500">
+            <h2 className="text-xl font-semibold text-foreground mb-3">
               📊 Rapport Informatie
             </h2>
-            <p className="text-green-800">
+            <p className="text-muted-foreground">
               Je rapporten worden automatisch gegenereerd na het voltooien van een calculator. 
               Ze bevatten gedetailleerde analyses en aanbevelingen op basis van je invoer.
             </p>

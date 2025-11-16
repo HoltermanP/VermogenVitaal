@@ -20,14 +20,16 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  profileFinancials ProfileFinancials?
-  scenarios         Scenario[]
-  documents         Document[]
-  reports           Report[]
-  payments          Payment[]
-  tickets           Ticket[]
-  auditLogs         AuditLog[]
-  auditChecks       AuditCheck[]
+  profileFinancials        ProfileFinancials?
+  scenarios                Scenario[]
+  documents                Document[]
+  reports                  Report[]
+  payments                 Payment[]
+  tickets                  Ticket[]
+  auditLogs                AuditLog[]
+  auditChecks              AuditCheck[]
+  accountingIntegrations   AccountingIntegration[]
+  stockFavorites           StockFavorite[]
 
   @@map("users")
 }
@@ -177,6 +179,47 @@ model AuditCheck {
   @@map("audit_checks")
 }
 
+model AccountingIntegration {
+  id              String             @id @default(cuid())
+  userId          String
+  provider        AccountingProvider
+  name            String             // Gebruikersvriendelijke naam
+  accessToken     String?            // Versleuteld opgeslagen
+  refreshToken    String?
+  expiresAt       DateTime?
+  apiKey          String?            // Voor API key gebaseerde auth
+  apiSecret       String?            // Versleuteld
+  companyId       String?            // Company/division ID voor multi-tenant systemen
+  isActive        Boolean            @default(true)
+  lastSyncAt      DateTime?
+  syncSettings    Json?              // Custom sync instellingen per provider
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, companyId])
+  @@map("accounting_integrations")
+}
+
+model StockFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String   // Bijv. "AAPL", "ASML.AS"
+  name      String   // Volledige naam van het aandeel/ETF
+  exchange  String?  // Bijv. "NASDAQ", "AMS"
+  type      String?  // "STOCK" of "ETF"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@map("stock_favorites")
+}
+
 // Enums
 enum UserRole {
   USER
@@ -242,4 +285,15 @@ enum AuditStatus {
   ANALYZING
   COMPLETED
   ERROR
+}
+
+enum AccountingProvider {
+  EXACT_ONLINE
+  E_BOEKHOUDEN
+  MONEYBIRD
+  AFAS
+  YUKI
+  JORTT
+  VISMA
+  SNELSTART
 }

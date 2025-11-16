@@ -2,219 +2,262 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Calculator, FileText, Users, Shield, ArrowRight, Sparkles, Zap, Target } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { 
+  CheckCircle, 
+  Calculator, 
+  FileText, 
+  Users, 
+  Shield, 
+  ArrowRight, 
+  Sparkles, 
+  Zap, 
+  Target
+} from "lucide-react"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-100 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        {/* Financial grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+      
       {/* Hero Section */}
-      <section className="relative container mx-auto px-4 py-24">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-indigo-50/50 to-purple-50/50"></div>
-        <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-100/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl"></div>
-        
-        <div className="relative text-center max-w-5xl mx-auto">
-          <Badge variant="secondary" className="mb-6 bg-white/80 backdrop-blur-sm border-slate-200 text-slate-700 hover:bg-white/90">
-            <Sparkles className="w-4 h-4 mr-2" />
+      <section className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto">
+          <Badge variant="secondary" className="mb-2 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <Sparkles className="mr-2 h-3 w-3" />
             Nieuwe fiscale regels 2024
           </Badge>
-          <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent mb-8 leading-tight">
-            Tax & Wealth Hub
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-foreground animate-fade-in">
+            <span className="text-gradient-financial">Tax & Wealth Hub</span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-2xl animate-fade-in delay-200">
             De complete oplossing voor belastingadvies en vermogensopbouw voor ondernemers. 
             Van BV vs EMZ tot ETF-allocatie en vastgoedstrategieën.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white border-0 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
+            <Button size="lg" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
               <Link href="/dashboard">
                 Start gratis
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="bg-white/80 backdrop-blur-sm border-slate-300 text-slate-700 hover:bg-white/90 px-8 py-4 text-lg font-semibold" asChild>
+            <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
               <Link href="/pricing">Bekijk prijzen</Link>
             </Button>
+          </div>
+          
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl pt-12">
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300 group">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-gradient-financial group-hover:scale-110 transition-transform duration-300">500+</div>
+                <div className="text-sm text-muted-foreground mt-1">Actieve gebruikers</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-400 group">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-gradient-financial group-hover:scale-110 transition-transform duration-300">10K+</div>
+                <div className="text-sm text-muted-foreground mt-1">Berekeningen</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-500 group">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-gradient-financial group-hover:scale-110 transition-transform duration-300">98%</div>
+                <div className="text-sm text-muted-foreground mt-1">Tevreden klanten</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
+      <Separator className="bg-slate-700" />
+
       {/* Features Section */}
-      <section className="relative container mx-auto px-4 py-24">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
+      <section className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-center text-center space-y-4 mb-12">
+          <Badge variant="secondary" className="mb-2 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <Sparkles className="mr-2 h-3 w-3" />
+            Complete oplossing
+          </Badge>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
             Alles wat je nodig hebt voor fiscale optimalisatie
           </h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-300 max-w-2xl">
             Van calculators tot persoonlijk advies - alles onder één dak
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Calculator className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">Smart Calculators</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">Smart Calculators</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 BV vs EMZ, ETF-groei, vastgoed cashflow en crypto-allocatie
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Scenario-vergelijking
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Scenario-vergelijking</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Gevoeligheidsanalyse
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Gevoeligheidsanalyse</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  PDF-rapporten
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">PDF-rapporten</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-400 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <FileText className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">Document Management</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">Document Management</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Upload en beheer je fiscale documenten veilig
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Veilige opslag
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Veilige opslag</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Status tracking
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Status tracking</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Aangifte check
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Aangifte check</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-500 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-violet-500 to-violet-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Users className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">Expert Community</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">Expert Community</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Stel vragen en deel kennis met andere ondernemers
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Q&A forum
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Q&A forum</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Expert antwoorden
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Expert antwoorden</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Nieuwe regels updates
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Nieuwe regels updates</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-600 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Shield className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">Compliance & Security</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">Compliance & Security</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 AVG-compliant met bank-niveau beveiliging
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  End-to-end encryptie
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">End-to-end encryptie</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  AVG-compliant
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">AVG-compliant</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Audit logging
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Audit logging</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-700 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Zap className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">AI-Powered Insights</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">AI-Powered Insights</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Krijg gepersonaliseerde adviezen op basis van je situatie
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  RAG-gebaseerde adviezen
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">RAG-gebaseerde adviezen</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Scenario-optimalisatie
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Scenario-optimalisatie</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Bronvermelding
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Bronvermelding</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 hover:bg-white/80 transition-all duration-300 hover:scale-105 group shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-800 group">
             <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-financial shadow-financial group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Target className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-slate-800 text-xl">EU Vastgoed & Crypto</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-foreground group-hover:text-primary transition-colors">EU Vastgoed & Crypto</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Specialisatie in Europese vastgoed en crypto-educatie
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  EU-landen support
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">EU-landen support</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Crypto educatie
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Crypto educatie</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Transparante affiliates
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Transparante affiliates</span>
                 </li>
               </ul>
             </CardContent>
@@ -222,132 +265,161 @@ export default function HomePage() {
         </div>
       </section>
 
+      <Separator className="bg-slate-700" />
+
       {/* Pricing Preview */}
-      <section className="relative container mx-auto px-4 py-24 bg-slate-50/50">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
+      <section className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-center text-center space-y-4 mb-12">
+          <Badge variant="outline" className="mb-2 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            Flexibele prijzen
+          </Badge>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
             Kies je abonnement
           </h2>
-          <p className="text-xl text-slate-600">
-            Van gratis tot volledig service
+          <p className="text-lg text-gray-300 max-w-2xl">
+            Van gratis tot volledig service - kies wat bij je past
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <Card className="bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white/90 transition-all duration-300 shadow-lg">
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300">
             <CardHeader className="text-center">
-              <CardTitle className="text-slate-800 text-2xl">Gratis</CardTitle>
-              <CardDescription className="text-slate-600">Perfect om te beginnen</CardDescription>
-              <div className="text-4xl font-bold text-slate-800 mt-4">€0</div>
+              <CardTitle className="text-2xl text-foreground">Gratis</CardTitle>
+              <CardDescription className="text-muted-foreground">Perfect om te beginnen</CardDescription>
+              <div className="text-4xl font-bold pt-4 text-gradient-financial">€0</div>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  QuickScan Belasting
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">QuickScan Belasting</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  ETF basisallocatie
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">ETF basisallocatie</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  3 kennisbankartikelen
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">3 kennisbankartikelen</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Community lezen
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Community lezen</span>
                 </li>
               </ul>
+              <Button variant="outline" className="w-full border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
+                <Link href="/auth/signin">Start gratis</Link>
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-slate-100/80 to-slate-200/80 backdrop-blur-sm border-slate-300 hover:border-slate-400 transition-all duration-300 hover:scale-105 relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 bg-gradient-to-l from-slate-600 to-slate-700 text-white px-4 py-1 text-sm font-semibold">
-              Meest populair
-            </div>
-            <CardHeader className="text-center">
-              <CardTitle className="text-slate-800 text-2xl">Pro</CardTitle>
-              <CardDescription className="text-slate-600">Voor serieuze ondernemers</CardDescription>
-              <div className="text-4xl font-bold text-slate-800 mt-4">€39<span className="text-lg font-normal">/maand</span></div>
+          <Card className="bg-card/80 backdrop-blur-sm border-primary border-2 shadow-financial-lg hover:shadow-financial-lg transition-all duration-500 animate-fade-in delay-400 relative group">
+            <CardHeader className="text-center relative">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-financial text-white shadow-financial">
+                Meest populair
+              </Badge>
+              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Pro</CardTitle>
+              <CardDescription className="text-muted-foreground">Voor serieuze ondernemers</CardDescription>
+              <div className="text-4xl font-bold pt-4 text-gradient-financial">
+                €39<span className="text-lg font-normal text-muted-foreground">/maand</span>
+              </div>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Alles van Gratis
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Alles van Gratis</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Document upload
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Document upload</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Scenariovergelijking
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Scenariovergelijking</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Expert Q&A
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Expert Q&A</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Aangifte check (€149)
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Aangifte check (€149)</span>
                 </li>
               </ul>
+              <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
+                <Link href="/auth/signin">Start Pro</Link>
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white/90 transition-all duration-300 shadow-lg">
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-500 group">
             <CardHeader className="text-center">
-              <CardTitle className="text-slate-800 text-2xl">Elite</CardTitle>
-              <CardDescription className="text-slate-600">Volledig service</CardDescription>
-              <div className="text-4xl font-bold text-slate-800 mt-4">€99<span className="text-lg font-normal">/maand</span></div>
+              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Elite</CardTitle>
+              <CardDescription className="text-muted-foreground">Volledig service</CardDescription>
+              <div className="text-4xl font-bold pt-4 text-gradient-premium">
+                €99<span className="text-lg font-normal text-muted-foreground">/maand</span>
+              </div>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Alles van Pro
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Alles van Pro</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Aangifte indienen
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Aangifte indienen</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Video consult (kwartaal)
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Video consult (kwartaal)</span>
                 </li>
-                <li className="flex items-center text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-3" />
-                  Prioriteitssupport
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">Prioriteitssupport</span>
                 </li>
               </ul>
+              <Button className="w-full gradient-premium text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
+                <Link href="/auth/signin">Start Elite</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
 
-        <div className="text-center mt-12">
-          <Button size="lg" className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white border-0 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+        <div className="flex justify-center mt-12">
+          <Button variant="outline" size="lg" className="border-slate-600 text-slate-300 hover:bg-slate-700" asChild>
             <Link href="/pricing">Bekijk alle prijzen</Link>
           </Button>
         </div>
       </section>
 
+      <Separator className="bg-slate-700" />
+
       {/* CTA Section */}
-      <section className="relative container mx-auto px-4 py-24">
-        <div className="text-center max-w-4xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
+      <section className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto">
+          <Badge variant="secondary" className="mb-2 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <Zap className="mr-2 h-3 w-3" />
+            Start vandaag
+          </Badge>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
             Klaar om je fiscale situatie te optimaliseren?
           </h2>
-          <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground">
             Start vandaag nog met je gratis account en ontdek hoe je belastingen kunt optimaliseren.
           </p>
-          <Button size="lg" className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white border-0 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300" asChild>
-            <Link href="/dashboard">
-              Start gratis nu
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
+            <Button size="lg" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
+              <Link href="/dashboard">
+                Start gratis nu
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
+              <Link href="/pricing">Bekijk prijzen</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { z } from "zod"
@@ -118,31 +119,39 @@ export default function OnboardingPage() {
   const progress = (currentStep / 4) * 100
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        {/* Financial grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      </div>
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welkom bij Tax & Wealth Hub
+            <h1 className="text-3xl font-bold mb-2 animate-fade-in">
+              <span className="text-gradient-financial">Welkom bij Tax & Wealth Hub</span>
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Laten we je profiel opzetten voor gepersonaliseerde adviezen
             </p>
           </div>
 
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500">
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <CardTitle>Stap {currentStep} van 4</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-foreground">Stap {currentStep} van 4</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     {currentStep === 1 && "Basis profiel"}
                     {currentStep === 2 && "Doelen en interesses"}
                     {currentStep === 3 && "Risicoprofiel"}
                     {currentStep === 4 && "Toestemmingen"}
                   </CardDescription>
                 </div>
-                <Badge variant="outline">{Math.round(progress)}%</Badge>
+                <Badge variant="outline" className="border-primary/50">{Math.round(progress)}%</Badge>
               </div>
               <Progress value={progress} className="h-2" />
             </CardHeader>
@@ -216,7 +225,7 @@ export default function OnboardingPage() {
                               <Label htmlFor={goal.id} className="text-sm font-medium">
                                 {goal.label}
                               </Label>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 {goal.description}
                               </p>
                             </div>
@@ -232,27 +241,31 @@ export default function OnboardingPage() {
                   <div className="space-y-6">
                     <div>
                       <Label>Risicoprofiel</Label>
-                      <div className="grid gap-4 mt-4">
-                        {riskProfiles.map((profile) => (
-                          <div key={profile.value} className="flex items-start space-x-3">
-                            <input
-                              type="radio"
-                              id={profile.value}
-                              {...form.register("riskProfile")}
-                              value={profile.value}
-                              className="mt-1"
-                            />
-                            <div className="grid gap-1.5 leading-none">
-                              <Label htmlFor={profile.value} className="text-sm font-medium">
-                                {profile.label}
-                              </Label>
-                              <p className="text-xs text-gray-500">
-                                {profile.description}
-                              </p>
+                      <RadioGroup
+                        value={form.watch("riskProfile")}
+                        onValueChange={(value) => form.setValue("riskProfile", value as "CONSERVATIVE" | "MODERATE" | "AGGRESSIVE")}
+                        className="mt-4"
+                      >
+                        <div className="grid gap-4">
+                          {riskProfiles.map((profile) => (
+                            <div key={profile.value} className="flex items-start space-x-3">
+                              <RadioGroupItem
+                                value={profile.value}
+                                id={profile.value}
+                                className="mt-1"
+                              />
+                              <div className="grid gap-1.5 leading-none">
+                                <Label htmlFor={profile.value} className="text-sm font-medium cursor-pointer">
+                                  {profile.label}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                  {profile.description}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
                     </div>
 
                     <div>
@@ -280,7 +293,7 @@ export default function OnboardingPage() {
                           <Label htmlFor="acceptTerms" className="text-sm font-medium">
                             Ik ga akkoord met de algemene voorwaarden
                           </Label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             <a href="/legal/terms" className="text-blue-600 hover:underline">
                               Lees de algemene voorwaarden
                             </a>
@@ -297,7 +310,7 @@ export default function OnboardingPage() {
                           <Label htmlFor="acceptPrivacy" className="text-sm font-medium">
                             Ik ga akkoord met het privacybeleid
                           </Label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             <a href="/legal/privacy" className="text-blue-600 hover:underline">
                               Lees het privacybeleid
                             </a>
@@ -314,7 +327,7 @@ export default function OnboardingPage() {
                           <Label htmlFor="acceptMarketing" className="text-sm font-medium">
                             Ik wil updates ontvangen over nieuwe features (optioneel)
                           </Label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Je kunt dit later altijd aanpassen in je account
                           </p>
                         </div>
@@ -335,11 +348,11 @@ export default function OnboardingPage() {
                   </Button>
 
                   {currentStep < 4 ? (
-                    <Button type="button" onClick={nextStep}>
+                    <Button type="button" onClick={nextStep} className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
                       Volgende
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting} className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
                       {isSubmitting ? "Opslaan..." : "Voltooi profiel"}
                     </Button>
                   )}
