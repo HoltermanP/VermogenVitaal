@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
+import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -26,10 +27,27 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Calculator, Home, FileText, TrendingUp, Menu, Plug } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
+// Wrapper component voor Clerk hooks
+function ClerkUserWrapper({ children }: { children: (user: ReturnType<typeof useUser>['user'], isLoaded: boolean) => ReactNode }) {
+  // Altijd de hook aanroepen (React regel), maar vangen we errors op
+  let user: ReturnType<typeof useUser>['user'] = null
+  let isLoaded = true
+  
+  try {
+    const clerkData = useUser()
+    user = clerkData.user
+    isLoaded = clerkData.isLoaded
+  } catch {
+    // Clerk niet beschikbaar tijdens build of wanneer niet geconfigureerd
+    user = null
+    isLoaded = true
+  }
+  
+  return <>{children(user, isLoaded)}</>
+}
+
 export function Header() {
   const pathname = usePathname()
-  const { user, isLoaded } = useUser()
-  const isAuthenticated = !!user
   const tier: 'FREE' | 'BASIC' | 'PRO' | 'ELITE' = 'FREE' // TODO: Haal tier op uit database
 
   const isActive = (path: string) => pathname === path
@@ -170,8 +188,12 @@ export function Header() {
         </div>
 
         {/* Right side - Auth & User Menu */}
-        <div className="flex items-center gap-4">
-          {isLoaded && isAuthenticated ? (
+        <ClerkUserWrapper>
+          {(user, isLoaded) => {
+            const isAuthenticated = !!user
+            return (
+              <div className="flex items-center gap-4">
+                {isLoaded && isAuthenticated ? (
             <>
               <Link href="/dashboard" className="hidden md:block">
                 <Button variant="ghost" size="sm">
@@ -246,11 +268,11 @@ export function Header() {
                 </Button>
               </SignUpButton>
             </div>
-          ) : (
-            <Skeleton className="h-10 w-20" />
-          )}
+                ) : (
+                  <Skeleton className="h-10 w-20" />
+                )}
 
-          {/* Mobile Menu */}
+                {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon">
@@ -331,7 +353,10 @@ export function Header() {
               </nav>
             </SheetContent>
           </Sheet>
-        </div>
+              </div>
+            )
+          }}
+        </ClerkUserWrapper>
       </div>
     </header>
   )

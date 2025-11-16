@@ -69,7 +69,19 @@ const PERIODS = [
 ]
 
 export default function StocksPage() {
-  const { user, isLoaded } = useUser()
+  // Conditioneel gebruik van Clerk - vang errors op
+  let user: ReturnType<typeof useUser>['user'] = null
+  let isLoaded = true
+  
+  try {
+    const clerkData = useUser()
+    user = clerkData.user
+    isLoaded = clerkData.isLoaded
+  } catch {
+    // Clerk niet beschikbaar tijdens build of wanneer niet geconfigureerd
+    user = null
+    isLoaded = true
+  }
   const [selectedStock, setSelectedStock] = useState("ASML")
   const [selectedPeriod, setSelectedPeriod] = useState("1M")
   const [quote, setQuote] = useState<StockQuote | null>(null)
