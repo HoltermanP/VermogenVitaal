@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -6,11 +8,20 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks(.*)",
 ])
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
-  }
-})
+// Check of Clerk is geconfigureerd
+const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+// Export middleware - conditioneel Clerk gebruiken
+export default isClerkConfigured
+  ? clerkMiddleware(async (auth, request) => {
+      if (!isPublicRoute(request)) {
+        await auth.protect()
+      }
+    })
+  : async function middleware(_request: NextRequest) {
+      // Fallback middleware wanneer Clerk niet is geconfigureerd (voor build)
+      return NextResponse.next()
+    }
 
 export const config = {
   matcher: [
