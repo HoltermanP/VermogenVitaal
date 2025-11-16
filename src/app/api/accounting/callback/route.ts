@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma"
 import { createProvider, getProviderConfig } from "@/lib/accounting/provider-factory"
 import { encrypt } from "@/lib/accounting/encryption"
 import type { Session } from "next-auth"
-import { AccountingProvider } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,7 +68,7 @@ export async function GET(request: NextRequest) {
     await prisma.accountingIntegration.create({
       data: {
         userId: user.id,
-        provider: stateData.provider.toUpperCase().replace("-", "_") as AccountingProvider,
+        provider: stateData.provider.toUpperCase().replace("-", "_") as "EXACT_ONLINE" | "E_BOEKHOUDEN" | "MONEYBIRD" | "AFAS" | "YUKI" | "JORTT" | "VISMA" | "SNELSTART",
         name: `${accountingProvider.displayName} - ${new Date().toLocaleDateString("nl-NL")}`,
         accessToken: encrypt(authResult.accessToken),
         refreshToken: authResult.refreshToken
