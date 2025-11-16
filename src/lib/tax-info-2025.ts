@@ -3,13 +3,10 @@ import {
   Building2, 
   Calculator, 
   Shield, 
-  Lightbulb, 
   FileText,
   Home,
   Briefcase,
   PiggyBank,
-  Users,
-  ArrowRight,
   LucideIcon
 } from "lucide-react"
 

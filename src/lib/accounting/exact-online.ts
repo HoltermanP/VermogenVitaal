@@ -188,19 +188,19 @@ export class ExactOnlineProvider extends AccountingProvider {
     const data = await response.json()
     const transactions = data.d?.results || []
 
-    return transactions.map((t: unknown) => this.mapTransaction(t))
+    return transactions.map((t: unknown) => this.mapTransaction(t as Record<string, unknown>))
   }
 
-  protected mapTransaction(rawTransaction: any): Transaction {
+  protected mapTransaction(rawTransaction: Record<string, unknown>): Transaction {
     return {
       datum: rawTransaction.TransactionDate
-        ? new Date(rawTransaction.TransactionDate).toISOString().split("T")[0]
+        ? new Date(rawTransaction.TransactionDate as string).toISOString().split("T")[0]
         : "",
-      omschrijving: rawTransaction.Description || "",
-      bedrag: rawTransaction.AmountFC || 0,
-      type: rawTransaction.JournalCode || "",
-      categorie: rawTransaction.JournalCode || "",
-      factuur: rawTransaction.EntryNumber?.toString() || "",
+      omschrijving: (rawTransaction.Description as string) || "",
+      bedrag: Number(rawTransaction.AmountFC) || 0,
+      type: (rawTransaction.JournalCode as string) || "",
+      categorie: (rawTransaction.JournalCode as string) || "",
+      factuur: rawTransaction.EntryNumber ? String(rawTransaction.EntryNumber) : "",
     }
   }
 }

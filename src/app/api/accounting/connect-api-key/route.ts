@@ -4,11 +4,13 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createProvider, getProviderConfig } from "@/lib/accounting/provider-factory"
 import { encrypt } from "@/lib/accounting/encryption"
+import type { Session } from "next-auth"
+import { AccountingProvider } from "@prisma/client"
 
 export async function POST(request: NextRequest) {
   try {
     // In Next.js 15, getServerSession kan headers nodig hebben
-    let session: any = null
+    let session: Session | null = null
     try {
       session = await getServerSession(authOptions)
     } catch (error) {
@@ -152,14 +154,14 @@ export async function POST(request: NextRequest) {
 
     // Sla integratie op (of gebruik mock ID in development zonder database)
     let integrationId = 'dev-integration-id'
-    let integrationName = name || `${accountingProvider.displayName} - ${new Date().toLocaleDateString("nl-NL")}`
+    const integrationName = name || `${accountingProvider.displayName} - ${new Date().toLocaleDateString("nl-NL")}`
     
     if (dbAvailable) {
       try {
         const integration = await prisma.accountingIntegration.create({
           data: {
             userId: user.id,
-            provider: provider as any,
+            provider: provider.toUpperCase().replace("-", "_") as AccountingProvider,
             name: integrationName,
             apiKey: encrypt(apiKey),
             apiSecret: finalApiSecret ? encrypt(finalApiSecret) : null,

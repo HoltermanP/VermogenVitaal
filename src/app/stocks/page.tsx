@@ -236,8 +236,9 @@ export default function StocksPage() {
       ])
       setQuote(quoteData)
       setHistory(historyData)
-    } catch (error: any) {
-      toast.error(error.message || "Fout bij laden beursdata")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Fout bij laden beursdata"
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -249,6 +250,7 @@ export default function StocksPage() {
     if (isLoaded && user?.emailAddresses?.[0]?.emailAddress) {
       loadFavorites()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user])
 
   // Update bij wijziging van aandeel of periode
@@ -256,6 +258,7 @@ export default function StocksPage() {
     if (selectedStock) {
       loadStockData(selectedStock, selectedPeriod)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStock, selectedPeriod])
 
   // Zoek debounce
@@ -278,7 +281,7 @@ export default function StocksPage() {
         loadFavorites(),
       ])
       toast.success("Koersen bijgewerkt")
-    } catch (error) {
+    } catch {
       toast.error("Fout bij bijwerken koersen")
     } finally {
       setRefreshing(false)
@@ -348,9 +351,9 @@ export default function StocksPage() {
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>Zoek Aandelen en ETF's</DialogTitle>
+                    <DialogTitle>Zoek Aandelen en ETF&apos;s</DialogTitle>
                     <DialogDescription>
-                      Zoek naar alle beschikbare aandelen en ETF's wereldwijd
+                      Zoek naar alle beschikbare aandelen en ETF&apos;s wereldwijd
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
@@ -453,7 +456,7 @@ export default function StocksPage() {
                 <CardHeader>
                   <CardTitle className="text-foreground">Mijn Favorieten</CardTitle>
                   <CardDescription>
-                    Je opgeslagen aandelen en ETF's
+                    Je opgeslagen aandelen en ETF&apos;s
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -542,7 +545,7 @@ export default function StocksPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Log in om je favoriete aandelen en ETF's op te slaan en direct te bekijken.
+                    Log in om je favoriete aandelen en ETF&apos;s op te slaan en direct te bekijken.
                   </p>
                 </CardContent>
               </Card>

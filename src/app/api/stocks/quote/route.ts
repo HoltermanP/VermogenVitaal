@@ -95,17 +95,17 @@ export async function GET(request: NextRequest) {
           volume: quotes.volume?.[idx] || 0,
         }))
         .filter(
-          (item: any) => new Date(item.timestamp).getTime() >= today.getTime()
+          (item: { timestamp: string }) => new Date(item.timestamp).getTime() >= today.getTime()
         )
 
       if (todayData.length > 0) {
         todayOpen = todayData[0].open || currentPrice
-        todayHigh = Math.max(...todayData.map((d: any) => d.high || 0))
+        todayHigh = Math.max(...todayData.map((d: { high?: number }) => d.high || 0))
         todayLow = Math.min(
-          ...todayData.map((d: any) => (d.low || currentPrice) > 0 ? d.low : currentPrice)
+          ...todayData.map((d: { low?: number }) => (d.low || currentPrice) > 0 ? d.low : currentPrice)
         )
         todayVolume = todayData.reduce(
-          (sum: number, d: any) => sum + (d.volume || 0),
+          (sum: number, d: { volume?: number }) => sum + (d.volume || 0),
           0
         )
       }

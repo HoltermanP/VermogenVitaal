@@ -181,17 +181,17 @@ export class MoneybirdProvider extends AccountingProvider {
     const data = await response.json()
     const mutations = Array.isArray(data) ? data : data.financial_mutations || []
 
-    return mutations.map((m: unknown) => this.mapTransaction(m))
+    return mutations.map((m: unknown) => this.mapTransaction(m as Record<string, unknown>))
   }
 
-  protected mapTransaction(rawTransaction: any): Transaction {
+  protected mapTransaction(rawTransaction: Record<string, unknown>): Transaction {
     return {
-      datum: rawTransaction.date || "",
-      omschrijving: rawTransaction.message || rawTransaction.description || "",
-      bedrag: rawTransaction.amount || 0,
-      type: rawTransaction.type || "",
-      categorie: rawTransaction.ledger_account_id?.toString() || "",
-      tegenrekening: rawTransaction.contra_account_name || "",
+      datum: (rawTransaction.date as string) || "",
+      omschrijving: (rawTransaction.message as string) || (rawTransaction.description as string) || "",
+      bedrag: Number(rawTransaction.amount) || 0,
+      type: (rawTransaction.type as string) || "",
+      categorie: rawTransaction.ledger_account_id ? String(rawTransaction.ledger_account_id) : "",
+      tegenrekening: (rawTransaction.contra_account_name as string) || "",
     }
   }
 }

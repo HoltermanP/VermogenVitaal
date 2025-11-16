@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         }
       })
       .filter(
-        (entry: any) =>
+        (entry: { open: number | null; high: number | null; low: number | null; close: number | null }) =>
           entry.open !== null &&
           entry.high !== null &&
           entry.low !== null &&
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     if (filteredEntries.length > 200) {
       const step = Math.ceil(filteredEntries.length / 200)
       filteredEntries = filteredEntries.filter(
-        (_: any, index: number) => index % step === 0
+        (_: unknown, index: number) => index % step === 0
       )
     }
 

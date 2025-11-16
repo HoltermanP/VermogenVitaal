@@ -34,7 +34,7 @@ export class EBoekhoudenProvider extends AccountingProvider {
     return null
   }
 
-  async validateToken(accessToken: string): Promise<boolean> {
+  async validateToken(_accessToken: string): Promise<boolean> {
     if (!this.config.apiKey) {
       return false
     }
@@ -146,7 +146,7 @@ export class EBoekhoudenProvider extends AccountingProvider {
       const data = await response.json()
       
       // Handle verschillende response formaten
-      let mutations: any[] = []
+      let mutations: unknown[] = []
       if (Array.isArray(data)) {
         mutations = data
       } else if (data.data && Array.isArray(data.data)) {
@@ -157,7 +157,7 @@ export class EBoekhoudenProvider extends AccountingProvider {
         mutations = data.result
       }
 
-      return mutations.map((m: unknown) => this.mapTransaction(m))
+      return mutations.map((m: unknown) => this.mapTransaction(m as Record<string, unknown>))
     } catch (error) {
       throw new Error(
         `Ophalen transacties mislukt: ${error instanceof Error ? error.message : "Onbekende fout"}`
@@ -165,50 +165,50 @@ export class EBoekhoudenProvider extends AccountingProvider {
     }
   }
 
-  protected mapTransaction(rawTransaction: any): Transaction {
+  protected mapTransaction(rawTransaction: Record<string, unknown>): Transaction {
     // Map verschillende mogelijke veldnamen van de REST API
     return {
-      datum: rawTransaction.datum || 
-             rawTransaction.date || 
-             rawTransaction.Datum || 
-             rawTransaction.boekdatum ||
+      datum: (rawTransaction.datum as string) || 
+             (rawTransaction.date as string) || 
+             (rawTransaction.Datum as string) || 
+             (rawTransaction.boekdatum as string) ||
              "",
-      omschrijving: rawTransaction.omschrijving || 
-                    rawTransaction.description || 
-                    rawTransaction.Omschrijving ||
-                    rawTransaction.tekst ||
+      omschrijving: (rawTransaction.omschrijving as string) || 
+                    (rawTransaction.description as string) || 
+                    (rawTransaction.Omschrijving as string) ||
+                    (rawTransaction.tekst as string) ||
                     "",
       bedrag: parseFloat(
-        rawTransaction.bedrag || 
+        String(rawTransaction.bedrag || 
         rawTransaction.amount || 
         rawTransaction.Bedrag || 
         rawTransaction.bedragExclBtw ||
         rawTransaction.BedragExclBTW ||
         rawTransaction.totaal ||
-        "0"
+        "0")
       ),
-      type: rawTransaction.type || 
-            rawTransaction.soort || 
-            rawTransaction.Soort ||
-            rawTransaction.mutatieSoort ||
+      type: (rawTransaction.type as string) || 
+            (rawTransaction.soort as string) || 
+            (rawTransaction.Soort as string) ||
+            (rawTransaction.mutatieSoort as string) ||
             "",
-      categorie: rawTransaction.rekening || 
-                 rawTransaction.account || 
-                 rawTransaction.Rekening ||
-                 rawTransaction.rekeningCode ||
+      categorie: (rawTransaction.rekening as string) || 
+                 (rawTransaction.account as string) || 
+                 (rawTransaction.Rekening as string) ||
+                 (rawTransaction.rekeningCode as string) ||
                  "",
-      btw: rawTransaction.btw || 
-           rawTransaction.btwCode || 
-           rawTransaction.BTWCode ||
-           rawTransaction.btwPercentage?.toString() ||
+      btw: (rawTransaction.btw as string) || 
+           (rawTransaction.btwCode as string) || 
+           (rawTransaction.BTWCode as string) ||
+           (rawTransaction.btwPercentage ? String(rawTransaction.btwPercentage) : "") ||
            "",
-      tegenrekening: rawTransaction.tegenrekening || 
-                     rawTransaction.counterAccount ||
+      tegenrekening: (rawTransaction.tegenrekening as string) || 
+                     (rawTransaction.counterAccount as string) ||
                      "",
-      factuur: rawTransaction.factuurnummer || 
-               rawTransaction.invoiceNumber || 
-               rawTransaction.Factuurnummer ||
-               rawTransaction.referentie ||
+      factuur: (rawTransaction.factuurnummer as string) || 
+               (rawTransaction.invoiceNumber as string) || 
+               (rawTransaction.Factuurnummer as string) ||
+               (rawTransaction.referentie as string) ||
                "",
     }
   }

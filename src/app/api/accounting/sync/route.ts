@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           })
 
           accessToken = authResult.accessToken
-        } catch (refreshError) {
+        } catch {
           return NextResponse.json(
             {
               error: "Token is verlopen en kon niet worden ververst. Verbind opnieuw.",

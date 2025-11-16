@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
 
     // Format results
     const results = data.quotes
-      .filter((quote: any) => quote.quoteType === "EQUITY" || quote.quoteType === "ETF")
-      .map((quote: any) => ({
+      .filter((quote: { quoteType?: string }) => quote.quoteType === "EQUITY" || quote.quoteType === "ETF")
+      .map((quote: { symbol: string; longname?: string; shortname?: string; exchange?: string; quoteType?: string; market?: string }) => ({
         symbol: quote.symbol,
         name: quote.longname || quote.shortname || quote.symbol,
         exchange: quote.exchange,

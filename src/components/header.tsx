@@ -23,7 +23,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Calculator, Home, Users, FileText, TrendingUp, Menu, LogIn, User, Plug, LineChart, Lightbulb } from "lucide-react"
+import { Calculator, Home, FileText, TrendingUp, Menu, Plug } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function Header() {
