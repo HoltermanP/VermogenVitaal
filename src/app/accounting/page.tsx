@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { PROVIDER_INFO } from "@/lib/accounting/provider-factory"
 import { toast } from "sonner"
+import { NewsTicker } from "@/components/news-ticker"
 
 interface Integration {
   id: string
@@ -245,6 +246,11 @@ export default function AccountingPage() {
           <p className="text-muted-foreground text-lg animate-fade-in delay-200">
             Koppel je boekhoudpakket om automatisch transacties op te halen
           </p>
+        </div>
+
+        {/* News Ticker - Compact */}
+        <div className="mb-6">
+          <NewsTicker pagePath="/accounting" />
         </div>
 
         {/* Actieve Koppelingen */}

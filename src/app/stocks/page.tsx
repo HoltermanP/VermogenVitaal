@@ -20,6 +20,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { toast } from "sonner"
+import { NewsTicker } from "@/components/news-ticker"
 
 type StockQuote = {
   symbol: string
@@ -458,6 +459,11 @@ export default function StocksPage() {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* News Ticker - Compact */}
+        <div className="mb-6">
+          <NewsTicker pagePath="/stocks" />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calculator, ArrowRight, Download } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { NewsTicker } from "@/components/news-ticker"
 
 type CalculationResults = {
   emz: {
@@ -109,6 +110,11 @@ export default function BVvsEMZCalculatorPage() {
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Bereken of een BV of EMZ voordeliger is voor jouw situatie
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/calculators/bv-vs-emz" />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">

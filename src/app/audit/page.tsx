@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, CheckCircle, Upload, FileText, Loader2, AlertTriangle, FileCheck, Table as TableIcon } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { NewsTicker } from "@/components/news-ticker"
 
 interface Question {
   id: string
@@ -231,6 +232,11 @@ export default function AuditPage() {
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Upload een XAF audit bestand van e-boekhouden of een CSV bestand met alle mutaties voor automatische controle op basis van belastingregels 2025
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/audit" />
           </div>
 
           {error && (

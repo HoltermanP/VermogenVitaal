@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
 import type { ReactNode } from "react"
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -24,30 +25,28 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Calculator, Home, FileText, TrendingUp, Menu, Plug } from "lucide-react"
+import { Calculator, Home, FileText, TrendingUp, Menu, Plug, Linkedin } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 // Wrapper component voor Clerk hooks
 function ClerkUserWrapper({ children }: { children: (user: ReturnType<typeof useUser>['user'], isLoaded: boolean, isClerkAvailable: boolean) => ReactNode }) {
-  // Check of Clerk beschikbaar is
-  const isClerkAvailable = typeof window !== 'undefined' && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const [isMounted, setIsMounted] = React.useState(false)
+  const [isClerkAvailable, setIsClerkAvailable] = React.useState(false)
   
-  // Altijd de hook aanroepen (React regel), maar vangen we errors op
-  let user: ReturnType<typeof useUser>['user'] = null
-  let isLoaded = true
+  // Check of Clerk beschikbaar is - alleen op client
+  React.useEffect(() => {
+    setIsMounted(true)
+    setIsClerkAvailable(!!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+  }, [])
   
-  // Altijd useUser aanroepen (React hooks regel)
-  try {
-    const clerkData = useUser()
-    // Alleen gebruiken als Clerk beschikbaar is
-    if (isClerkAvailable) {
-      user = clerkData.user
-      isLoaded = clerkData.isLoaded
-    }
-  } catch {
-    // Clerk niet beschikbaar tijdens build of wanneer niet geconfigureerd
-    user = null
-    isLoaded = true
+  // Altijd de hook aanroepen (React regel)
+  const clerkData = useUser()
+  const user = clerkData.user
+  const isLoaded = clerkData.isLoaded
+  
+  // Tijdens SSR, toon altijd loading state om hydration mismatch te voorkomen
+  if (!isMounted) {
+    return <>{children(null, false, false)}</>
   }
   
   return <>{children(user, isLoaded, isClerkAvailable)}</>
@@ -256,6 +255,13 @@ export function Header() {
                     <Link href="/pricing" className="flex items-center">
                       <TrendingUp className="mr-2 h-4 w-4" />
                       Upgrade Plan
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/linkedin" className="flex items-center">
+                      <Linkedin className="mr-2 h-4 w-4" />
+                      LinkedIn Posts
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { taxTopics2025 } from "@/lib/tax-info-2025"
+import { NewsTicker } from "@/components/news-ticker"
 
 export default function AdviesPage() {
   const belangrijkeWijzigingen = [
@@ -59,6 +60,11 @@ export default function AdviesPage() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
               Actuele belastingadviezen, tips en optimalisatiestrategieën voor het belastingjaar 2025
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/advies" />
           </div>
 
           {/* Belangrijke wijzigingen */}

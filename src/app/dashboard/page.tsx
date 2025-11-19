@@ -2,8 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck } from "lucide-react"
+import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck, Linkedin } from "lucide-react"
 import Link from "next/link"
+import { NewsTicker } from "@/components/news-ticker"
 
 export default function DashboardPage() {
   // Temporarily disabled authentication for testing
@@ -43,6 +44,11 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* News Ticker - Compact */}
+        <div className="mb-6">
+          <NewsTicker pagePath="/dashboard" />
         </div>
 
         {/* Quick Actions */}
@@ -150,6 +156,27 @@ export default function DashboardPage() {
               <Button size="sm" className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/audit">
                   Start controle
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Admin: LinkedIn Posts Generator */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in delay-500">
+            <CardHeader className="pb-4">
+              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-blue-500/25">
+                <Linkedin className="h-7 w-7 text-white" />
+              </div>
+              <CardTitle className="text-foreground text-xl group-hover:text-primary transition-colors">LinkedIn Posts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-6 group-hover:text-foreground transition-colors">
+                Genereer en beheer LinkedIn posts
+              </p>
+              <Button size="sm" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300" asChild>
+                <Link href="/admin/linkedin">
+                  Beheer posts
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>

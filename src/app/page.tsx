@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { NewsTicker } from "@/components/news-ticker"
 import { 
   CheckCircle, 
   Calculator, 
@@ -75,6 +76,13 @@ export default function HomePage() {
             </Card>
           </div>
         </div>
+      </section>
+
+      <Separator className="bg-slate-700" />
+
+      {/* News Ticker - Compact banner */}
+      <section className="container mx-auto px-4 relative z-10 py-4">
+        <NewsTicker pagePath="/" />
       </section>
 
       <Separator className="bg-slate-700" />

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, Calculator, Download, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { NewsTicker } from "@/components/news-ticker"
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 
 type ETFResults = {
@@ -105,6 +106,11 @@ export default function ETFGrowthCalculatorPage() {
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Bereken de potentiële groei van je ETF beleggingen
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/calculators/etf" />
           </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">

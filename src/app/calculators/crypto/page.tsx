@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coins, Calculator, Download, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { NewsTicker } from "@/components/news-ticker"
 
 type CryptoResults = {
   bitcoin: { percentage: number; amount: number }
@@ -138,6 +139,11 @@ export default function CryptoAllocationCalculatorPage() {
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Bepaal de optimale allocatie voor je crypto portfolio
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/calculators/crypto" />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">

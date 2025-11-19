@@ -20,31 +20,31 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  profileFinancials        ProfileFinancials?
-  scenarios                Scenario[]
-  documents                Document[]
-  reports                  Report[]
-  payments                 Payment[]
-  tickets                  Ticket[]
-  auditLogs                AuditLog[]
-  auditChecks              AuditCheck[]
-  accountingIntegrations   AccountingIntegration[]
-  stockFavorites           StockFavorite[]
+  profileFinancials      ProfileFinancials?
+  scenarios              Scenario[]
+  documents              Document[]
+  reports                Report[]
+  payments               Payment[]
+  tickets                Ticket[]
+  auditLogs              AuditLog[]
+  auditChecks            AuditCheck[]
+  accountingIntegrations AccountingIntegration[]
+  stockFavorites         StockFavorite[]
 
   @@map("users")
 }
 
 model ProfileFinancials {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  legalForm    LegalForm
-  revenue      Float?
-  salary       Float?
-  assets       Float?
-  goals        String[]
-  riskProfile  RiskProfile
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  legalForm   LegalForm
+  revenue     Float?
+  salary      Float?
+  assets      Float?
+  goals       String[]
+  riskProfile RiskProfile
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,16 +53,16 @@ model ProfileFinancials {
 }
 
 model Scenario {
-  id        String      @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
   type      ScenarioType
   inputs    Json
   results   Json
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   // Relations
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reports Report[]
 
   @@map("scenarios")
@@ -162,16 +162,16 @@ model AuditLog {
 }
 
 model AuditCheck {
-  id              String       @id @default(cuid())
+  id              String      @id @default(cuid())
   userId          String
   fileName        String
-  csvData         Json         // Opgeslagen mutaties
-  status          AuditStatus  @default(UPLOADED)
-  questions       Json?        // Aanvullende vragen en antwoorden
-  findings        Json?        // Bevindingen van AI analyse
-  recommendations Json?        // Concrete aanbevelingen
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  csvData         Json // Opgeslagen mutaties
+  status          AuditStatus @default(UPLOADED)
+  questions       Json? // Aanvullende vragen en antwoorden
+  findings        Json? // Bevindingen van AI analyse
+  recommendations Json? // Concrete aanbevelingen
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,21 +180,21 @@ model AuditCheck {
 }
 
 model AccountingIntegration {
-  id              String             @id @default(cuid())
-  userId          String
-  provider        AccountingProvider
-  name            String             // Gebruikersvriendelijke naam
-  accessToken     String?            // Versleuteld opgeslagen
-  refreshToken    String?
-  expiresAt       DateTime?
-  apiKey          String?            // Voor API key gebaseerde auth
-  apiSecret       String?            // Versleuteld
-  companyId       String?            // Company/division ID voor multi-tenant systemen
-  isActive        Boolean            @default(true)
-  lastSyncAt      DateTime?
-  syncSettings    Json?              // Custom sync instellingen per provider
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id           String             @id @default(cuid())
+  userId       String
+  provider     AccountingProvider
+  name         String // Gebruikersvriendelijke naam
+  accessToken  String? // Versleuteld opgeslagen
+  refreshToken String?
+  expiresAt    DateTime?
+  apiKey       String? // Voor API key gebaseerde auth
+  apiSecret    String? // Versleuteld
+  companyId    String? // Company/division ID voor multi-tenant systemen
+  isActive     Boolean            @default(true)
+  lastSyncAt   DateTime?
+  syncSettings Json? // Custom sync instellingen per provider
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -206,10 +206,10 @@ model AccountingIntegration {
 model StockFavorite {
   id        String   @id @default(cuid())
   userId    String
-  symbol    String   // Bijv. "AAPL", "ASML.AS"
-  name      String   // Volledige naam van het aandeel/ETF
-  exchange  String?  // Bijv. "NASDAQ", "AMS"
-  type      String?  // "STOCK" of "ETF"
+  symbol    String // Bijv. "AAPL", "ASML.AS"
+  name      String // Volledige naam van het aandeel/ETF
+  exchange  String? // Bijv. "NASDAQ", "AMS"
+  type      String? // "STOCK" of "ETF"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -218,6 +218,25 @@ model StockFavorite {
 
   @@unique([userId, symbol])
   @@map("stock_favorites")
+}
+
+model LinkedInPost {
+  id             String             @id @default(cuid())
+  title          String
+  content        String
+  status         LinkedInPostStatus @default(DRAFT)
+  scheduledFor   DateTime?
+  postedAt       DateTime?
+  linkedInPostId String?
+  error          String?
+  topic          String // Onderwerp categorie voor variatie
+  metadata       Json? // Extra data (keywords, etc.)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([topic])
+  @@map("linkedin_posts")
 }
 
 // Enums
@@ -296,4 +315,12 @@ enum AccountingProvider {
   JORTT
   VISMA
   SNELSTART
+}
+
+enum LinkedInPostStatus {
+  DRAFT
+  SCHEDULED
+  POSTED
+  FAILED
+  CANCELLED
 }

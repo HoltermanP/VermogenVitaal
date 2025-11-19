@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Calculator, TrendingUp, Home, Coins, ArrowRight, Sparkles, FileText } from "lucide-react"
 import Link from "next/link"
+import { NewsTicker } from "@/components/news-ticker"
 
 export default function CalculatorsPage() {
   const calculators = [
@@ -72,6 +73,11 @@ export default function CalculatorsPage() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
               Gebruik onze professionele calculators om je fiscale optimalisatie te berekenen
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/calculators" />
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

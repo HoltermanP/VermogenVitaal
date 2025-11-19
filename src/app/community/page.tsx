@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MessageCircle, Plus, Star, Clock, User, Sparkles } from "lucide-react"
 import Link from "next/link"
+import { NewsTicker } from "@/components/news-ticker"
 
 // Mock data - in production this would come from the database
 const questions = [
@@ -103,6 +104,11 @@ export default function CommunityPage() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
               Stel vragen en deel kennis met andere ondernemers
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/community" />
           </div>
 
           <div className="grid lg:grid-cols-4 gap-8">

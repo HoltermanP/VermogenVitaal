@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Home, Calculator, Download, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { NewsTicker } from "@/components/news-ticker"
 
 type RealEstateResults = {
   grossRent: number
@@ -88,6 +89,11 @@ export default function RealEstateCalculatorPage() {
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Analyseer de cashflow van je vastgoed investeringen
             </p>
+          </div>
+
+          {/* News Ticker - Compact */}
+          <div className="mb-6">
+            <NewsTicker pagePath="/calculators/real-estate" />
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
