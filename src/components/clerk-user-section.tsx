@@ -16,37 +16,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Home, FileText, TrendingUp, Plug, Linkedin } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
+import { ClerkErrorBoundary } from "./clerk-error-boundary"
 
 // Separate component voor Clerk user - wordt dynamisch geïmporteerd om build errors te voorkomen
-export function ClerkUserSection() {
+function ClerkUserContent() {
   const [isMounted, setIsMounted] = React.useState(false)
   
   React.useEffect(() => {
     setIsMounted(true)
   }, [])
   
-  // Hook ALTIJD aanroepen (React regel) - zonder conditionals
+  // Hook ALTIJD aanroepen (React regel)
   const clerkData = useUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
   const isAuthenticated = !!user
   
-  // Check of Clerk key beschikbaar is
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  const hasValidKey = publishableKey && publishableKey !== 'pk_test_...' && !publishableKey.includes('placeholder') && !publishableKey.includes('dummy')
-  
-  // Als er geen geldige key is of niet gemount, toon alleen login buttons
-  if (!hasValidKey || !isMounted) {
-    return (
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/signin">Inloggen</Link>
-        </Button>
-        <Button size="sm" asChild>
-          <Link href="/auth/signup">Start gratis</Link>
-        </Button>
-      </div>
-    )
+  if (!isMounted) {
+    return <Skeleton className="h-10 w-20" />
   }
   
   if (!isLoaded) {
@@ -146,6 +133,15 @@ export function ClerkUserSection() {
       </DropdownMenu>
       <UserButton afterSignOutUrl="/" />
     </>
+  )
+}
+
+// Export wrapper die error handling heeft
+export function ClerkUserSection() {
+  return (
+    <ClerkErrorBoundary>
+      <ClerkUserContent />
+    </ClerkErrorBoundary>
   )
 }
 

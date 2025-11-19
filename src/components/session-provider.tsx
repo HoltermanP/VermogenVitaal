@@ -6,12 +6,19 @@ import { ReactNode } from "react"
 export function SessionProvider({ children }: { children: ReactNode }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   
-  // Alleen ClerkProvider renderen als er een echte key is
-  // ClerkUserSection wordt dynamisch geïmporteerd met ssr: false, dus dit is OK
-  if (!publishableKey || publishableKey === 'pk_test_...' || publishableKey.includes('placeholder') || publishableKey.includes('dummy')) {
+  // Check of er een geldige key is
+  const hasValidKey = publishableKey && 
+                      publishableKey !== 'pk_test_...' && 
+                      !publishableKey.includes('placeholder') && 
+                      !publishableKey.includes('dummy')
+  
+  // Als er geen geldige key is, render children zonder ClerkProvider
+  // ClerkUserSection zal dan een fallback tonen via ClerkUserWrapper
+  if (!hasValidKey) {
     return <>{children}</>
   }
   
+  // Render ClerkProvider met de echte key
   return <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>
 }
 
