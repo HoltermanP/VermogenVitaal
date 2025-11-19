@@ -40,6 +40,7 @@ function ClerkUserWrapper({ children }: { children: (user: ReturnType<typeof use
   }, [])
   
   // Altijd de hook aanroepen (React regel)
+  // ClerkProvider moet altijd beschikbaar zijn (ook tijdens build met placeholder)
   const clerkData = useUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
