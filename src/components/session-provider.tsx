@@ -6,18 +6,12 @@ import { ReactNode } from "react"
 export function SessionProvider({ children }: { children: ReactNode }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   
-  // Tijdens build, zorg dat we altijd een ClerkProvider hebben (ook met placeholder key)
-  // Dit voorkomt errors tijdens static generation
-  if (!publishableKey || publishableKey === 'pk_test_...') {
-    // Gebruik een placeholder key tijdens build om errors te voorkomen
-    // In productie zal dit worden overschreven door de echte key
-    return (
-      <ClerkProvider publishableKey="pk_test_placeholder">
-        {children}
-      </ClerkProvider>
-    )
-  }
+  // Als er geen key is, gebruik een dummy key voor build
+  // In productie zal dit worden overschreven door de echte key uit Vercel env vars
+  const key = publishableKey || "pk_test_dummy_for_build_only"
   
-  return <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>
+  // ClerkProvider moet altijd aanwezig zijn, anders faalt useUser hook
+  // Gebruik een dummy key tijdens build (wordt niet gevalideerd tijdens build)
+  return <ClerkProvider publishableKey={key}>{children}</ClerkProvider>
 }
 
