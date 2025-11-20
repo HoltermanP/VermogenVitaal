@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { TrendingUp, TrendingDown, RefreshCw, Activity, Search, Star, StarOff, X } from "lucide-react"
 import {
   LineChart,
@@ -18,6 +20,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ComposedChart,
+  Cell,
 } from "recharts"
 import { toast } from "sonner"
 import { NewsTicker } from "@/components/news-ticker"
@@ -95,6 +99,8 @@ export default function StocksPage() {
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
+  const [showCandlestick, setShowCandlestick] = useState(true)
+  const [showLine, setShowLine] = useState(false)
 
   // Laad quote voor geselecteerd aandeel
   const fetchQuote = async (symbol: string) => {
@@ -735,21 +741,44 @@ export default function StocksPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-foreground">Koersontwikkeling</CardTitle>
-                  <Select
-                    value={selectedPeriod}
-                    onValueChange={setSelectedPeriod}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PERIODS.map((period) => (
-                        <SelectItem key={period.value} value={period.value}>
-                          {period.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-4">
+                    {/* Toggles voor grafiek types */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="candlestick-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                        Candlestick
+                      </Label>
+                      <Switch
+                        id="candlestick-toggle"
+                        checked={showCandlestick}
+                        onCheckedChange={setShowCandlestick}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="line-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                        Lijn
+                      </Label>
+                      <Switch
+                        id="line-toggle"
+                        checked={showLine}
+                        onCheckedChange={setShowLine}
+                      />
+                    </div>
+                    <Select
+                      value={selectedPeriod}
+                      onValueChange={setSelectedPeriod}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PERIODS.map((period) => (
+                          <SelectItem key={period.value} value={period.value}>
+                            {period.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -757,9 +786,10 @@ export default function StocksPage() {
                   <Skeleton className="h-96 w-full" />
                 ) : history.length > 0 ? (() => {
                   // Bereken min en max waarden van de koers over de geselecteerde periode
-                  const prices = history.map(h => h.close)
-                  const minPrice = Math.min(...prices)
-                  const maxPrice = Math.max(...prices)
+                  // Gebruik high en low voor candlestick bereik
+                  const allPrices = history.flatMap(h => [h.high, h.low, h.open, h.close])
+                  const minPrice = Math.min(...allPrices)
+                  const maxPrice = Math.max(...allPrices)
                   
                   // Voeg 10% marge toe aan beide kanten
                   const priceRange = maxPrice - minPrice
@@ -767,9 +797,68 @@ export default function StocksPage() {
                   const yAxisMin = Math.max(0, minPrice - margin) // Zorg dat minimum niet negatief wordt
                   const yAxisMax = maxPrice + margin
                   
+                  // Custom candlestick dot component
+                  const CandlestickDot = (props: any) => {
+                    const { cx, cy, payload, yAxis } = props
+                    if (!payload || !cx || !cy) return null
+                    
+                    const { open, high, low, close } = payload
+                    const isUp = close >= open
+                    const upColor = "oklch(0.55 0.20 150)" // Groen voor bullish
+                    const downColor = "oklch(0.55 0.20 10)" // Rood voor bearish
+                    const color = isUp ? upColor : downColor
+                    
+                    // Bereken Y posities op basis van de y-as schaal
+                    // cy is de y positie van close, gebruik dat als referentie
+                    const range = yAxisMax - yAxisMin
+                    const chartHeight = 400 // Hoogte van de chart (minus margins)
+                    const getY = (value: number) => {
+                      const ratio = (yAxisMax - value) / range
+                      // cy is de close positie, gebruik dat als basis
+                      const closeRatio = (yAxisMax - close) / range
+                      const offset = (ratio - closeRatio) * chartHeight
+                      return cy - offset
+                    }
+                    
+                    const candleWidth = 8
+                    const candleX = cx - candleWidth / 2
+                    const centerX = cx
+                    
+                    const highY = getY(high)
+                    const lowY = getY(low)
+                    const openY = getY(open)
+                    const closeY = getY(close)
+                    const bodyTop = Math.min(openY, closeY)
+                    const bodyHeight = Math.max(Math.abs(closeY - openY), 1)
+                    
+                    return (
+                      <g>
+                        {/* Wick (lijn van low naar high) */}
+                        <line
+                          x1={centerX}
+                          y1={highY}
+                          x2={centerX}
+                          y2={lowY}
+                          stroke={color}
+                          strokeWidth={1.5}
+                        />
+                        {/* Body (rechthoek van open naar close) */}
+                        <rect
+                          x={candleX}
+                          y={bodyTop}
+                          width={candleWidth}
+                          height={bodyHeight}
+                          fill={color}
+                          stroke={color}
+                          strokeWidth={1}
+                        />
+                      </g>
+                    )
+                  }
+                  
                   return (
                   <ResponsiveContainer width="100%" height={400}>
-                    <LineChart
+                    <ComposedChart
                       data={history}
                       margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                     >
@@ -799,23 +888,67 @@ export default function StocksPage() {
                           borderRadius: "8px",
                           color: "oklch(0.98 0 0)",
                         }}
-                        formatter={(value: number) => [
-                          `$${value.toFixed(2)}`,
-                          "Koers",
-                        ]}
-                        labelFormatter={(label) =>
-                          new Date(label).toLocaleString("nl-NL")
-                        }
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length > 0) {
+                            const data = payload[0].payload
+                            return (
+                              <div style={{
+                                backgroundColor: "oklch(0.22 0.02 240)",
+                                border: "1px solid oklch(0.32 0.025 250)",
+                                borderRadius: "8px",
+                                padding: "8px",
+                                color: "oklch(0.98 0 0)",
+                              }}>
+                                <div style={{ marginBottom: "4px", fontWeight: "bold" }}>
+                                  {label ? new Date(label).toLocaleString("nl-NL") : ""}
+                                </div>
+                                <div style={{ fontSize: "12px" }}>
+                                  <div>Open: ${data.open.toFixed(2)}</div>
+                                  <div>High: ${data.high.toFixed(2)}</div>
+                                  <div>Low: ${data.low.toFixed(2)}</div>
+                                  <div>Close: ${data.close.toFixed(2)}</div>
+                                </div>
+                              </div>
+                            )
+                          }
+                          return null
+                        }}
                       />
-                      <Line
-                        type="monotone"
-                        dataKey="close"
-                        stroke="oklch(0.65 0.18 150)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
+                      {/* Candlestick visualisatie */}
+                      {showCandlestick && (
+                        <Line
+                          type="monotone"
+                          dataKey="close"
+                          stroke="transparent"
+                          strokeWidth={0}
+                          dot={<CandlestickDot />}
+                          activeDot={false}
+                        />
+                      )}
+                      {/* Lijn grafiek */}
+                      {showLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="close"
+                          stroke="oklch(0.65 0.18 150)"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 6 }}
+                        />
+                      )}
+                      {/* Melding als beide uit staan */}
+                      {!showCandlestick && !showLine && (
+                        <text
+                          x="50%"
+                          y="50%"
+                          textAnchor="middle"
+                          fill="oklch(0.60 0 0)"
+                          fontSize="14"
+                        >
+                          Zet candlestick of lijn aan om de grafiek te zien
+                        </text>
+                      )}
+                    </ComposedChart>
                   </ResponsiveContainer>
                   )
                 })() : (
