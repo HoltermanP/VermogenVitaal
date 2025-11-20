@@ -63,7 +63,12 @@ export async function fetchNewsForPage(pagePath: string, limit: number = 10): Pr
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=nl&sortBy=publishedAt&pageSize=${limit}&apiKey=${apiKey}`
     
     const response = await fetch(url, {
-      next: { revalidate: 300 } // Cache voor 5 minuten
+      cache: 'no-store', // Geen cache voor realtime updates
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
     if (!response.ok) {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { fetchNewsForPage } from "@/lib/news-service"
 
+export const dynamic = 'force-dynamic' // Zorg dat route altijd dynamisch is
+export const revalidate = 0 // Geen cache
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -12,6 +15,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       articles,
       count: articles.length
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
   } catch (error) {
     console.error("Error in news API:", error)

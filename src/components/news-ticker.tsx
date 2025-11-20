@@ -28,7 +28,14 @@ export function NewsTicker({ pagePath, className }: NewsTickerProps) {
   useEffect(() => {
     async function loadNews() {
       try {
-        const response = await fetch(`/api/news?path=${encodeURIComponent(pagePath)}`)
+        // Voeg timestamp toe om cache te omzeilen
+        const timestamp = new Date().getTime()
+        const response = await fetch(`/api/news?path=${encodeURIComponent(pagePath)}&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
         if (response.ok) {
           const data = await response.json()
           setArticles(data.articles || [])
@@ -40,7 +47,15 @@ export function NewsTicker({ pagePath, className }: NewsTickerProps) {
       }
     }
 
+    // Laad direct bij mount
     loadNews()
+
+    // Poll elke 4 uur voor nieuwe nieuwsberichten
+    const interval = setInterval(() => {
+      loadNews()
+    }, 14400000) // 4 uur (4 * 60 * 60 * 1000 milliseconden)
+
+    return () => clearInterval(interval)
   }, [pagePath])
 
   // Rotate through articles
