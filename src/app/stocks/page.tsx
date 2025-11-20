@@ -102,6 +102,134 @@ export default function StocksPage() {
   const [showCandlestick, setShowCandlestick] = useState(true)
   const [showLine, setShowLine] = useState(false)
 
+  // Technische analyse functies
+  const calculateSMA = (data: StockHistory[], period: number): number[] => {
+    const sma: number[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        sma.push(NaN)
+      } else {
+        const sum = data.slice(i - period + 1, i + 1).reduce((acc, item) => acc + item.close, 0)
+        sma.push(sum / period)
+      }
+    }
+    return sma
+  }
+
+  const calculateEMA = (data: StockHistory[], period: number): number[] => {
+    const ema: number[] = []
+    const multiplier = 2 / (period + 1)
+    
+    // Start met SMA voor eerste waarde
+    if (data.length >= period) {
+      const firstSMA = data.slice(0, period).reduce((acc, item) => acc + item.close, 0) / period
+      ema.push(firstSMA)
+      
+      for (let i = period; i < data.length; i++) {
+        const prevEMA = ema[ema.length - 1]
+        const currentPrice = data[i].close
+        const newEMA = (currentPrice - prevEMA) * multiplier + prevEMA
+        ema.push(newEMA)
+      }
+    }
+    
+    // Voeg NaN toe voor eerste period-1 waarden
+    const result = new Array(data.length - ema.length).fill(NaN).concat(ema)
+    return result
+  }
+
+  const calculateRSI = (data: StockHistory[], period: number = 14): number[] => {
+    const rsi: number[] = []
+    const changes: number[] = []
+    
+    // Bereken prijsveranderingen
+    for (let i = 1; i < data.length; i++) {
+      changes.push(data[i].close - data[i - 1].close)
+    }
+    
+    // Bereken RSI
+    for (let i = 0; i < data.length; i++) {
+      if (i < period) {
+        rsi.push(NaN)
+      } else {
+        const periodChanges = changes.slice(i - period, i)
+        const gains = periodChanges.filter(c => c > 0).reduce((sum, c) => sum + c, 0) / period
+        const losses = Math.abs(periodChanges.filter(c => c < 0).reduce((sum, c) => sum + c, 0)) / period
+        
+        if (losses === 0) {
+          rsi.push(100)
+        } else {
+          const rs = gains / losses
+          rsi.push(100 - (100 / (1 + rs)))
+        }
+      }
+    }
+    
+    return rsi
+  }
+
+  const calculateMACD = (data: StockHistory[]): { macd: number[], signal: number[], histogram: number[] } => {
+    const ema12 = calculateEMA(data, 12)
+    const ema26 = calculateEMA(data, 26)
+    
+    const macd: number[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (isNaN(ema12[i]) || isNaN(ema26[i])) {
+        macd.push(NaN)
+      } else {
+        macd.push(ema12[i] - ema26[i])
+      }
+    }
+    
+    // Signal line (EMA van MACD)
+    const macdData = macd.map((val, idx) => ({ close: isNaN(val) ? 0 : val } as StockHistory))
+    const signal = calculateEMA(macdData, 9)
+    
+    // Histogram
+    const histogram: number[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (isNaN(macd[i]) || isNaN(signal[i])) {
+        histogram.push(NaN)
+      } else {
+        histogram.push(macd[i] - signal[i])
+      }
+    }
+    
+    return { macd, signal, histogram }
+  }
+
+  const getSupportResistance = (data: StockHistory[]): { support: number, resistance: number } => {
+    if (data.length === 0) return { support: 0, resistance: 0 }
+    
+    const prices = data.map(d => [d.low, d.high]).flat()
+    const support = Math.min(...prices)
+    const resistance = Math.max(...prices)
+    
+    return { support, resistance }
+  }
+
+  const getTrendAnalysis = (data: StockHistory[]): { trend: string, strength: string } => {
+    if (data.length < 20) return { trend: "Onbekend", strength: "Onvoldoende data" }
+    
+    const recent = data.slice(-20)
+    const firstPrice = recent[0].close
+    const lastPrice = recent[recent.length - 1].close
+    const change = ((lastPrice - firstPrice) / firstPrice) * 100
+    
+    let trend = "Neutraal"
+    let strength = "Zwak"
+    
+    if (change > 5) {
+      trend = "Stijgend"
+      strength = change > 15 ? "Sterk" : "Matig"
+    } else if (change < -5) {
+      trend = "Dalend"
+      strength = change < -15 ? "Sterk" : "Matig"
+    }
+    
+    return { trend, strength }
+  }
+
   // Laad quote voor geselecteerd aandeel
   const fetchQuote = async (symbol: string) => {
     try {
@@ -961,6 +1089,217 @@ export default function StocksPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Technische Analyse */}
+            {history.length > 0 && (
+              <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Technische Analyse</CardTitle>
+                  <CardDescription>
+                    Indicatoren en signalen voor {selectedStock}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const sma20 = calculateSMA(history, 20)
+                    const sma50 = calculateSMA(history, 50)
+                    const ema12 = calculateEMA(history, 12)
+                    const rsi = calculateRSI(history, 14)
+                    const macd = calculateMACD(history)
+                    const { support, resistance } = getSupportResistance(history)
+                    const { trend, strength } = getTrendAnalysis(history)
+                    
+                    const currentPrice = history[history.length - 1].close
+                    const currentRSI = rsi[rsi.length - 1]
+                    const currentSMA20 = sma20[sma20.length - 1]
+                    const currentSMA50 = sma50[sma50.length - 1]
+                    const currentEMA12 = ema12[ema12.length - 1]
+                    const currentMACD = macd.macd[macd.macd.length - 1]
+                    const currentSignal = macd.signal[macd.signal.length - 1]
+                    
+                    // Signalen
+                    const signals: string[] = []
+                    
+                    // RSI signalen
+                    if (!isNaN(currentRSI)) {
+                      if (currentRSI > 70) {
+                        signals.push("RSI oversold (>70) - mogelijk overgekocht")
+                      } else if (currentRSI < 30) {
+                        signals.push("RSI oversold (<30) - mogelijk oververkocht")
+                      }
+                    }
+                    
+                    // Moving Average signalen
+                    if (!isNaN(currentSMA20) && !isNaN(currentPrice)) {
+                      if (currentPrice > currentSMA20) {
+                        signals.push("Prijs boven SMA(20) - bullish signaal")
+                      } else {
+                        signals.push("Prijs onder SMA(20) - bearish signaal")
+                      }
+                    }
+                    
+                    if (!isNaN(currentSMA20) && !isNaN(currentSMA50)) {
+                      if (currentSMA20 > currentSMA50) {
+                        signals.push("SMA(20) > SMA(50) - opwaartse trend")
+                      } else {
+                        signals.push("SMA(20) < SMA(50) - neerwaartse trend")
+                      }
+                    }
+                    
+                    // MACD signalen
+                    if (!isNaN(currentMACD) && !isNaN(currentSignal)) {
+                      if (currentMACD > currentSignal) {
+                        signals.push("MACD boven signaallijn - bullish momentum")
+                      } else {
+                        signals.push("MACD onder signaallijn - bearish momentum")
+                      }
+                    }
+                    
+                    return (
+                      <div className="space-y-6">
+                        {/* Trend Analyse */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">Trend</div>
+                            <div className="text-2xl font-bold text-foreground">{trend}</div>
+                            <div className="text-xs text-muted-foreground mt-1">Sterkte: {strength}</div>
+                          </div>
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">Support</div>
+                            <div className="text-2xl font-bold text-foreground">${support.toFixed(2)}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {((currentPrice - support) / support * 100).toFixed(1)}% boven support
+                            </div>
+                          </div>
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">Resistance</div>
+                            <div className="text-2xl font-bold text-foreground">${resistance.toFixed(2)}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {((resistance - currentPrice) / currentPrice * 100).toFixed(1)}% boven huidige prijs
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Indicatoren */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">RSI (14)</div>
+                            <div className={`text-2xl font-bold ${
+                              !isNaN(currentRSI) 
+                                ? currentRSI > 70 
+                                  ? "text-red-500" 
+                                  : currentRSI < 30 
+                                    ? "text-green-500" 
+                                    : "text-foreground"
+                                : "text-foreground"
+                            }`}>
+                              {!isNaN(currentRSI) ? currentRSI.toFixed(2) : "N/A"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {!isNaN(currentRSI) && currentRSI > 70 
+                                ? "Overgekocht" 
+                                : !isNaN(currentRSI) && currentRSI < 30 
+                                  ? "Oververkocht" 
+                                  : "Neutraal"}
+                            </div>
+                          </div>
+                          
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">SMA (20)</div>
+                            <div className="text-2xl font-bold text-foreground">
+                              ${!isNaN(currentSMA20) ? currentSMA20.toFixed(2) : "N/A"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {!isNaN(currentSMA20) && currentPrice > currentSMA20 
+                                ? "Boven prijs" 
+                                : !isNaN(currentSMA20) 
+                                  ? "Onder prijs" 
+                                  : "N/A"}
+                            </div>
+                          </div>
+                          
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">SMA (50)</div>
+                            <div className="text-2xl font-bold text-foreground">
+                              ${!isNaN(currentSMA50) ? currentSMA50.toFixed(2) : "N/A"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {!isNaN(currentSMA50) && currentPrice > currentSMA50 
+                                ? "Boven prijs" 
+                                : !isNaN(currentSMA50) 
+                                  ? "Onder prijs" 
+                                  : "N/A"}
+                            </div>
+                          </div>
+                          
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm text-muted-foreground mb-1">EMA (12)</div>
+                            <div className="text-2xl font-bold text-foreground">
+                              ${!isNaN(currentEMA12) ? currentEMA12.toFixed(2) : "N/A"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {!isNaN(currentEMA12) && currentPrice > currentEMA12 
+                                ? "Boven prijs" 
+                                : !isNaN(currentEMA12) 
+                                  ? "Onder prijs" 
+                                  : "N/A"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* MACD */}
+                        <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                          <div className="text-sm text-muted-foreground mb-2">MACD</div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <div className="text-xs text-muted-foreground">MACD</div>
+                              <div className="text-lg font-semibold text-foreground">
+                                {!isNaN(currentMACD) ? currentMACD.toFixed(4) : "N/A"}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground">Signaal</div>
+                              <div className="text-lg font-semibold text-foreground">
+                                {!isNaN(currentSignal) ? currentSignal.toFixed(4) : "N/A"}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground">Histogram</div>
+                              <div className={`text-lg font-semibold ${
+                                !isNaN(currentMACD) && !isNaN(currentSignal)
+                                  ? currentMACD > currentSignal
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                  : "text-foreground"
+                              }`}>
+                                {!isNaN(currentMACD) && !isNaN(currentSignal)
+                                  ? (currentMACD - currentSignal).toFixed(4)
+                                  : "N/A"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Signalen */}
+                        {signals.length > 0 && (
+                          <div className="p-4 bg-accent/10 rounded-lg border border-border">
+                            <div className="text-sm font-semibold text-foreground mb-2">Trading Signalen</div>
+                            <ul className="space-y-1">
+                              {signals.map((signal, index) => (
+                                <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                  {signal}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
