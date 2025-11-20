@@ -13,7 +13,6 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { TrendingUp, TrendingDown, RefreshCw, Activity, Search, Star, StarOff, X } from "lucide-react"
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -21,7 +20,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   ComposedChart,
-  Cell,
 } from "recharts"
 import { toast } from "sonner"
 import { NewsTicker } from "@/components/news-ticker"
@@ -182,7 +180,7 @@ export default function StocksPage() {
     }
     
     // Signal line (EMA van MACD)
-    const macdData = macd.map((val, idx) => ({ close: isNaN(val) ? 0 : val } as StockHistory))
+    const macdData = macd.map((val) => ({ close: isNaN(val) ? 0 : val } as StockHistory))
     const signal = calculateEMA(macdData, 9)
     
     // Histogram
@@ -926,8 +924,13 @@ export default function StocksPage() {
                   const yAxisMax = maxPrice + margin
                   
                   // Custom candlestick dot component
-                  const CandlestickDot = (props: any) => {
-                    const { cx, cy, payload, yAxis } = props
+                  interface CandlestickDotProps {
+                    cx?: number
+                    cy?: number
+                    payload?: StockHistory
+                  }
+                  const CandlestickDot = (props: CandlestickDotProps) => {
+                    const { cx, cy, payload } = props
                     if (!payload || !cx || !cy) return null
                     
                     const { open, high, low, close } = payload
