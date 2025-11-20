@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
     const path = searchParams.get("path") || "/"
     const limit = parseInt(searchParams.get("limit") || "10")
 
+    console.log(`[News API] Request received for path: ${path}, limit: ${limit}`)
+    console.log(`[News API] NEWS_API_KEY configured: ${!!process.env.NEWS_API_KEY}`)
+
     const articles = await fetchNewsForPage(path, limit)
+
+    console.log(`[News API] Returning ${articles.length} articles`)
 
     return NextResponse.json({
       articles,
@@ -23,7 +28,9 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("Error in news API:", error)
+    const errorMessage = error instanceof Error ? error.message : "Onbekende fout"
+    console.error("[News API] Error in news API route:", errorMessage)
+    console.error("[News API] Error stack:", error instanceof Error ? error.stack : undefined)
     return NextResponse.json(
       { error: "Fout bij ophalen nieuws", articles: [] },
       { status: 500 }

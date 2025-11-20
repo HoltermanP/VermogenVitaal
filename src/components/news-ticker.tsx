@@ -13,6 +13,7 @@ interface NewsArticle {
   publishedAt: string
   source: string
   imageUrl?: string
+  isFallback?: boolean
 }
 
 interface NewsTickerProps {
@@ -38,10 +39,24 @@ export function NewsTicker({ pagePath, className }: NewsTickerProps) {
         })
         if (response.ok) {
           const data = await response.json()
-          setArticles(data.articles || [])
+          const articles = data.articles || []
+          const fallbackCount = articles.filter((a: NewsArticle) => a.isFallback).length
+          const realCount = articles.length - fallbackCount
+          
+          if (fallbackCount > 0) {
+            console.warn(`[NewsTicker] ⚠️ ${fallbackCount} fallback artikelen geladen (API werkt niet)`)
+          } else {
+            console.log(`[NewsTicker] ✅ ${realCount} echte artikelen geladen van API`)
+          }
+          
+          setArticles(articles)
+        } else {
+          console.error(`[NewsTicker] API response not OK: ${response.status} ${response.statusText}`)
+          const errorData = await response.json().catch(() => ({}))
+          console.error(`[NewsTicker] Error data:`, errorData)
         }
       } catch (error) {
-        console.error("Error loading news:", error)
+        console.error("[NewsTicker] Error loading news:", error)
       } finally {
         setIsLoading(false)
       }
