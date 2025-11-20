@@ -755,7 +755,19 @@ export default function StocksPage() {
               <CardContent>
                 {loading ? (
                   <Skeleton className="h-96 w-full" />
-                ) : history.length > 0 ? (
+                ) : history.length > 0 ? (() => {
+                  // Bereken min en max waarden van de koers over de geselecteerde periode
+                  const prices = history.map(h => h.close)
+                  const minPrice = Math.min(...prices)
+                  const maxPrice = Math.max(...prices)
+                  
+                  // Voeg 10% marge toe aan beide kanten
+                  const priceRange = maxPrice - minPrice
+                  const margin = priceRange * 0.1
+                  const yAxisMin = Math.max(0, minPrice - margin) // Zorg dat minimum niet negatief wordt
+                  const yAxisMax = maxPrice + margin
+                  
+                  return (
                   <ResponsiveContainer width="100%" height={400}>
                     <LineChart
                       data={history}
@@ -775,6 +787,7 @@ export default function StocksPage() {
                         }
                       />
                       <YAxis
+                        domain={[yAxisMin, yAxisMax]}
                         stroke="oklch(0.60 0 0)"
                         style={{ fontSize: "12px" }}
                         tickFormatter={(value) => `$${value.toFixed(0)}`}
@@ -804,7 +817,8 @@ export default function StocksPage() {
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                ) : (
+                  )
+                })() : (
                   <div className="h-96 flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
                       <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
