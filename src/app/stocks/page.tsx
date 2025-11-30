@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useUser } from "@clerk/nextjs"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,7 +83,7 @@ const PERIODS = [
   { value: "ALL", label: "Alles" },
 ]
 
-export default function StocksPage() {
+function StocksPageContent() {
   // Gebruik Clerk hook - moet altijd worden aangeroepen (React hook regel)
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
@@ -3929,5 +3929,22 @@ export default function StocksPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function StocksPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Laden...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <StocksPageContent />
+    </Suspense>
   )
 }
