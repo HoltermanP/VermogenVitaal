@@ -77,7 +77,7 @@ export function calculateEtfGrowth(input: EtfGrowthInput): EtfGrowthResult {
   const returnPercentage = (totalReturn / totalInvested) * 100
   const costImpact = totalInvested * (ter / 100) * duration
 
-  // Advies
+  // Ondersteuning
   const advice: string[] = []
   
   if (ter > 0.5) {

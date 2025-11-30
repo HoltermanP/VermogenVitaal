@@ -109,7 +109,7 @@ function ClerkUserContent() {
           <DropdownMenuItem asChild>
             <Link href="/accounting" className="flex items-center">
               <Plug className="mr-2 h-4 w-4" />
-              Boekhoudpakket
+              EasyBook
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

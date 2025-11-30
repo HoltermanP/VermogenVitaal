@@ -119,7 +119,7 @@ export function Header() {
                       isActive("/advies") ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    Advies
+                    Ondersteuning
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -150,12 +150,24 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
+                    href="/portfolio"
+                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
+                      isActive("/portfolio") ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    Portefeuille
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
                     href="/accounting"
                     className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
                       isActive("/accounting") ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    Boekhoudpakket
+                    EasyBook
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -211,7 +223,7 @@ export function Header() {
                     isActive("/advies") ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
-                  Advies
+                  Ondersteuning
                 </Link>
                 <Link
                   href="/community"
@@ -230,12 +242,20 @@ export function Header() {
                   Beurskoersen
                 </Link>
                 <Link
+                  href="/portfolio"
+                  className={`text-lg font-medium ${
+                    isActive("/portfolio") ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  Portefeuille
+                </Link>
+                <Link
                   href="/accounting"
                   className={`text-lg font-medium ${
                     isActive("/accounting") ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
-                  Boekhoudpakket
+                  EasyBook
                 </Link>
                 <Link
                   href="/pricing"

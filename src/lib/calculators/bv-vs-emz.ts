@@ -56,7 +56,7 @@ export function calculateBvVsEmz(input: BvVsEmzInput): BvVsEmzResult {
   const difference = bvNetIncome - emzNetIncome
   const percentageDifference = (difference / emzNetIncome) * 100
 
-  // Advies
+  // Ondersteuning
   const advice: string[] = []
   if (difference > 0) {
     advice.push("BV structuur is voordeliger voor uw situatie")

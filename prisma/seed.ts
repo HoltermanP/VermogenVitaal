@@ -43,7 +43,7 @@ Nieuwe ondernemers kunnen gebruik maken van de startersaftrek van €2.123 in 20
 
 ## Disclaimer
 
-Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkadvies.`
+Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkbegeleiding.`
     },
     {
       title: "Vennootschapsbelasting en DGA salaris 2024",
@@ -88,7 +88,7 @@ Dividenduitkeringen zijn belast tegen 26,5% dividendbelasting.
 
 ## Disclaimer
 
-Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkadvies.`
+Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkbegeleiding.`
     },
     {
       title: "Box 3 vermogensbelasting 2024",
@@ -141,7 +141,7 @@ Het heffingsvrij vermogen bedraagt in 2024:
 
 ## Disclaimer
 
-Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkadvies.`
+Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkbegeleiding.`
     }
   ]
 

@@ -1,11 +1,137 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calculator, TrendingUp, Home, Coins, ArrowRight, Sparkles, FileText } from "lucide-react"
+import { Calculator, TrendingUp, Home, Coins, ArrowRight, Sparkles, PiggyBank, FileText, Briefcase, Building2, Receipt, Shield } from "lucide-react"
 import Link from "next/link"
 import { NewsTicker } from "@/components/news-ticker"
 
 export default function CalculatorsPage() {
   const calculators = [
+    {
+      id: "inkomstenbelasting",
+      title: "Inkomstenbelasting Calculator",
+      description: "Bereken je inkomstenbelasting met heffingskortingen en aftrekposten",
+      icon: TrendingUp,
+      href: "/calculators/inkomstenbelasting",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "box3",
+      title: "Box 3 Vermogensbelasting",
+      description: "Bereken box 3 belasting over vermogen (2025 regeling)",
+      icon: PiggyBank,
+      href: "/calculators/box3",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "hypotheekrenteaftrek",
+      title: "Hypotheekrenteaftrek Calculator",
+      description: "Bereken je hypotheekrenteaftrek en netto maandlast",
+      icon: Home,
+      href: "/calculators/hypotheekrenteaftrek",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "pensioen",
+      title: "Pensioen Jaarruimte Calculator",
+      description: "Bereken je jaarruimte en reserveringsruimte voor pensioenopbouw",
+      icon: FileText,
+      href: "/calculators/pensioen",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "zelfstandigenaftrek",
+      title: "Zelfstandigenaftrek & MKB",
+      description: "Controleer je recht op zelfstandigenaftrek, startersaftrek en MKB-winstvrijstelling",
+      icon: Briefcase,
+      href: "/calculators/zelfstandigenaftrek",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "btw",
+      title: "BTW Calculator",
+      description: "Bereken BTW inclusief/exclusief of BTW-teruggaaf",
+      icon: Receipt,
+      href: "/calculators/btw",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "dividendbelasting",
+      title: "Dividendbelasting Calculator",
+      description: "Bereken dividendbelasting en netto dividend",
+      icon: Briefcase,
+      href: "/calculators/dividendbelasting",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "vennootschapsbelasting",
+      title: "Vennootschapsbelasting Calculator",
+      description: "Bereken vennootschapsbelasting met MKB-winstvrijstelling en innovatiebox",
+      icon: Building2,
+      href: "/calculators/vennootschapsbelasting",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "investeringsaftrek",
+      title: "Investeringsaftrek Calculator",
+      description: "Bereken MIA, EIA, KIA en VAMIL voordelen",
+      icon: TrendingUp,
+      href: "/calculators/investeringsaftrek",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "dga-optimalisatie",
+      title: "DGA Salaris Optimalisatie",
+      description: "Optimaliseer de verhouding tussen salaris en dividend voor DGA's",
+      icon: Briefcase,
+      href: "/calculators/dga-optimalisatie",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "aftrekposten",
+      title: "Aftrekposten Checker",
+      description: "Controleer op welke aftrekposten je recht hebt",
+      icon: Shield,
+      href: "/calculators/aftrekposten",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "fiscale-reserve",
+      title: "Fiscale Reserve Calculator",
+      description: "Bereken FOR en investeringsreserve voordelen",
+      icon: PiggyBank,
+      href: "/calculators/fiscale-reserve",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "eigenwoningforfait",
+      title: "Eigenwoningforfait Calculator",
+      description: "Bereken eigenwoningforfait en netto voordeel hypotheekrenteaftrek",
+      icon: Home,
+      href: "/calculators/eigenwoningforfait",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
+    {
+      id: "arbeidskorting",
+      title: "Arbeidskorting Calculator",
+      description: "Bereken je arbeidskorting op basis van je inkomen",
+      icon: TrendingUp,
+      href: "/calculators/arbeidskorting",
+      gradient: "from-slate-600 to-slate-700",
+      hoverGradient: "from-slate-600 to-slate-700"
+    },
     {
       id: "bv-vs-emz",
       title: "BV vs EMZ Calculator",
@@ -39,15 +165,6 @@ export default function CalculatorsPage() {
       description: "Bepaal de optimale allocatie voor je crypto portfolio",
       icon: Coins,
       href: "/calculators/crypto",
-      gradient: "from-slate-600 to-slate-700",
-      hoverGradient: "from-slate-600 to-slate-700"
-    },
-    {
-      id: "dba-opdrachtomschrijving",
-      title: "DBA Opdrachtomschrijving Generator",
-      description: "Genereer een DBA-proof opdrachtomschrijving met behulp van AI",
-      icon: FileText,
-      href: "/calculators/dba-opdrachtomschrijving",
       gradient: "from-slate-600 to-slate-700",
       hoverGradient: "from-slate-600 to-slate-700"
     }

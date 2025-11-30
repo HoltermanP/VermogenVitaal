@@ -71,7 +71,7 @@ export function calculateCryptoAllocation(input: CryptoAllocationInput): CryptoA
     riskWarnings.push("Crypto is complex - begin klein en leer eerst")
   }
 
-  // Custody advies
+  // Custody ondersteuning
   const custodyAdvice: string[] = []
   
   if (baseAllocation > 5) {
@@ -82,7 +82,7 @@ export function calculateCryptoAllocation(input: CryptoAllocationInput): CryptoA
   custodyAdvice.push("Gebruik 2FA en sterke wachtwoorden")
   custodyAdvice.push("Bewaar recovery phrases veilig offline")
 
-  // Diversificatie advies
+  // Diversificatie ondersteuning
   const diversificationAdvice: string[] = []
   
   if (baseAllocation > 0) {

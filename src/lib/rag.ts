@@ -55,7 +55,7 @@ export async function generateRAGSummary(input: RAGInput): Promise<RAGResult> {
     summary,
     attentionPoints,
     sources,
-    disclaimer: "Deze informatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijk financieel advies. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkadvies.",
+    disclaimer: "Deze informatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijke financiële ondersteuning. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkbegeleiding.",
     generatedAt: new Date()
   }
 }
@@ -134,7 +134,7 @@ function generateSummary(scenario: string, profile: RAGInput['profile'], article
   
   summary += "Belangrijke overwegingen:\n"
   summary += "- Controleer altijd de meest recente fiscale regels\n"
-  summary += "- Overweeg professioneel advies voor complexe situaties\n"
+  summary += "- Overweeg professionele begeleiding voor complexe situaties\n"
   summary += "- Houd rekening met uw persoonlijke omstandigheden\n"
   
   return summary
@@ -158,7 +158,7 @@ function extractAttentionPoints(articles: KnowledgeArticle[]): string[] {
   
   // Default aandachtspunten
   points.push("Controleer altijd de meest recente fiscale regels")
-  points.push("Overweeg professioneel advies voor complexe situaties")
+  points.push("Overweeg professionele begeleiding voor complexe situaties")
   
   return [...new Set(points)] // Remove duplicates
 }

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       summary: `Op basis van uw scenario "${scenario}" zijn de volgende punten relevant voor uw situatie. Dit is een educatieve samenvatting gebaseerd op algemene fiscale regels.`,
       attentionPoints: [
         "Controleer altijd de meest recente fiscale regels",
-        "Overweeg professioneel advies voor complexe situaties",
+        "Overweeg professionele begeleiding voor complexe situaties",
         "Houd rekening met uw persoonlijke omstandigheden"
       ],
       sources: [
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
           version: "1.0"
         }
       ],
-      disclaimer: "Deze informatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijk financieel advies. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkadvies.",
+      disclaimer: "Deze informatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijke financiële ondersteuning. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkbegeleiding.",
       generatedAt: new Date()
     }
 

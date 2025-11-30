@@ -149,10 +149,6 @@ export default function PricingPage() {
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-muted-foreground">Async Q&A met expert</span>
                 </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Aangifte-check (€149 add-on)</span>
-                </li>
               </ul>
               <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
                 <Link href="/auth/signin">Start Pro</Link>
@@ -176,19 +172,11 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Aangifte indienen/afhandelen</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">1 video-consult per kwartaal</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-muted-foreground">Prioriteitssupport</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Persoonlijke adviseur</span>
+                  <span className="text-muted-foreground">Persoonlijke begeleider</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
@@ -213,27 +201,27 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-700">
               <CardHeader>
-                <CardTitle className="text-foreground">Aangifte Check</CardTitle>
-                <CardDescription className="text-muted-foreground">Laat je aangifte controleren door een expert</CardDescription>
-                <div className="text-3xl font-bold mt-4 text-gradient-financial">€149</div>
+                <CardTitle className="text-foreground">Fiscale Optimalisatie Check</CardTitle>
+                <CardDescription className="text-muted-foreground">Laat je fiscale situatie analyseren en optimaliseren</CardDescription>
+                <div className="text-3xl font-bold mt-4 text-gradient-financial">€99</div>
                 <p className="text-sm text-muted-foreground">per dossier</p>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Volledige controle van je aangifte</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Expert feedback en tips</span>
+                    <span className="text-muted-foreground">Volledige fiscale analyse</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-primary mr-2" />
                     <span className="text-muted-foreground">Optimalisatie suggesties</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Expert feedback en tips</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-primary mr-2" />
@@ -244,6 +232,35 @@ export default function PricingPage() {
             </Card>
 
             <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-800">
+              <CardHeader>
+                <CardTitle className="text-foreground">Premium Document Analyse</CardTitle>
+                <CardDescription className="text-muted-foreground">Diepgaande AI-analyse van je documenten</CardDescription>
+                <div className="text-3xl font-bold mt-4 text-gradient-financial">€49</div>
+                <p className="text-sm text-muted-foreground">per document</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">AI-powered document analyse</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Fiscale inzichten en risico&apos;s</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">Gedetailleerd rapport</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-muted-foreground">24u response tijd</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-900">
               <CardHeader>
                 <CardTitle className="text-foreground">Due Diligence Vastgoed</CardTitle>
                 <CardDescription className="text-muted-foreground">Professionele vastgoed analyse</CardDescription>
@@ -266,7 +283,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Investeringsadvies</span>
+                    <span className="text-muted-foreground">Investeringsondersteuning</span>
                   </li>
                 </ul>
               </CardContent>
@@ -317,8 +334,8 @@ export default function PricingPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
-                        Nee, alle prijzen zijn inclusief BTW. Alleen add-ons zoals aangifte-check 
-                        zijn extra kosten.
+                        Nee, alle prijzen zijn inclusief BTW. Add-ons zoals Fiscale Optimalisatie Check, 
+                        Premium Document Analyse en Due Diligence Vastgoed zijn extra kosten.
                       </p>
                     </AccordionContent>
                   </AccordionItem>

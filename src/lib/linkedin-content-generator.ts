@@ -146,7 +146,7 @@ export class LinkedInContentGenerator {
       take: 3
     })
 
-    const prompt = `Je bent een LinkedIn content creator voor Tax & Wealth Hub, een platform voor belastingadvies en vermogensopbouw voor Nederlandse ondernemers.
+    const prompt = `Je bent een LinkedIn content creator voor Tax & Wealth Hub, een platform voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers.
 
 ONDERWERP: ${topic.category}
 INVALSHOEK: ${topic.angle}
@@ -169,12 +169,12 @@ GENEREER EEN LINKEDIN POST MET:
 
 4. EEN NATUURLIJKE CALL-TO-ACTION:
    - Verwijs naar Tax & Wealth Hub
-   - Noem een specifieke feature (calculator, advies, etc.)
+   - Noem een specifieke feature (calculator, ondersteuning, etc.)
    - Link naar: ${this.appUrl}
    - Maak het waardevol, niet te salesy
 
 5. RELEVANTE HASHTAGS (max 5):
-   #BelastingAdvies #Ondernemen #Vermogensopbouw #FiscaalAdvies #OndernemersNL
+   #BelastingOndersteuning #Ondernemen #Vermogensopbouw #FiscaleOndersteuning #OndernemersNL
 
 STIJL:
 - Professioneel maar toegankelijk
@@ -197,7 +197,7 @@ Geef alleen de titel en content terug, zonder extra uitleg.`
       messages: [
         {
           role: "system",
-          content: "Je bent een expert LinkedIn content creator, gespecialiseerd in belastingadvies en vermogensopbouw voor Nederlandse ondernemers. Je schrijft waardevolle, praktische content die natuurlijk verwijst naar het platform."
+          content: "Je bent een expert LinkedIn content creator, gespecialiseerd in belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers. Je schrijft waardevolle, praktische content die natuurlijk verwijst naar het platform."
         },
         {
           role: "user",
@@ -211,7 +211,7 @@ Geef alleen de titel en content terug, zonder extra uitleg.`
     const generated = response.choices[0]?.message?.content || ""
     
     const titleMatch = generated.match(/Titel:\s*(.+)/i)
-    const title = titleMatch?.[1]?.trim() || `${topic.angle} - Belastingadvies`
+    const title = titleMatch?.[1]?.trim() || `${topic.angle} - Belastingondersteuning`
     
     const contentMatch = generated.split("---")[1] || generated
     let content = contentMatch.trim()

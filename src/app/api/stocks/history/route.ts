@@ -115,10 +115,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Limiteer aantal datapunten voor performance (max 200)
+    // Limiteer aantal datapunten voor performance
+    // Voor lange termijn analyses (1Y, ALL) gebruiken we meer datapunten
     let filteredEntries = entries
-    if (filteredEntries.length > 200) {
-      const step = Math.ceil(filteredEntries.length / 200)
+    const maxPoints = period === "1Y" || period === "ALL" ? 500 : 200
+    if (filteredEntries.length > maxPoints) {
+      const step = Math.ceil(filteredEntries.length / maxPoints)
       filteredEntries = filteredEntries.filter(
         (_: unknown, index: number) => index % step === 0
       )

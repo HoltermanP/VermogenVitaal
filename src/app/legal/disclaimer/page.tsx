@@ -28,17 +28,17 @@ export default function DisclaimerPage() {
               <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Algemene bepalingen</h2>
               <p className="text-muted-foreground mb-4">
                 De informatie op deze website is uitsluitend bedoeld voor educatieve doeleinden en vormt 
-                geen persoonlijk financieel, fiscaal of juridisch advies. Tax & Wealth Hub is geen 
-                geregistreerde financiële dienstverlener en biedt geen geautoriseerd financieel advies.
+                geen persoonlijke financiële, fiscale of juridische ondersteuning. Tax & Wealth Hub is geen 
+                geregistreerde financiële dienstverlener en biedt geen geautoriseerde financiële ondersteuning.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Geen advies</h2>
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Geen professionele ondersteuning</h2>
               <p className="text-muted-foreground mb-4">
                 Alle calculators, tools, artikelen en andere content op deze website zijn bedoeld voor 
-                algemene informatieve doeleinden. Ze zijn niet bedoeld als vervanging voor professioneel 
-                financieel, fiscaal of juridisch advies dat is afgestemd op uw specifieke situatie.
+                algemene informatieve doeleinden. Ze zijn niet bedoeld als vervanging voor professionele 
+                financiële, fiscale of juridische ondersteuning die is afgestemd op uw specifieke situatie.
               </p>
               <p className="text-muted-foreground mb-4">
                 Raadpleeg altijd een gekwalificeerde adviseur voordat u financiële beslissingen neemt 

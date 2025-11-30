@@ -77,7 +77,7 @@ export function calculateRealEstate(input: RealEstateInput): RealEstateResult {
     interestMinus10: calculateRealEstate({ ...input, interestRate: interestRate * 0.9 }).yearlyCashflow
   }
 
-  // Advies
+  // Ondersteuning
   const advice: string[] = []
 
   if (dscr < 1.2) {

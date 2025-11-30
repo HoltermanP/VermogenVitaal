@@ -23,9 +23,22 @@ export const PRICING = {
     currency: 'eur',
     interval: 'month'
   },
-  AANGIFTE_CHECK: {
-    priceId: process.env.STRIPE_AANGIFTE_CHECK_PRICE_ID!,
-    amount: 14900, // €149.00 in cents
+  // Add-ons (one-time payments)
+  FISCALE_OPTIMALISATIE_CHECK: {
+    priceId: process.env.STRIPE_FISCALE_OPTIMALISATIE_CHECK_PRICE_ID!,
+    amount: 9900, // €99.00 in cents
+    currency: 'eur',
+    interval: 'one_time'
+  },
+  PREMIUM_DOCUMENT_ANALYSE: {
+    priceId: process.env.STRIPE_PREMIUM_DOCUMENT_ANALYSE_PRICE_ID!,
+    amount: 4900, // €49.00 in cents
+    currency: 'eur',
+    interval: 'one_time'
+  },
+  DUE_DILIGENCE_VASTGOED: {
+    priceId: process.env.STRIPE_DUE_DILIGENCE_VASTGOED_PRICE_ID!,
+    amount: 29900, // €299.00 in cents
     currency: 'eur',
     interval: 'one_time'
   }
@@ -39,8 +52,14 @@ export async function createCheckoutSession(
   successUrl?: string,
   cancelUrl?: string
 ) {
+  // Determine if this is a subscription or one-time payment
+  const isOneTime = 
+    priceId === PRICING.FISCALE_OPTIMALISATIE_CHECK.priceId ||
+    priceId === PRICING.PREMIUM_DOCUMENT_ANALYSE.priceId ||
+    priceId === PRICING.DUE_DILIGENCE_VASTGOED.priceId
+
   const session = await stripe.checkout.sessions.create({
-    mode: priceId === PRICING.AANGIFTE_CHECK.priceId ? 'payment' : 'subscription',
+    mode: isOneTime ? 'payment' : 'subscription',
     payment_method_types: ['card'],
     line_items: [
       {
@@ -53,6 +72,7 @@ export async function createCheckoutSession(
     cancel_url: cancelUrl || `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
     metadata: {
       priceId,
+      type: isOneTime ? 'addon' : 'subscription',
     },
   })
 

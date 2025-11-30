@@ -18,7 +18,7 @@ export function TaxChatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hallo! Ik ben je belastingadviseur assistent. Stel gerust vragen over belastingregels, tips voor 2025, of optimalisatiestrategieën. Hoe kan ik je helpen?",
+      content: "Hallo! Ik ben je belastingondersteuning assistent. Stel gerust vragen over belastingregels, tips voor 2025, of optimalisatiestrategieën. Hoe kan ik je helpen?",
       timestamp: new Date().toISOString()
     }
   ])
@@ -106,11 +106,11 @@ export function TaxChatbot() {
   }
 
   return (
-    <Card className="w-full h-[600px] flex flex-col">
-      <CardHeader className="border-b">
+    <Card className="w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-10rem)] max-h-[800px] flex flex-col shadow-xl">
+      <CardHeader className="border-b bg-card/95 backdrop-blur-sm">
         <CardTitle className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
-          Belastingadvies Chatbot
+          Belastingondersteuning Chatbot
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
@@ -171,7 +171,7 @@ export function TaxChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Stel je vraag over belastingadvies..."
+              placeholder="Stel je vraag over belastingondersteuning..."
               className="min-h-[60px] resize-none"
               disabled={isLoading}
             />

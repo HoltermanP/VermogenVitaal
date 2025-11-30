@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         }
       },
       cryptoAllocation: {
-        title: "Crypto Allocatie Advies",
+        title: "Crypto Allocatie Ondersteuning",
         description: "Optimale allocatie voor crypto portfolio",
         generatedAt: new Date().toISOString(),
         results: {

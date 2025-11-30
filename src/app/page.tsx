@@ -39,7 +39,7 @@ export default function HomePage() {
             <span className="text-gradient-financial">Tax & Wealth Hub</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl animate-fade-in delay-200">
-            De complete oplossing voor belastingadvies en vermogensopbouw voor ondernemers. 
+            De complete oplossing voor belastingondersteuning en vermogensopbouw voor ondernemers. 
             Van BV vs EMZ tot ETF-allocatie en vastgoedstrategieën.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -98,7 +98,7 @@ export default function HomePage() {
             Alles wat je nodig hebt voor fiscale optimalisatie
           </h2>
           <p className="text-lg text-gray-300 max-w-2xl">
-            Van calculators tot persoonlijk advies - alles onder één dak
+            Van calculators tot persoonlijke ondersteuning - alles onder één dak
           </p>
         </div>
 
@@ -153,7 +153,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">Aangifte check</span>
+                  <span className="text-muted-foreground">Document analyse</span>
                 </li>
               </ul>
             </CardContent>
@@ -222,14 +222,14 @@ export default function HomePage() {
               </div>
               <CardTitle className="text-foreground group-hover:text-primary transition-colors">AI-Powered Insights</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Krijg gepersonaliseerde adviezen op basis van je situatie
+                Krijg gepersonaliseerde ondersteuning op basis van je situatie
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">RAG-gebaseerde adviezen</span>
+                  <span className="text-muted-foreground">RAG-gebaseerde ondersteuning</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
@@ -352,7 +352,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">Aangifte check (€149)</span>
+                  <span className="text-muted-foreground">Fiscale optimalisatie ondersteuning</span>
                 </li>
               </ul>
               <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
@@ -377,15 +377,15 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">Aangifte indienen</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-muted-foreground">Video consult (kwartaal)</span>
+                  <span className="text-muted-foreground">Persoonlijke adviseur</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-primary" />
                   <span className="text-muted-foreground">Prioriteitssupport</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">White-label rapporten</span>
                 </li>
               </ul>
               <Button className="w-full gradient-premium text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>

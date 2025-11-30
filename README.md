@@ -1,11 +1,11 @@
 # Tax & Wealth Hub
 
-Een complete MVP voor belastingadvies en vermogensopbouw voor Nederlandse ondernemers.
+Een complete MVP voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers.
 
 ## 🚀 Features
 
 - **Smart Calculators**: BV vs EMZ, ETF-groei, Vastgoed cashflow, Crypto allocatie
-- **AI-Powered Insights**: RAG-gebaseerde adviezen met bronvermelding
+- **AI-Powered Insights**: RAG-gebaseerde ondersteuning met bronvermelding
 - **Document Management**: Veilige upload en status tracking
 - **Community Q&A**: Expert vragen en antwoorden
 - **Tier-based Access**: Gratis, Basic, Pro, Elite abonnementen
@@ -71,6 +71,12 @@ Een complete MVP voor belastingadvies en vermogensopbouw voor Nederlandse ondern
    
    # OpenAI (optioneel)
    OPENAI_API_KEY="sk-..."
+   
+   # News API (voor realtime nieuws)
+   # Gratis tier: 100 requests/dag (alleen development/localhost)
+   # Registreer op https://newsapi.org/register
+   # Let op: Voor productie is betaald abonnement nodig
+   NEWS_API_KEY="your-news-api-key"
    ```
 
 4. **Setup database**
@@ -110,7 +116,7 @@ Een complete MVP voor belastingadvies en vermogensopbouw voor Nederlandse ondern
 - Vergelijkt fiscale gevolgen van BV vs EMZ
 - Inclusief MKB-winstvrijstelling, zelfstandigenaftrek
 - Gevoeligheidsanalyse bij omzetwijzigingen
-- Advies op basis van specifieke situatie
+- Ondersteuning op basis van specifieke situatie
 
 ### 2. ETF Groei Calculator
 - Projecteert ETF portefeuille groei
@@ -156,13 +162,29 @@ Een complete MVP voor belastingadvies en vermogensopbouw voor Nederlandse ondern
 - Document upload
 - Scenariovergelijking
 - Expert Q&A
-- Aangifte-check (€149 add-on)
+- Fiscale optimalisatie ondersteuning
 
 ### Elite (€99/maand)
-- Aangifte indienen
-- Video consult (kwartaal)
 - Prioriteitssupport
-- Persoonlijke adviseur
+- Persoonlijke begeleider
+- White-label rapporten
+
+## 💰 Add-ons
+
+### Fiscale Optimalisatie Check (€99)
+- Volledige fiscale analyse van je situatie
+- Optimalisatie suggesties en expert feedback
+- 48u response tijd
+
+### Premium Document Analyse (€49)
+- AI-powered diepgaande document analyse
+- Fiscale inzichten en risico identificatie
+- Gedetailleerd rapport binnen 24u
+
+### Due Diligence Vastgoed (€299)
+- Professionele vastgoed analyse
+- Financiële analyse, marktonderzoek en risico assessment
+- Investeringsondersteuning
 
 ## 🔒 Compliance
 
@@ -207,6 +229,23 @@ npm run format
 ### Environment Variables
 
 Zorg dat alle environment variabelen zijn geconfigureerd in je deployment platform.
+
+## 📰 Nieuws Functionaliteit
+
+De applicatie haalt realtime nieuws op via NewsAPI.org. Voor development kun je een gratis API key gebruiken:
+
+1. **Registreer** op [https://newsapi.org/register](https://newsapi.org/register)
+2. **Kopieer** je API key
+3. **Voeg toe** aan `.env.local`:
+   ```env
+   NEWS_API_KEY="jouw-api-key-hier"
+   ```
+
+**Belangrijk**: 
+- De gratis tier werkt alleen op `localhost` (development)
+- Voor productie/deployment is een betaald abonnement nodig
+- Als de API key niet is ingesteld, wordt fallback nieuws getoond
+- De applicatie probeert automatisch alternatieve nieuwsbronnen (RSS feeds) als NewsAPI niet beschikbaar is
 
 ## 📝 API Endpoints
 
@@ -284,4 +323,4 @@ Dit project is eigendom van Tax & Wealth Hub. Alle rechten voorbehouden.
 
 ---
 
-**Disclaimer**: Deze applicatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijk financieel advies. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkadvies.
+**Disclaimer**: Deze applicatie is uitsluitend bedoeld voor educatieve doeleinden en vormt geen persoonlijke financiële ondersteuning. Raadpleeg altijd een gekwalificeerde adviseur voor maatwerkbegeleiding.

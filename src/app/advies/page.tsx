@@ -51,14 +51,14 @@ export default function AdviesPage() {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 animate-fade-in">
-              <span className="text-gradient-financial">Belastingadviezen & Tips 2025</span>
+              <span className="text-gradient-financial">Belastingondersteuning & Tips 2025</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
-              Actuele belastingadviezen, tips en optimalisatiestrategieën voor het belastingjaar 2025
+              Actuele belastingondersteuning, tips en optimalisatiestrategieën voor het belastingjaar 2025
             </p>
           </div>
 
@@ -67,108 +67,112 @@ export default function AdviesPage() {
             <NewsTicker pagePath="/advies" />
           </div>
 
-          {/* Belangrijke wijzigingen */}
-          <div className="mb-12">
-            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-primary" />
-                  Belangrijke Wijzigingen 2025
-                </CardTitle>
-                <CardDescription>
-                  Nieuwe regels en wijzigingen die van belang zijn voor het belastingjaar 2025
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {belangrijkeWijzigingen.map((wijziging, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-4 rounded-lg border bg-muted/50"
-                    >
-                      {wijziging.type === "info" && <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />}
-                      {wijziging.type === "warning" && <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />}
-                      {wijziging.type === "success" && <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />}
+          {/* Main Content Grid: Content links, Chatbot rechts */}
+          <div className="grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 lg:gap-8">
+            {/* Left Column: Main Content */}
+            <div className="space-y-8">
+              {/* Belangrijke wijzigingen */}
+              <div>
+                <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-primary" />
+                      Belangrijke Wijzigingen 2025
+                    </CardTitle>
+                    <CardDescription>
+                      Nieuwe regels en wijzigingen die van belang zijn voor het belastingjaar 2025
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {belangrijkeWijzigingen.map((wijziging, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 p-4 rounded-lg border bg-muted/50"
+                        >
+                          {wijziging.type === "info" && <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />}
+                          {wijziging.type === "warning" && <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />}
+                          {wijziging.type === "success" && <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />}
+                          <div>
+                            <h3 className="font-semibold text-foreground mb-1">{wijziging.title}</h3>
+                            <p className="text-sm text-muted-foreground">{wijziging.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Belastingonderwerpen Overzicht */}
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-6">Alle Belastingonderwerpen 2025</h2>
+                <p className="text-muted-foreground mb-8">
+                  Klik op een onderwerp om uitgebreide informatie te bekijken
+                </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {taxTopics2025.map((topic) => {
+                    const IconComponent = topic.icon
+                    const colorClass = colorMap[topic.color] || colorMap.blue
+                    return (
+                      <Link key={topic.id} href={`/advies/${topic.id}`}>
+                        <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 h-full cursor-pointer group">
+                          <CardHeader>
+                            <div className="flex items-start gap-4">
+                              <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${colorClass} group-hover:scale-110 transition-transform`}>
+                                <IconComponent className="h-7 w-7" />
+                              </div>
+                              <div className="flex-1">
+                                <CardTitle className="text-foreground mb-2 group-hover:text-primary transition-colors">
+                                  {topic.title}
+                                </CardTitle>
+                                <Badge variant="secondary" className="mb-2">
+                                  {topic.category}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                              {topic.shortDescription}
+                            </p>
+                            <div className="flex items-center text-primary font-medium text-sm group-hover:gap-2 transition-all">
+                              Lees meer
+                              <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <div>
+                <Card className="bg-accent/10 border-primary/20">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <h3 className="font-semibold text-foreground mb-1">{wijziging.title}</h3>
-                        <p className="text-sm text-muted-foreground">{wijziging.description}</p>
+                        <h3 className="font-semibold text-foreground mb-2">Belangrijke opmerking</h3>
+                        <p className="text-sm text-muted-foreground">
+                          De informatie op deze pagina is bedoeld als algemene richtlijn en kan niet worden beschouwd als 
+                          persoonlijke belastingondersteuning. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
+                          individuele situatie. Voor persoonlijke begeleiding raden we aan om een gecertificeerd belastingadviseur 
+                          te raadplegen. De chatbot geeft algemene informatie en kan geen vervanging zijn voor professionele begeleiding.
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Belastingonderwerpen Overzicht */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-6">Alle Belastingonderwerpen 2025</h2>
-            <p className="text-muted-foreground mb-8">
-              Klik op een onderwerp om uitgebreide informatie te bekijken
-            </p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {taxTopics2025.map((topic) => {
-                const IconComponent = topic.icon
-                const colorClass = colorMap[topic.color] || colorMap.blue
-                return (
-                  <Link key={topic.id} href={`/advies/${topic.id}`}>
-                    <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 h-full cursor-pointer group">
-                      <CardHeader>
-                        <div className="flex items-start gap-4">
-                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${colorClass} group-hover:scale-110 transition-transform`}>
-                            <IconComponent className="h-7 w-7" />
-                          </div>
-                          <div className="flex-1">
-                            <CardTitle className="text-foreground mb-2 group-hover:text-primary transition-colors">
-                              {topic.title}
-                            </CardTitle>
-                            <Badge variant="secondary" className="mb-2">
-                              {topic.category}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                          {topic.shortDescription}
-                        </p>
-                        <div className="flex items-center text-primary font-medium text-sm group-hover:gap-2 transition-all">
-                          Lees meer
-                          <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Chatbot */}
-            <div className="lg:col-span-1">
+            {/* Right Column: Chatbot - Sticky */}
+            <div className="lg:sticky lg:top-6 lg:self-start">
               <TaxChatbot />
             </div>
-          </div>
-
-          {/* Disclaimer */}
-          <div className="mt-12">
-            <Card className="bg-accent/10 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-foreground mb-2">Belangrijke opmerking</h3>
-                    <p className="text-sm text-muted-foreground">
-                      De informatie op deze pagina is bedoeld als algemene richtlijn en kan niet worden beschouwd als 
-                      persoonlijk belastingadvies. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
-                      individuele situatie. Voor persoonlijk advies raden we aan om een gecertificeerd belastingadviseur 
-                      te raadplegen. De chatbot geeft algemene informatie en kan geen vervanging zijn voor professioneel advies.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
