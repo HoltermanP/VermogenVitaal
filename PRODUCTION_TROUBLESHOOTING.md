@@ -79,12 +79,52 @@ De CORS warning voor `clerk-telemetry.com` is niet kritisch. Dit is Clerk's tele
 
 ### 7. Database Connectie Problemen
 
-Als je de volgende error krijgt in productie:
+#### Error: "the URL must start with the protocol `postgresql://` or `postgres://`"
+
+Als je deze error krijgt:
+```
+error: Error validating datasource `db`: the URL must start with the protocol `postgresql://` or `postgres://`.
+```
+
+**Oorzaak:** De `DATABASE_URL` environment variabele is leeg, ongeldig, of bevat onzichtbare karakters.
+
+**Oplossing:**
+1. Ga naar **Vercel Dashboard** > Je Project > **Settings** > **Environment Variables**
+2. Zoek naar `DATABASE_URL`
+3. **Verwijder** de bestaande waarde (als deze bestaat)
+4. **Voeg opnieuw toe** met de correcte waarde:
+   - Klik op "Add New" of "Edit"
+   - Key: `DATABASE_URL`
+   - Value: Je database connection string (moet beginnen met `postgresql://` of `postgres://`)
+   - Environment: Selecteer **Production** (en eventueel Preview/Development)
+5. **Herdeploy** je applicatie
+
+**Voorbeelden van correcte DATABASE_URL:**
+```env
+# Vercel Postgres
+DATABASE_URL="postgres://default:password@host.vercel-storage.com:5432/verceldb"
+
+# Supabase
+DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
+
+# Andere PostgreSQL provider
+DATABASE_URL="postgresql://username:password@your-db-host.com:5432/database_name"
+```
+
+**Veelvoorkomende fouten:**
+- ❌ Lege waarde
+- ❌ Spaties voor/na de URL
+- ❌ Verkeerde protocol (bijv. `https://` in plaats van `postgresql://`)
+- ❌ Vergeten quotes (als je via CLI instelt)
+
+#### Error: "Can't reach database server at `localhost:5432`"
+
+Als je deze error krijgt:
 ```
 Can't reach database server at `localhost:5432`
 ```
 
-Dit betekent dat de `DATABASE_URL` environment variabele niet correct is ingesteld of nog steeds naar localhost verwijst.
+Dit betekent dat de `DATABASE_URL` environment variabele nog steeds naar localhost verwijst.
 
 #### Oplossing:
 
@@ -169,6 +209,30 @@ Voordat je deployt naar productie:
 - Zorg dat `DATABASE_URL` verwijst naar een externe database (niet localhost)
 - Herdeploy na het instellen van `DATABASE_URL`
 - Zie sectie 7 voor gedetailleerde instructies
+
+**Probleem:** "the URL must start with the protocol `postgresql://` or `postgres://`"
+**Oplossing:**
+- De `DATABASE_URL` is leeg of ongeldig
+- Ga naar Vercel Settings > Environment Variables
+- Verwijder en voeg `DATABASE_URL` opnieuw toe met correcte waarde
+- Zorg dat de URL begint met `postgresql://` of `postgres://`
+- Controleer op onzichtbare spaties of karakters
+- Herdeploy na het instellen
+
+**Probleem:** "The table `public.users` does not exist"
+**Oplossing:**
+- Database migraties zijn nog niet uitgevoerd
+- Zie `FIX_DATABASE_TABLES.md` voor uitgebreide instructies
+- Snelle oplossing:
+  ```bash
+  vercel env pull .env.production
+  npx prisma db push --skip-generate
+  ```
+- Of voer migraties uit:
+  ```bash
+  vercel env pull .env.production
+  npx prisma migrate deploy
+  ```
 
 ### 10. Vercel Specifieke Instellingen
 
