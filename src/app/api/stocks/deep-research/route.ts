@@ -386,12 +386,53 @@ export async function POST(request: NextRequest) {
         url: request.url,
       })
       
-      return NextResponse.json(
-        { 
-          error: "Gebruiker niet gevonden in database",
-        },
-        { status: 500 }
-      )
+      // Probeer de gebruiker handmatig aan te maken als laatste redmiddel
+      try {
+        const { currentUser } = await import("@clerk/nextjs/server")
+        const clerkUser = await currentUser()
+        
+        if (clerkUser) {
+          const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                       clerkUser.primaryEmailAddress?.emailAddress ||
+                       clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
+          
+          if (email) {
+            console.log("Deep Research API: Attempting manual user creation", { email })
+            const newUser = await prisma.user.create({
+              data: {
+                email,
+                name: clerkUser.firstName && clerkUser.lastName
+                  ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                  : clerkUser.firstName || clerkUser.username || email,
+              },
+            })
+            
+            user = {
+              id: newUser.id,
+              email: newUser.email,
+              name: newUser.name,
+              tier: newUser.tier,
+              role: newUser.role,
+              clerkId: authResult.userId,
+            }
+            
+            console.log("Deep Research API: User created manually", { userId: user.id })
+          }
+        }
+      } catch (manualCreateError) {
+        console.error("Deep Research API: Manual user creation failed", {
+          error: manualCreateError instanceof Error ? manualCreateError.message : String(manualCreateError),
+        })
+      }
+      
+      if (!user || !user.id) {
+        return NextResponse.json(
+          { 
+            error: "Gebruiker niet gevonden in database. Probeer opnieuw in te loggen.",
+          },
+          { status: 500 }
+        )
+      }
     }
     
     const userId = user.id

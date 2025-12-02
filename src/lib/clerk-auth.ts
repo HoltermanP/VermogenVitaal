@@ -129,18 +129,57 @@ export async function getClerkUser(request?: NextRequest) {
     if (!user) {
       // Maak nieuwe gebruiker aan met error handling
       try {
+        const userName = clerkUser.firstName && clerkUser.lastName
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`
+          : clerkUser.firstName || clerkUser.username || email || 'Gebruiker'
+        
+        console.log("getClerkUser: Creating new user in database", {
+          email,
+          name: userName,
+          clerkUserId: userId,
+        })
+        
         user = await prisma.user.create({
           data: {
             email,
-            name: clerkUser.firstName && clerkUser.lastName
-              ? `${clerkUser.firstName} ${clerkUser.lastName}`
-              : clerkUser.firstName || clerkUser.username || email,
+            name: userName,
           },
         })
+        
+        console.log("getClerkUser: User created successfully", {
+          userId: user.id,
+          email: user.email,
+        })
       } catch (createError) {
-        console.error("getClerkUser: Database error creating user:", createError)
-        // Als we de gebruiker niet kunnen aanmaken, return null
-        return null
+        const errorMessage = createError instanceof Error ? createError.message : String(createError)
+        const errorCode = createError && typeof createError === 'object' && 'code' in createError ? String(createError.code) : undefined
+        
+        console.error("getClerkUser: Database error creating user:", {
+          error: errorMessage,
+          code: errorCode,
+          email,
+          clerkUserId: userId,
+        })
+        
+        // Als het een duplicate key error is, probeer opnieuw te vinden
+        if (errorCode === 'P2002') {
+          console.log("getClerkUser: Duplicate key error, trying to find user again")
+          try {
+            user = await prisma.user.findUnique({
+              where: { email },
+            })
+            if (user) {
+              console.log("getClerkUser: User found after duplicate error", { userId: user.id })
+            }
+          } catch (findError) {
+            console.error("getClerkUser: Error finding user after duplicate:", findError)
+          }
+        }
+        
+        // Als we de gebruiker nog steeds niet hebben, return null
+        if (!user) {
+          return null
+        }
       }
     } else {
       // Update naam als deze is veranderd met error handling
