@@ -4,6 +4,83 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+// Valideer DATABASE_URL voordat we Prisma client initialiseren
+function validateDatabaseUrl(): string | null {
+  const databaseUrl = process.env.DATABASE_URL
+  
+  if (!databaseUrl) {
+    const errorMessage = 
+      'DATABASE_URL environment variable is not set. ' +
+      'Please set DATABASE_URL in your environment variables.'
+    console.error('❌ Prisma initialization error:', errorMessage)
+    
+    // In productie, gooi een error zodat het probleem duidelijk is
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+      throw new Error(errorMessage)
+    }
+    
+    // In development, waarschuw maar crash niet
+    console.warn('⚠️  Warning:', errorMessage)
+    return null
+  }
+  
+  // Waarschuw als DATABASE_URL naar localhost verwijst in productie
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) {
+      const errorMessage = 
+        'DATABASE_URL cannot point to localhost in production. ' +
+        'Please configure a production database URL in your environment variables. ' +
+        'Check Vercel Settings > Environment Variables > DATABASE_URL'
+      console.error('❌ Prisma initialization error:', errorMessage)
+      throw new Error(errorMessage)
+    }
+  }
+  
+  return databaseUrl
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Valideer DATABASE_URL bij initialisatie
+let databaseUrlValid = false
+try {
+  const url = validateDatabaseUrl()
+  databaseUrlValid = url !== null
+  if (url) {
+    console.log('✅ DATABASE_URL is configured')
+  }
+} catch (error) {
+  // In productie gooien we de error door zodat deployment faalt
+  // Dit voorkomt dat de app start met een verkeerde configuratie
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    throw error
+  }
+  // In development loggen we alleen
+  console.error('Database configuration error:', error instanceof Error ? error.message : String(error))
+}
+
+// Maak Prisma client met connection pool configuratie voor productie
+const createPrismaClient = () => {
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' 
+      ? ['query', 'error', 'warn'] 
+      : ['error'],
+    errorFormat: 'pretty',
+  })
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+}
+
+// Test database connectie bij startup (alleen in development)
+if (process.env.NODE_ENV === 'development') {
+  prisma.$connect()
+    .then(() => {
+      console.log('✅ Database connection successful')
+    })
+    .catch((error) => {
+      console.error('❌ Database connection failed:', error.message)
+      console.error('Make sure your database is running and DATABASE_URL is correct')
+    })
+}

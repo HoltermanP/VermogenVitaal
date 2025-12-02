@@ -77,15 +77,82 @@ De applicatie logt nu uitgebreide informatie in productie. Check de Vercel logs 
 
 De CORS warning voor `clerk-telemetry.com` is niet kritisch. Dit is Clerk's telemetrie service en heeft geen invloed op de functionaliteit. Je kunt dit negeren of uitschakelen in Clerk Dashboard.
 
-### 7. Test Checklist
+### 7. Database Connectie Problemen
+
+Als je de volgende error krijgt in productie:
+```
+Can't reach database server at `localhost:5432`
+```
+
+Dit betekent dat de `DATABASE_URL` environment variabele niet correct is ingesteld of nog steeds naar localhost verwijst.
+
+#### Oplossing:
+
+1. **Controleer DATABASE_URL in Vercel**:
+   - Ga naar Vercel Dashboard > Je Project > Settings > Environment Variables
+   - Zoek naar `DATABASE_URL`
+   - Zorg dat deze is ingesteld voor "Production" environment
+   - De URL moet verwijzen naar een externe database (niet localhost)
+
+2. **Voorbeelden van correcte DATABASE_URL**:
+   ```env
+   # Vercel Postgres
+   DATABASE_URL="postgres://default:password@host.vercel-storage.com:5432/verceldb"
+   
+   # Supabase
+   DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
+   
+   # Andere PostgreSQL provider
+   DATABASE_URL="postgresql://username:password@your-db-host.com:5432/database_name"
+   ```
+
+3. **Verkeerde DATABASE_URL (zal niet werken in productie)**:
+   ```env
+   # ❌ Dit werkt alleen lokaal, niet in productie!
+   DATABASE_URL="postgresql://username:password@localhost:5432/tax_wealth_hub"
+   ```
+
+4. **Na het instellen van DATABASE_URL**:
+   - Herdeploy je applicatie in Vercel
+   - De applicatie zal nu automatisch controleren of DATABASE_URL correct is ingesteld
+   - Als DATABASE_URL naar localhost verwijst in productie, krijg je een duidelijke error
+
+5. **Database Migraties Uitvoeren**:
+   
+   Zie `DATABASE_MIGRATIONS.md` voor uitgebreide instructies. Kort samengevat:
+   
+   **Optie A: Automatisch tijdens build (aanbevolen)**:
+   - Update Build Command in Vercel naar: `prisma generate && prisma migrate deploy && next build --turbopack`
+   - Migraties worden automatisch uitgevoerd bij elke deployment
+   
+   **Optie B: Handmatig via Vercel CLI**:
+   ```bash
+   vercel env pull .env.production
+   npm run db:migrate:deploy
+   ```
+   
+   **Optie C: Via lokale terminal**:
+   ```bash
+   # Stel DATABASE_URL in (kopieer uit Vercel dashboard)
+   export DATABASE_URL="postgresql://..."
+   npm run db:migrate:deploy
+   ```
+
+6. **Test Database Connectie**:
+   De applicatie test nu automatisch de database connectie bij startup in development mode.
+   In productie worden errors gelogd in Vercel logs.
+
+### 8. Test Checklist
 
 Voordat je deployt naar productie:
 - [ ] Clerk environment variables zijn ingesteld (live keys)
 - [ ] Productie domain is toegevoegd aan Clerk Dashboard
+- [ ] **DATABASE_URL is ingesteld en verwijst naar productie database (niet localhost)**
+- [ ] Database migraties zijn uitgevoerd (`prisma migrate deploy`)
 - [ ] Database is bereikbaar vanuit productie
-- [ ] Alle andere environment variables zijn ingesteld (OPENAI_API_KEY, DATABASE_URL, etc.)
+- [ ] Alle andere environment variables zijn ingesteld (OPENAI_API_KEY, etc.)
 
-### 8. Veelvoorkomende Problemen
+### 9. Veelvoorkomende Problemen
 
 **Probleem:** 401 errors bij alle API calls
 **Oplossing:** Controleer of `CLERK_SECRET_KEY` is ingesteld (niet alleen `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`)
@@ -96,7 +163,14 @@ Voordat je deployt naar productie:
 **Probleem:** Authenticatie werkt lokaal maar niet in productie
 **Oplossing:** Controleer of je live keys gebruikt (niet test keys) en of je domain is toegevoegd aan Clerk
 
-### 9. Vercel Specifieke Instellingen
+**Probleem:** Database connectie errors (`Can't reach database server at localhost:5432`)
+**Oplossing:** 
+- Controleer of `DATABASE_URL` is ingesteld in Vercel environment variables
+- Zorg dat `DATABASE_URL` verwijst naar een externe database (niet localhost)
+- Herdeploy na het instellen van `DATABASE_URL`
+- Zie sectie 7 voor gedetailleerde instructies
+
+### 10. Vercel Specifieke Instellingen
 
 In Vercel:
 1. Ga naar je project
@@ -104,7 +178,7 @@ In Vercel:
 3. Zorg dat variabelen zijn ingesteld voor "Production"
 4. Herdeploy na het toevoegen van variabelen
 
-### 10. Contact
+### 11. Contact
 
 Als het probleem blijft bestaan na het volgen van deze stappen:
 1. Check Vercel logs voor specifieke error messages
