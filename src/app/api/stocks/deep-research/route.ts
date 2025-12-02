@@ -3,6 +3,7 @@ import OpenAI from "openai"
 import { fetchStockNews } from "@/lib/news-service"
 import { prisma } from "@/lib/prisma"
 import { getClerkUser } from "@/lib/clerk-auth"
+import { auth } from "@clerk/nextjs/server"
 
 // Converteer Nederlandse symbolen naar Yahoo Finance format
 function convertSymbol(symbol: string): string {
@@ -322,37 +323,24 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Middleware heeft al auth.protect() aangeroepen, dus auth() zou moeten werken
-    // Maar we gebruiken nog steeds getClerkUser voor database sync
-    let user = null
+    // Probeer eerst auth() direct te gebruiken om te zien of we een userId hebben
+    let authResult
     try {
-      user = await getClerkUser(request)
+      authResult = await auth()
     } catch (authError) {
-      const errorMessage = authError instanceof Error ? authError.message : "Authenticatie fout"
-      const errorStack = authError instanceof Error ? authError.stack : undefined
-      
-      console.error("Error in getClerkUser():", {
-        message: errorMessage,
-        stack: errorStack,
-        hasRequest: !!request,
-        url: request?.url,
+      console.error("Deep Research API: auth() failed", {
+        error: authError instanceof Error ? authError.message : String(authError),
+        url: request.url,
       })
-      
-      return NextResponse.json(
-        { 
-          error: "Authenticatie fout",
-          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-        },
-        { status: 401 }
-      )
     }
     
-    if (!user || !user.id) {
-      // Log meer details voor troubleshooting
+    // Als auth() geen userId geeft, probeer getClerkUser
+    if (!authResult?.userId) {
       const cookieHeader = request.headers.get('cookie')
-      console.error("Deep Research API: Geen gebruiker gevonden", {
-        hasUser: !!user,
-        userId: user?.id,
+      console.error("Deep Research API: Geen userId van auth()", {
+        hasAuthResult: !!authResult,
+        userId: authResult?.userId,
+        sessionId: authResult?.sessionId,
         hasCookies: !!cookieHeader,
         hasClerkCookie: cookieHeader?.includes('__clerk') || false,
         url: request.url,
@@ -361,9 +349,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: "Niet geautoriseerd. Log in om een Deep Research rapport te genereren.",
-          details: process.env.NODE_ENV === 'development' ? "Geen gebruiker gevonden na authenticatie" : undefined
         },
         { status: 401 }
+      )
+    }
+    
+    // Nu gebruiken we getClerkUser voor database sync
+    let user = null
+    try {
+      user = await getClerkUser(request)
+    } catch (authError) {
+      const errorMessage = authError instanceof Error ? authError.message : "Authenticatie fout"
+      console.error("Error in getClerkUser():", {
+        message: errorMessage,
+        userId: authResult.userId,
+        url: request?.url,
+      })
+      
+      return NextResponse.json(
+        { 
+          error: "Fout bij ophalen gebruikersgegevens",
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        },
+        { status: 500 }
+      )
+    }
+    
+    if (!user || !user.id) {
+      // Log meer details voor troubleshooting
+      const cookieHeader = request.headers.get('cookie')
+      console.error("Deep Research API: Geen gebruiker gevonden in database", {
+        hasUser: !!user,
+        userId: user?.id,
+        clerkUserId: authResult.userId,
+        hasCookies: !!cookieHeader,
+        url: request.url,
+      })
+      
+      return NextResponse.json(
+        { 
+          error: "Gebruiker niet gevonden in database",
+        },
+        { status: 500 }
       )
     }
     
