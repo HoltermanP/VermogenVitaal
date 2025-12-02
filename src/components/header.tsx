@@ -136,16 +136,35 @@ export function Header() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/stocks"
-                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      isActive("/stocks") ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    Beurskoersen
-                  </Link>
-                </NavigationMenuLink>
+                <NavigationMenuTrigger>Beurskoersen</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-3 p-4 w-[400px]">
+                    <NavigationMenuLink asChild>
+                      <Link href="/stocks" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div className="text-sm font-medium leading-none">Beurskoersen</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
+                          Realtime koersen en koersontwikkeling
+                        </p>
+                      </Link>
+                    </NavigationMenuLink>
+                    <NavigationMenuLink asChild>
+                      <Link href="/stocks/pelosi-trades" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div className="text-sm font-medium leading-none">Congressional Trades</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
+                          Track invloedrijke politici hun stock trades (House Stock Watcher)
+                        </p>
+                      </Link>
+                    </NavigationMenuLink>
+                    <NavigationMenuLink asChild>
+                      <Link href="/stocks/deep-research" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div className="text-sm font-medium leading-none">Deep Research</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
+                          Uitgebreide analyses van aandelen
+                        </p>
+                      </Link>
+                    </NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
@@ -233,14 +252,32 @@ export function Header() {
                 >
                   Community
                 </Link>
-                <Link
-                  href="/stocks"
-                  className={`text-lg font-medium ${
-                    isActive("/stocks") ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  Beurskoersen
-                </Link>
+                <div className="space-y-2">
+                  <Link
+                    href="/stocks"
+                    className={`text-lg font-medium block ${
+                      isActive("/stocks") ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    Beurskoersen
+                  </Link>
+                  <Link
+                    href="/stocks/pelosi-trades"
+                    className={`text-sm font-medium block ml-4 ${
+                      isActive("/stocks/pelosi-trades") ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    Congressional Trades
+                  </Link>
+                  <Link
+                    href="/stocks/deep-research"
+                    className={`text-sm font-medium block ml-4 ${
+                      isActive("/stocks/deep-research") ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    Deep Research
+                  </Link>
+                </div>
                 <Link
                   href="/portfolio"
                   className={`text-lg font-medium ${

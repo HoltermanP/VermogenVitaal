@@ -51,12 +51,19 @@ export function NewsTicker({ pagePath, className }: NewsTickerProps) {
           
           setArticles(articles)
         } else {
-          console.error(`[NewsTicker] API response not OK: ${response.status} ${response.statusText}`)
-          const errorData = await response.json().catch(() => ({}))
-          console.error(`[NewsTicker] Error data:`, errorData)
+          // Bij 404 of andere errors, gebruik fallback of lege array
+          if (response.status === 404) {
+            console.warn(`[NewsTicker] ⚠️ News API route niet gevonden (404). Dit kan gebeuren tijdens development.`)
+          } else {
+            console.warn(`[NewsTicker] ⚠️ API response not OK: ${response.status} ${response.statusText}`)
+          }
+          // Stel lege array in zodat component niet crasht
+          setArticles([])
         }
       } catch (error) {
-        console.error("[NewsTicker] Error loading news:", error)
+        // Bij network errors of andere fouten, gebruik lege array
+        console.warn("[NewsTicker] ⚠️ Error loading news:", error instanceof Error ? error.message : "Unknown error")
+        setArticles([])
       } finally {
         setIsLoading(false)
       }

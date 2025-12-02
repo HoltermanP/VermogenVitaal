@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Download, 
   ArrowLeft,
@@ -89,6 +90,14 @@ const getScoreLabel = (score: number) => {
   return "Risicovol"
 }
 
+const PERIODS = [
+  { value: "1M", label: "1 Maand" },
+  { value: "3M", label: "3 Maanden" },
+  { value: "6M", label: "6 Maanden" },
+  { value: "1Y", label: "1 Jaar" },
+  { value: "ALL", label: "Alles" },
+]
+
 export default function DeepResearchDetailPage() {
   const { user, isLoaded } = useUser()
   const params = useParams()
@@ -97,6 +106,7 @@ export default function DeepResearchDetailPage() {
   const [report, setReport] = useState<DeepResearchReport | null>(null)
   const [loading, setLoading] = useState(true)
   const [polling, setPolling] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState("1Y")
 
   useEffect(() => {
     if (isLoaded && user && reportId) {
@@ -201,21 +211,80 @@ export default function DeepResearchDetailPage() {
     generatedAt?: string
   }
 
+  // Functie om history te filteren op basis van periode
+  const filterHistoryByPeriod = (history: Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }>, period: string) => {
+    if (period === "ALL" || history.length === 0) return history
+    
+    const now = new Date()
+    const cutoffDate = new Date()
+    
+    switch (period) {
+      case "1M":
+        cutoffDate.setMonth(now.getMonth() - 1)
+        break
+      case "3M":
+        cutoffDate.setMonth(now.getMonth() - 3)
+        break
+      case "6M":
+        cutoffDate.setMonth(now.getMonth() - 6)
+        break
+      case "1Y":
+        cutoffDate.setFullYear(now.getFullYear() - 1)
+        break
+      default:
+        return history
+    }
+    
+    return history.filter(h => new Date(h.date) >= cutoffDate)
+  }
+
   // Bereid data voor grafieken
   const historyData = reportData.history || []
-  const priceChartData = historyData.map((h, index) => {
-    // Bereken percentage verandering ten opzichte van vorige dag
-    let changePercent = 0
-    if (index > 0 && historyData[index - 1].close > 0) {
-      changePercent = ((h.close - historyData[index - 1].close) / historyData[index - 1].close) * 100
-    }
+  const filteredHistory = filterHistoryByPeriod(historyData, selectedPeriod)
+  
+  // Bereken Y-as domein met ±2% marge
+  const calculateYAxisDomain = (history: Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }>) => {
+    if (history.length === 0) return [0, 100]
+    
+    const allPrices = history.flatMap(h => [h.high, h.low, h.open, h.close])
+    const minPrice = Math.min(...allPrices)
+    const maxPrice = Math.max(...allPrices)
+    
+    // Bereken 2% marge
+    const priceRange = maxPrice - minPrice
+    const margin = priceRange * 0.02
+    
+    const yAxisMin = Math.max(0, minPrice - margin)
+    const yAxisMax = maxPrice + margin
+    
+    return [yAxisMin, yAxisMax]
+  }
+  
+  const [yAxisMin, yAxisMax] = calculateYAxisDomain(filteredHistory)
+  
+  const priceChartData = filteredHistory.map((h) => {
     return {
-      date: new Date(h.date).toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' }),
+      date: new Date(h.date).toISOString(),
+      dateLabel: new Date(h.date).toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' }),
       prijs: h.close,
-      changePercent: changePercent,
       volume: h.volume
     }
   }) || []
+  
+  // Format date functie voor X-as
+  const formatDate = (dateString: string, period: string) => {
+    const date = new Date(dateString)
+    if (period === "1M" || period === "3M") {
+      return date.toLocaleDateString("nl-NL", {
+        day: "2-digit",
+        month: "2-digit",
+      })
+    }
+    return date.toLocaleDateString("nl-NL", {
+      month: "short",
+      day: "numeric",
+    })
+  }
 
   // Bereid financiele data voor grafieken
   const incomeStatements = (reportData.fundamentals?.incomeStatement as Array<Record<string, unknown>>) || []
@@ -250,6 +319,111 @@ export default function DeepResearchDetailPage() {
       freeCashflow: operating - capex,
     }
   }).reverse()
+
+  // Bereken groei per kwartaal over het laatste jaar
+  const calculateQuarterlyGrowth = () => {
+    if (historyData.length === 0) return []
+    
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+    
+    // Filter data van laatste jaar
+    const lastYearData = historyData.filter(h => new Date(h.date) >= oneYearAgo)
+    
+    if (lastYearData.length === 0) return []
+    
+    // Groepeer per kwartaal
+    const quarters: Record<string, Array<{ date: string; close: number }>> = {}
+    
+    lastYearData.forEach(h => {
+      const date = new Date(h.date)
+      const year = date.getFullYear()
+      const quarter = Math.floor(date.getMonth() / 3) + 1
+      const key = `${year}-Q${quarter}`
+      
+      if (!quarters[key]) {
+        quarters[key] = []
+      }
+      quarters[key].push({ date: h.date, close: h.close })
+    })
+    
+    // Sorteer kwartalen en bereken gemiddelde prijs per kwartaal
+    const sortedQuarters = Object.keys(quarters).sort()
+    const quarterlyData = sortedQuarters.map((key, index) => {
+      const quarterData = quarters[key]
+      const avgPrice = quarterData.reduce((sum, d) => sum + d.close, 0) / quarterData.length
+      
+      // Bereken groei ten opzichte van vorig kwartaal
+      let growth = 0
+      if (index > 0) {
+        const prevKey = sortedQuarters[index - 1]
+        const prevQuarterData = quarters[prevKey]
+        const prevAvgPrice = prevQuarterData.reduce((sum, d) => sum + d.close, 0) / prevQuarterData.length
+        growth = ((avgPrice - prevAvgPrice) / prevAvgPrice) * 100
+      }
+      
+      return {
+        kwartaal: key,
+        gemiddeldePrijs: avgPrice,
+        groei: growth
+      }
+    })
+    
+    return quarterlyData
+  }
+
+  // Bereken groei per jaar over de laatste 10 jaar
+  const calculateYearlyGrowth = () => {
+    if (historyData.length === 0) return []
+    
+    const tenYearsAgo = new Date()
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10)
+    
+    // Filter data van laatste 10 jaar
+    const lastTenYearsData = historyData.filter(h => new Date(h.date) >= tenYearsAgo)
+    
+    if (lastTenYearsData.length === 0) return []
+    
+    // Groepeer per jaar
+    const years: Record<string, Array<{ date: string; close: number }>> = {}
+    
+    lastTenYearsData.forEach(h => {
+      const date = new Date(h.date)
+      const year = date.getFullYear().toString()
+      
+      if (!years[year]) {
+        years[year] = []
+      }
+      years[year].push({ date: h.date, close: h.close })
+    })
+    
+    // Sorteer jaren en bereken gemiddelde prijs per jaar
+    const sortedYears = Object.keys(years).sort((a, b) => parseInt(a) - parseInt(b))
+    const yearlyData = sortedYears.map((year, index) => {
+      const yearData = years[year]
+      const avgPrice = yearData.reduce((sum, d) => sum + d.close, 0) / yearData.length
+      
+      // Bereken groei ten opzichte van vorig jaar
+      let growth = 0
+      if (index > 0) {
+        const prevYear = sortedYears[index - 1]
+        const prevYearData = years[prevYear]
+        const prevAvgPrice = prevYearData.reduce((sum, d) => sum + d.close, 0) / prevYearData.length
+        growth = ((avgPrice - prevAvgPrice) / prevAvgPrice) * 100
+      }
+      
+      return {
+        jaar: year,
+        gemiddeldePrijs: avgPrice,
+        groei: growth
+      }
+    })
+    
+    return yearlyData
+  }
+
+  const quarterlyGrowthData = calculateQuarterlyGrowth()
+  const yearlyGrowthData = calculateYearlyGrowth()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
@@ -289,9 +463,16 @@ export default function DeepResearchDetailPage() {
                     try {
                       const response = await fetch(`/api/stocks/deep-research/${reportId}/download`)
                       if (!response.ok) {
-                        throw new Error("Download mislukt")
+                        const errorData = await response.json().catch(() => ({ error: "Onbekende fout" }))
+                        throw new Error(errorData.error || `HTTP ${response.status}: Download mislukt`)
                       }
                       const blob = await response.blob()
+                      
+                      // Controleer of het blob daadwerkelijk een PDF is
+                      if (blob.type !== "application/pdf" && blob.size === 0) {
+                        throw new Error("Geen geldige PDF ontvangen")
+                      }
+                      
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement("a")
                       a.href = url
@@ -303,7 +484,8 @@ export default function DeepResearchDetailPage() {
                       toast.success("PDF wordt gedownload")
                     } catch (error) {
                       console.error("Download error:", error)
-                      toast.error("Fout bij downloaden PDF")
+                      const errorMessage = error instanceof Error ? error.message : "Fout bij downloaden PDF"
+                      toast.error(errorMessage)
                     }
                   }}
                 >
@@ -955,11 +1137,25 @@ export default function DeepResearchDetailPage() {
 
               {/* Grafieken */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Prijs Trend */}
+                {/* Koersgrafiek */}
                 {priceChartData.length > 0 && (
                   <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
                     <CardHeader>
-                      <CardTitle>Prijs Trend (Laatste Jaar)</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Koersgrafiek</CardTitle>
+                        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PERIODS.map((period) => (
+                              <SelectItem key={period.value} value={period.value}>
+                                {period.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
@@ -971,20 +1167,32 @@ export default function DeepResearchDetailPage() {
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                          <YAxis 
-                            domain={[-5, 5]}
+                          <XAxis 
+                            dataKey="date" 
                             tick={{ fontSize: 12 }} 
-                            tickFormatter={(value) => `${value.toFixed(1)}%`} 
+                            tickFormatter={(value) => formatDate(value, selectedPeriod)}
+                          />
+                          <YAxis 
+                            domain={[yAxisMin, yAxisMax]}
+                            tick={{ fontSize: 12 }} 
+                            tickFormatter={(value) => `$${value.toFixed(2)}`} 
                           />
                           <Tooltip 
-                            formatter={(value: number) => [`${value >= 0 ? '+' : ''}${value.toFixed(2)}%`, "Verandering"]}
+                            formatter={(value: number) => [`$${value.toFixed(2)}`, "Koers"]}
+                            labelFormatter={(value) => {
+                              const date = new Date(value)
+                              return date.toLocaleDateString('nl-NL', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })
+                            }}
                             labelStyle={{ color: 'hsl(var(--foreground))' }}
                             contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                           />
                           <Area 
                             type="monotone" 
-                            dataKey="changePercent" 
+                            dataKey="prijs" 
                             stroke="#3b82f6" 
                             fillOpacity={1} 
                             fill="url(#colorPrice)" 
@@ -1069,6 +1277,109 @@ export default function DeepResearchDetailPage() {
                           <Line type="monotone" dataKey="operating" stroke="#3b82f6" strokeWidth={2} name="Operating Cashflow (M)" />
                           <Line type="monotone" dataKey="freeCashflow" stroke="#10b981" strokeWidth={2} name="Free Cashflow (M)" />
                         </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Groei Grafieken */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Groei per Kwartaal - Laatste Jaar */}
+                {quarterlyGrowthData.length > 0 && (
+                  <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+                    <CardHeader>
+                      <CardTitle>Groei per Kwartaal (Laatste Jaar)</CardTitle>
+                      <CardDescription>
+                        Percentage groei van de gemiddelde koers per kwartaal
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={quarterlyGrowthData}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis 
+                            dataKey="kwartaal" 
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }} 
+                            tickFormatter={(value) => `${value.toFixed(1)}%`} 
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => [`${value.toFixed(2)}%`, "Groei"]}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--background))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="groei" 
+                            radius={[8, 8, 0, 0]}
+                          >
+                            {quarterlyGrowthData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.groei >= 0 ? "#10b981" : "#ef4444"} 
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Groei per Jaar - Laatste 10 Jaar */}
+                {yearlyGrowthData.length > 0 && (
+                  <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+                    <CardHeader>
+                      <CardTitle>Groei per Jaar (Laatste 10 Jaar)</CardTitle>
+                      <CardDescription>
+                        Percentage groei van de gemiddelde koers per jaar
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={yearlyGrowthData}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                          <XAxis 
+                            dataKey="jaar" 
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }} 
+                            tickFormatter={(value) => `${value.toFixed(1)}%`} 
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => [`${value.toFixed(2)}%`, "Groei"]}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--background))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="groei" 
+                            radius={[8, 8, 0, 0]}
+                          >
+                            {yearlyGrowthData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.groei >= 0 ? "#10b981" : "#ef4444"} 
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>

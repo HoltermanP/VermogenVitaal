@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Plus, 
   Edit, 
@@ -24,6 +25,16 @@ import {
   Wallet
 } from "lucide-react"
 import { toast } from "sonner"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from "recharts"
 
 type PortfolioItem = {
   id: string
@@ -48,6 +59,17 @@ type StockQuote = {
   changePercent: number
 }
 
+type PortfolioHistoryData = {
+  date: string
+  value: number
+}
+
+type PortfolioReturnData = {
+  date: string
+  return: number
+  returnPercent: number
+}
+
 export default function PortfolioPage() {
   const { user, isLoaded } = useUser()
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
@@ -60,6 +82,10 @@ export default function PortfolioPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<Array<{ symbol: string; name: string; exchange: string; type: string }>>([])
   const [searching, setSearching] = useState(false)
+  const [historyData, setHistoryData] = useState<PortfolioHistoryData[]>([])
+  const [returnData, setReturnData] = useState<PortfolioReturnData[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyPeriod, setHistoryPeriod] = useState("1Y")
 
   // Form state
   const [formSymbol, setFormSymbol] = useState("")
@@ -81,6 +107,10 @@ export default function PortfolioPage() {
         // Haal quotes op voor alle items
         if (data.portfolio && data.portfolio.length > 0) {
           loadQuotes(data.portfolio)
+          loadPortfolioHistory()
+        } else {
+          setHistoryData([])
+          setReturnData([])
         }
       }
     } catch (error) {
@@ -88,6 +118,30 @@ export default function PortfolioPage() {
       toast.error("Fout bij laden portefeuille")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Laad historische portfolio data
+  const loadPortfolioHistory = async () => {
+    const currentPortfolio = portfolio.length > 0 ? portfolio : []
+    if (currentPortfolio.length === 0) {
+      setHistoryData([])
+      setReturnData([])
+      return
+    }
+
+    setHistoryLoading(true)
+    try {
+      const response = await fetch(`/api/portfolio/history?period=${historyPeriod}`)
+      if (response.ok) {
+        const data = await response.json()
+        setHistoryData(data.totalValue || [])
+        setReturnData(data.totalReturn || [])
+      }
+    } catch (error) {
+      console.error("Error loading portfolio history:", error)
+    } finally {
+      setHistoryLoading(false)
     }
   }
 
@@ -346,6 +400,16 @@ export default function PortfolioPage() {
   }, [isLoaded, user])
 
   useEffect(() => {
+    if (portfolio.length > 0) {
+      loadPortfolioHistory()
+    } else {
+      setHistoryData([])
+      setReturnData([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyPeriod, portfolio.length])
+
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery) {
         searchStocks(searchQuery)
@@ -584,6 +648,152 @@ export default function PortfolioPage() {
               <div className="text-2xl font-bold">{portfolio.length}</div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Grafieken */}
+      {portfolio.length > 0 && (
+        <div className="mb-6">
+          <div className="flex justify-end mb-4">
+            <Tabs value={historyPeriod} onValueChange={setHistoryPeriod}>
+              <TabsList>
+                <TabsTrigger value="1M">1M</TabsTrigger>
+                <TabsTrigger value="3M">3M</TabsTrigger>
+                <TabsTrigger value="6M">6M</TabsTrigger>
+                <TabsTrigger value="1Y">1Y</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Totale Waarde Grafiek */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Totale Waarde Over Tijd</CardTitle>
+                <CardDescription>Ontwikkeling van je totale portefeuille waarde</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : historyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={historyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' })
+                        }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [`€${value.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Waarde']}
+                        labelFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('nl-NL', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#2563eb" 
+                        strokeWidth={2}
+                        dot={false}
+                        name="Totale Waarde"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    Geen historische data beschikbaar
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Rendement Grafiek */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Rendement Over Tijd</CardTitle>
+                <CardDescription>Ontwikkeling van je totale rendement</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : returnData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={returnData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('nl-NL', { month: 'short', day: 'numeric' })
+                        }}
+                      />
+                      <YAxis 
+                        yAxisId="left"
+                        tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+                      />
+                      <YAxis 
+                        yAxisId="right" 
+                        orientation="right"
+                        tickFormatter={(value) => `${value.toFixed(1)}%`}
+                      />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          if (name === 'return') {
+                            return [`€${value.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Rendement']
+                          }
+                          return [`${value.toFixed(2)}%`, 'Rendement %']
+                        }}
+                        labelFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('nl-NL', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="return" 
+                        stroke={totalReturn >= 0 ? "#16a34a" : "#dc2626"} 
+                        strokeWidth={2}
+                        dot={false}
+                        name="Rendement (€)"
+                      />
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="returnPercent" 
+                        stroke={totalReturn >= 0 ? "#22c55e" : "#ef4444"} 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        name="Rendement (%)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    {portfolio.some(item => item.averagePrice) 
+                      ? "Geen historische data beschikbaar"
+                      : "Voeg gemiddelde aankoopprijzen toe om rendement te zien"}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 

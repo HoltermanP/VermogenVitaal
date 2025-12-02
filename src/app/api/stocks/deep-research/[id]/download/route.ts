@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@clerk/nextjs/server"
-import { renderToStream } from "@react-pdf/renderer"
+import { getClerkUser } from "@/lib/clerk-auth"
+import { renderToBuffer } from "@react-pdf/renderer"
 import { DeepResearchPDF } from "@/lib/pdf-generator"
 
 export async function GET(
@@ -9,9 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    // Haal gebruiker op via getClerkUser (sync met database)
+    const user = await getClerkUser(request)
     
-    if (!userId) {
+    if (!user || !user.id) {
       return NextResponse.json(
         { error: "Niet geautoriseerd" },
         { status: 401 }
@@ -19,14 +20,23 @@ export async function GET(
     }
 
     const { id } = await params
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: "Rapport ID ontbreekt" },
+        { status: 400 }
+      )
+    }
+
     const report = await prisma.deepResearchReport.findFirst({
       where: {
         id: id,
-        userId,
+        userId: user.id,
       },
     })
 
     if (!report) {
+      console.error(`PDF download: Rapport niet gevonden - reportId: ${id}, userId: ${user.id}`)
       return NextResponse.json(
         { error: "Rapport niet gevonden" },
         { status: 404 }
@@ -51,19 +61,14 @@ export async function GET(
       quote: reportData.quote || null,
       fundamentals: reportData.fundamentals || null,
       scores: reportData.scores || null,
+      history: reportData.history || [],
       generatedAt: new Date(report.createdAt),
     })
 
-    const pdfStream = await renderToStream(pdfDoc)
-    
-    // Converteer stream naar buffer
-    const chunks: Buffer[] = []
-    for await (const chunk of pdfStream) {
-      chunks.push(Buffer.from(chunk))
-    }
-    const pdfBuffer = Buffer.concat(chunks)
+    // Gebruik renderToBuffer in plaats van renderToStream voor betere compatibiliteit
+    const pdfBuffer = await renderToBuffer(pdfDoc)
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -74,7 +79,7 @@ export async function GET(
   } catch (error) {
     console.error("PDF download error:", error)
     return NextResponse.json(
-      { error: "Interne server fout" },
+      { error: "Interne server fout", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

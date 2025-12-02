@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useUser } from "@clerk/nextjs"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -2020,6 +2021,11 @@ function StocksPageContent() {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/stocks/pelosi-trades">
+                  Congressional Trades
+                </Link>
+              </Button>
               <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
