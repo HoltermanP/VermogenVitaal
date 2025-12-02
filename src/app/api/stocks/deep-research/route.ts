@@ -436,6 +436,21 @@ export async function POST(request: NextRequest) {
     }
     
     const userId = user.id
+    
+    // Valideer dat userId bestaat en een geldige string is
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.error("Deep Research API: Invalid userId", {
+        userId,
+        user,
+        clerkUserId: authResult.userId,
+      })
+      return NextResponse.json(
+        { 
+          error: "Ongeldige gebruikers-ID",
+        },
+        { status: 500 }
+      )
+    }
 
     // JSON parsing met error handling
     let body: { symbol?: string; name?: string; exchange?: string; type?: string }
@@ -531,6 +546,14 @@ export async function POST(request: NextRequest) {
     // Geen recent rapport gevonden, maak een nieuw rapport aan
     let report
     try {
+      console.log("Deep Research API: Creating new report", {
+        userId,
+        symbol,
+        name: name || symbol,
+        exchange: exchange || null,
+        type: type || null,
+      })
+      
       report = await prisma.deepResearchReport.create({
         data: {
           userId,
@@ -542,10 +565,24 @@ export async function POST(request: NextRequest) {
           report: {},
         },
       })
+      
+      console.log("Deep Research API: Report created successfully", {
+        reportId: report.id,
+        userId: report.userId,
+        symbol: report.symbol,
+      })
     } catch (dbError) {
-      console.error("Database error:", dbError)
       const errorMessage = dbError instanceof Error ? dbError.message : "Onbekende database fout"
       const errorCode = dbError && typeof dbError === 'object' && 'code' in dbError ? String(dbError.code) : undefined
+      const errorStack = dbError instanceof Error ? dbError.stack : undefined
+      
+      console.error("Deep Research API: Database error creating report:", {
+        error: errorMessage,
+        code: errorCode,
+        stack: errorStack,
+        userId,
+        symbol,
+      })
       
       return NextResponse.json(
         { 
@@ -578,26 +615,28 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     // Catch-all voor onverwachte errors - zorg altijd voor JSON response
-    console.error("Unexpected error in deep research API:", error)
-    
     const errorMessage = error instanceof Error ? error.message : "Interne server fout"
     const errorStack = error instanceof Error ? error.stack : undefined
     const errorName = error instanceof Error ? error.name : error?.constructor?.name || "Unknown"
     
-    console.error("Error details:", {
+    // Log uitgebreide error informatie voor debugging
+    console.error("Unexpected error in deep research API:", {
       name: errorName,
       message: errorMessage,
       stack: errorStack,
+      // Log ook de error zelf voor meer context
+      error: error,
     })
     
     // Zorg altijd voor een geldige JSON response
     try {
       return NextResponse.json(
         { 
-          error: errorMessage,
-          ...(process.env.NODE_ENV === 'development' && { 
-            details: errorStack,
-            errorName: errorName
+          error: "Interne server fout bij genereren rapport",
+          ...((process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'production') && { 
+            details: errorMessage,
+            errorName: errorName,
+            ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
           })
         },
         { status: 500 }
