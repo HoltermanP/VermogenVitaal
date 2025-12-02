@@ -138,6 +138,24 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
   
   console.log(`[Congressional Trades] ⚠️ Alle GitHub repositories gefaald, probeer andere bronnen...`)
 
+  // Probeer scraping van CapitolTrades (voor individuele trades) - VOOR RapidAPI
+  try {
+    const capitolTrades = await scrapeCapitolTrades(politician)
+    if (capitolTrades.length > 0) {
+      console.log(`[Congressional Trades] ✅ Scraped ${capitolTrades.length} trades from CapitolTrades`)
+      cachedData = capitolTrades
+      cachedDataSource = "CapitolTrades (Scraping)"
+      cacheTimestamp = now
+      return {
+        trades: capitolTrades,
+        dataSource: "CapitolTrades (Scraping)",
+        dataTimestamp: now,
+      }
+    }
+  } catch (error) {
+    console.warn(`[Congressional Trades] ⚠️ CapitolTrades scraping failed:`, error)
+  }
+
   // Probeer RapidAPI endpoints voor individuele trades
   if (rapidApiKey) {
     // Probeer eerst /get_profile voor specifieke politicus (geeft individuele trades)
@@ -692,6 +710,267 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
     : "Geen API key geconfigureerd. Voeg POLIAPI_API_KEY toe aan je .env bestand. Zie CONGRESSIONAL_TRADES_API.md voor instructies."
   
   throw new Error(errorMessage)
+}
+
+// Scrape CapitolTrades website
+async function scrapeCapitolTrades(politician: string): Promise<CongressionalTrade[]> {
+  try {
+    // Eerst proberen we de BFF API te gebruiken
+    // CapitolTrades heeft een BFF API op bff.capitoltrades.com
+    const politicianSlug = politician.toLowerCase().replace(/\s+/g, "-")
+    
+    // Probeer verschillende API endpoints
+    const apiEndpoints = [
+      `https://bff.capitoltrades.com/trades?politician=${encodeURIComponent(politician)}`,
+      `https://bff.capitoltrades.com/politicians/${encodeURIComponent(politicianSlug)}/trades`,
+      `https://bff.capitoltrades.com/politicians?search=${encodeURIComponent(politician)}`,
+    ]
+
+    for (const apiUrl of apiEndpoints) {
+      try {
+        console.log(`[Congressional Trades] 🔄 Trying CapitolTrades API: ${apiUrl}`)
+        
+        const response = await fetch(apiUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Referer": "https://www.capitoltrades.com/",
+          },
+          cache: "no-store",
+        })
+
+        if (response.ok) {
+          const contentType = response.headers.get("content-type")
+          if (contentType && contentType.includes("application/json")) {
+            const data = await response.json()
+            
+            // Probeer verschillende data structuren
+            let trades: any[] = []
+            
+            if (Array.isArray(data)) {
+              trades = data
+            } else if (data.trades && Array.isArray(data.trades)) {
+              trades = data.trades
+            } else if (data.data && Array.isArray(data.data)) {
+              trades = data.data
+            } else if (data.results && Array.isArray(data.results)) {
+              trades = data.results
+            } else if (data.transactions && Array.isArray(data.transactions)) {
+              trades = data.transactions
+            }
+            
+            if (trades.length > 0) {
+              const transformedTrades = trades
+                .filter((trade: any) => {
+                  // Filter op politicus naam
+                  const repName = (
+                    trade.politician || 
+                    trade.politician_name || 
+                    trade.representative || 
+                    trade.name ||
+                    trade.politicianName ||
+                    ""
+                  ).toLowerCase()
+                  const searchName = politician.toLowerCase()
+                  return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
+                })
+                .map((trade: any) => ({
+                  representative: trade.politician || trade.politician_name || trade.representative || trade.name || trade.politicianName || politician,
+                  party: trade.party || trade.partyName || "D",
+                  state: trade.state || trade.stateName || "CA",
+                  district: trade.district,
+                  ticker: trade.ticker || trade.symbol || trade.stock_symbol || trade.issuer_ticker || "",
+                  company: trade.company || trade.stock_name || trade.issuer_name || trade.companyName || "",
+                  transactionType: trade.transaction_type || trade.transactionType || trade.type || trade.action || "Unknown",
+                  amount: trade.amount || trade.value || trade.amount_range || trade.transaction_amount || "Unknown",
+                  transactionDate: trade.transaction_date || trade.transactionDate || trade.date || trade.traded_date || "",
+                  disclosureDate: trade.disclosure_date || trade.disclosureDate || trade.filed_date || trade.publication_date || "",
+                  owner: trade.owner || trade.owner_type,
+                  assetDescription: trade.description || trade.asset_description || trade.assetDescription,
+                }))
+                .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+              if (transformedTrades.length > 0) {
+                console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from CapitolTrades API`)
+                return transformedTrades
+              }
+            }
+          }
+        } else {
+          console.warn(`[Congressional Trades] ⚠️ CapitolTrades API returned ${response.status} for ${apiUrl}`)
+        }
+      } catch (error) {
+        console.warn(`[Congressional Trades] ⚠️ CapitolTrades API error for ${apiUrl}:`, error)
+        continue
+      }
+    }
+
+    // Als API niet werkt, probeer HTML scraping
+    console.log(`[Congressional Trades] 🔄 Trying CapitolTrades HTML scraping...`)
+    
+    const politicianSlugForUrl = politician.toLowerCase().replace(/\s+/g, "-")
+    const urls = [
+      `https://www.capitoltrades.com/politicians/${politicianSlugForUrl}`,
+      `https://www.capitoltrades.com/trades?politician=${encodeURIComponent(politician)}`,
+    ]
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://www.capitoltrades.com/",
+          },
+          cache: "no-store",
+        })
+
+        if (!response.ok) continue
+
+        const html = await response.text()
+        
+        // Probeer JSON data uit HTML te extraheren (Next.js apps hebben vaak JSON in script tags)
+        const jsonMatches = [
+          html.match(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/),
+          html.match(/<script[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/),
+          html.match(/window\.__NEXT_DATA__\s*=\s*({[\s\S]*?});/),
+        ]
+
+        for (const jsonMatch of jsonMatches) {
+          if (jsonMatch) {
+            try {
+              const jsonData = JSON.parse(jsonMatch[1] || jsonMatch[0])
+              
+              // Navigeer door Next.js data structuur
+              let trades: any[] = []
+              
+              if (jsonData.props?.pageProps?.trades) {
+                trades = jsonData.props.pageProps.trades
+              } else if (jsonData.props?.pageProps?.data?.trades) {
+                trades = jsonData.props.pageProps.data.trades
+              } else if (jsonData.props?.pageProps?.initialData?.trades) {
+                trades = jsonData.props.pageProps.initialData.trades
+              } else if (jsonData.trades) {
+                trades = jsonData.trades
+              } else if (Array.isArray(jsonData)) {
+                trades = jsonData
+              }
+              
+              if (trades.length > 0) {
+                const transformedTrades = trades
+                  .filter((trade: any) => {
+                    const repName = (
+                      trade.politician || 
+                      trade.politician_name || 
+                      trade.representative || 
+                      trade.name ||
+                      ""
+                    ).toLowerCase()
+                    const searchName = politician.toLowerCase()
+                    return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
+                  })
+                  .map((trade: any) => ({
+                    representative: trade.politician || trade.politician_name || trade.representative || trade.name || politician,
+                    party: trade.party || trade.partyName || "D",
+                    state: trade.state || trade.stateName || "CA",
+                    district: trade.district,
+                    ticker: trade.ticker || trade.symbol || trade.stock_symbol || trade.issuer_ticker || "",
+                    company: trade.company || trade.stock_name || trade.issuer_name || trade.companyName || "",
+                    transactionType: trade.transaction_type || trade.transactionType || trade.type || trade.action || "Unknown",
+                    amount: trade.amount || trade.value || trade.amount_range || trade.transaction_amount || "Unknown",
+                    transactionDate: trade.transaction_date || trade.transactionDate || trade.date || trade.traded_date || "",
+                    disclosureDate: trade.disclosure_date || trade.disclosureDate || trade.filed_date || trade.publication_date || "",
+                    owner: trade.owner || trade.owner_type,
+                    assetDescription: trade.description || trade.asset_description || trade.assetDescription,
+                  }))
+                  .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+                if (transformedTrades.length > 0) {
+                  console.log(`[Congressional Trades] ✅ Successfully scraped ${transformedTrades.length} trades from CapitolTrades HTML`)
+                  return transformedTrades
+                }
+              }
+            } catch (parseError) {
+              console.warn(`[Congressional Trades] Failed to parse JSON from ${url}`)
+            }
+          }
+        }
+
+        // Alternatief: Parse HTML direct voor trade informatie
+        // Zoek naar trade patterns in de HTML
+        const tradePatterns = [
+          /<div[^>]*class[^>]*trade[^>]*>([\s\S]*?)<\/div>/gi,
+          /<div[^>]*data-trade[^>]*>([\s\S]*?)<\/div>/gi,
+          /<tr[^>]*class[^>]*trade[^>]*>([\s\S]*?)<\/tr>/gi,
+        ]
+
+        for (const pattern of tradePatterns) {
+          const matches = Array.from(html.matchAll(pattern))
+          if (matches.length > 0) {
+            const trades: CongressionalTrade[] = []
+            for (const match of matches.slice(0, 100)) { // Limiteer tot 100 trades
+              const tradeHtml = match[1]
+              
+              // Extract ticker - alleen valide tickers (1-5 uppercase letters)
+              const tickerMatch = tradeHtml.match(/\b([A-Z]{1,5})\b|Ticker[:\s]+([A-Z]{1,5})|symbol[:\s]+([A-Z]{1,5})/i)
+              let ticker = tickerMatch ? (tickerMatch[1] || tickerMatch[2] || tickerMatch[3]) : ""
+              // Valideer ticker: alleen uppercase letters, 1-5 karakters, geen woorden zoals "pdown", "Unknown", etc.
+              if (ticker) {
+                ticker = ticker.toUpperCase().trim()
+                const invalidTickers = ["PDOWN", "UNKNOWN", "SUMMARY", "NONE", "NULL", "UNDEFINED"]
+                if (invalidTickers.includes(ticker) || ticker.length === 0 || ticker.length > 5) {
+                  ticker = ""
+                }
+              }
+              
+              // Extract company name
+              const companyMatch = tradeHtml.match(/(?:Company|Stock|Name|Issuer)[:\s]+([^<\n]+)/i)
+              const company = companyMatch ? companyMatch[1].trim() : ""
+              
+              // Extract transaction type
+              const typeMatch = tradeHtml.match(/(?:Type|Action|Transaction)[:\s]+(Purchase|Sale|Buy|Sell|Exchange)/i)
+              const transactionType = typeMatch ? typeMatch[1] : "Unknown"
+              
+              // Extract amount
+              const amountMatch = tradeHtml.match(/(?:Amount|Value)[:\s]+(\$[\d,]+(?:\s*-\s*\$[\d,]+)?)/i)
+              const amount = amountMatch ? amountMatch[1] : "Unknown"
+              
+              // Extract dates (YYYY-MM-DD format)
+              const dateMatch = tradeHtml.match(/(\d{4}-\d{2}-\d{2})/g) || tradeHtml.match(/(\d{1,2}\/\d{1,2}\/\d{4})/g)
+              const dates = dateMatch || []
+              
+              if (ticker) {
+                trades.push({
+                  representative: politician,
+                  party: "D",
+                  state: "CA",
+                  ticker,
+                  company: company || ticker,
+                  transactionType,
+                  amount,
+                  transactionDate: dates[0] || "",
+                  disclosureDate: dates[1] || dates[0] || "",
+                })
+              }
+            }
+            
+            if (trades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully scraped ${trades.length} trades from CapitolTrades HTML (pattern matching)`)
+              return trades
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[Congressional Trades] Failed to scrape ${url}:`, error)
+        continue
+      }
+    }
+    
+    return []
+  } catch (error) {
+    console.error(`[Congressional Trades] CapitolTrades scraping error:`, error)
+    return []
+  }
 }
 
 // Scrape Pelosi Tracker website
