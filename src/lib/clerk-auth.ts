@@ -8,37 +8,61 @@ import type { NextRequest } from "next/server"
  */
 export async function getClerkUser(request?: NextRequest) {
   try {
-    // In Clerk v6 voor Next.js 15, auth() leest automatisch uit request context
-    // Maar we kunnen headers loggen voor debugging
-    if (request && process.env.NODE_ENV === 'development') {
+    // Check of Clerk is geconfigureerd
+    const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY
+    
+    if (!clerkPublishableKey || !clerkSecretKey) {
+      console.error("getClerkUser: Clerk environment variables niet geconfigureerd")
+      return null
+    }
+    
+    // Log voor debugging (zowel development als production voor troubleshooting)
+    if (request) {
       const cookieHeader = request.headers.get('cookie')
-      const authHeader = request.headers.get('authorization')
-      console.log("getClerkUser: Request cookies present:", !!cookieHeader)
-      console.log("getClerkUser: Request auth header present:", !!authHeader)
-      if (cookieHeader) {
-        // Log alleen of __clerk_db_jwt aanwezig is (niet de waarde)
-        console.log("getClerkUser: __clerk_db_jwt cookie present:", cookieHeader.includes('__clerk_db_jwt'))
+      const hasCookies = !!cookieHeader
+      const hasClerkCookie = cookieHeader ? cookieHeader.includes('__clerk') : false
+      
+      if (process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'production') {
+        console.log("getClerkUser: Request info", {
+          hasCookies,
+          hasClerkCookie,
+          url: request.url,
+          method: request.method,
+        })
       }
     }
     
-    // In Clerk v6, auth() werkt automatisch met de request context
-    // Als we een request hebben, kunnen we proberen de headers door te geven
+    // In Clerk v6 voor Next.js 15, auth() leest automatisch uit request context
+    // In API routes werkt dit automatisch via de middleware
     let authResult
     try {
       authResult = await auth()
     } catch (authError) {
-      console.error("getClerkUser: Error calling auth():", authError)
+      const errorMessage = authError instanceof Error ? authError.message : String(authError)
+      console.error("getClerkUser: Error calling auth():", errorMessage)
+      
+      // In productie, log meer details voor troubleshooting
+      if (process.env.VERCEL_ENV === 'production') {
+        console.error("getClerkUser: Auth error details", {
+          error: errorMessage,
+          hasRequest: !!request,
+          clerkConfigured: !!clerkPublishableKey && !!clerkSecretKey,
+        })
+      }
+      
       return null
     }
     
     const { userId, sessionId } = authResult
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log("getClerkUser: auth() result - userId:", userId, "sessionId:", sessionId)
-    }
-    
     if (!userId) {
-      console.log("getClerkUser: No userId from auth()")
+      if (process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'production') {
+        console.log("getClerkUser: No userId from auth()", {
+          sessionId: sessionId || 'none',
+          hasRequest: !!request,
+        })
+      }
       return null
     }
 

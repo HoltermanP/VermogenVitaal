@@ -1895,6 +1895,7 @@ function StocksPageContent() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Zorg dat cookies worden meegestuurd
         body: JSON.stringify({
           symbol: stockSymbol,
           name: stockName,

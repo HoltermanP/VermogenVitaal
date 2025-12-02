@@ -68,7 +68,9 @@ export default function DeepResearchPage() {
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/stocks/deep-research?reportId=${pollingReportId}`)
+        const response = await fetch(`/api/stocks/deep-research?reportId=${pollingReportId}`, {
+          credentials: "include", // Zorg dat cookies worden meegestuurd
+        })
         if (response.ok) {
           const report = await response.json()
           if (report.status === "COMPLETED" || report.status === "FAILED") {
@@ -92,7 +94,9 @@ export default function DeepResearchPage() {
   const fetchReports = async () => {
     try {
       setLoadingReports(true)
-      const response = await fetch("/api/stocks/deep-research")
+      const response = await fetch("/api/stocks/deep-research", {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
       if (response.ok) {
         const data = await response.json()
         setReports(data.reports || [])
@@ -135,6 +139,7 @@ export default function DeepResearchPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Zorg dat cookies worden meegestuurd
         body: JSON.stringify({
           symbol: selectedStock.symbol,
           name: selectedStock.name,

@@ -120,7 +120,9 @@ export default function DeepResearchDetailPage() {
     setPolling(true)
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`)
+        const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`, {
+          credentials: "include", // Zorg dat cookies worden meegestuurd
+        })
         if (response.ok) {
           const updatedReport = await response.json()
           setReport(updatedReport)
@@ -146,7 +148,9 @@ export default function DeepResearchDetailPage() {
   const fetchReport = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`)
+      const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`, {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
       if (response.ok) {
         const data = await response.json()
         setReport(data)
@@ -461,7 +465,9 @@ export default function DeepResearchDetailPage() {
                   className="gradient-financial text-white shadow-financial"
                   onClick={async () => {
                     try {
-                      const response = await fetch(`/api/stocks/deep-research/${reportId}/download`)
+                      const response = await fetch(`/api/stocks/deep-research/${reportId}/download`, {
+                        credentials: "include", // Zorg dat cookies worden meegestuurd
+                      })
                       if (!response.ok) {
                         const errorData = await response.json().catch(() => ({ error: "Onbekende fout" }))
                         throw new Error(errorData.error || `HTTP ${response.status}: Download mislukt`)

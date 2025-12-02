@@ -310,22 +310,58 @@ async function fetchHistory(symbol: string) {
 export async function POST(request: NextRequest) {
   // Wrapper om ervoor te zorgen dat we altijd JSON teruggeven
   try {
+    // Check Clerk configuratie eerst
+    const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY
+    
+    if (!clerkPublishableKey || !clerkSecretKey) {
+      console.error("Deep Research API: Clerk environment variables niet geconfigureerd")
+      return NextResponse.json(
+        { error: "Authenticatie niet geconfigureerd" },
+        { status: 500 }
+      )
+    }
+    
     // Haal gebruiker op via getClerkUser (sync met database)
     let user = null
     try {
       user = await getClerkUser(request)
     } catch (authError) {
-      console.error("Error in getClerkUser():", authError)
       const errorMessage = authError instanceof Error ? authError.message : "Authenticatie fout"
+      const errorStack = authError instanceof Error ? authError.stack : undefined
+      
+      console.error("Error in getClerkUser():", {
+        message: errorMessage,
+        stack: errorStack,
+        hasRequest: !!request,
+        url: request?.url,
+      })
+      
       return NextResponse.json(
-        { error: errorMessage },
+        { 
+          error: "Authenticatie fout",
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        },
         { status: 401 }
       )
     }
     
     if (!user || !user.id) {
+      // Log meer details voor troubleshooting
+      const cookieHeader = request.headers.get('cookie')
+      console.error("Deep Research API: Geen gebruiker gevonden", {
+        hasUser: !!user,
+        userId: user?.id,
+        hasCookies: !!cookieHeader,
+        hasClerkCookie: cookieHeader?.includes('__clerk') || false,
+        url: request.url,
+      })
+      
       return NextResponse.json(
-        { error: "Niet geautoriseerd. Log in om een Deep Research rapport te genereren." },
+        { 
+          error: "Niet geautoriseerd. Log in om een Deep Research rapport te genereren.",
+          details: process.env.NODE_ENV === 'development' ? "Geen gebruiker gevonden na authenticatie" : undefined
+        },
         { status: 401 }
       )
     }

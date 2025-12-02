@@ -32,9 +32,12 @@ export default isClerkConfigured
       const response = NextResponse.next()
       
       // Zorg dat cookies worden doorgegeven (voor CORS en cookie sharing)
-      if (request.headers.get('origin')) {
+      const origin = request.headers.get('origin')
+      if (origin) {
         response.headers.set('Access-Control-Allow-Credentials', 'true')
-        response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*')
+        response.headers.set('Access-Control-Allow-Origin', origin)
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       }
       
       return response
