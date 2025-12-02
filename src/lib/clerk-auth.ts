@@ -85,10 +85,32 @@ export async function getClerkUser(request?: NextRequest) {
     }
 
     // Sync gebruiker met database
-    const email = clerkUser.emailAddresses[0]?.emailAddress
+    // Voor OAuth providers (zoals Google), kan email op verschillende plaatsen zitten
+    let email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                clerkUser.primaryEmailAddress?.emailAddress ||
+                clerkUser.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+    
+    // Fallback: probeer email uit external accounts (voor OAuth providers)
+    if (!email && clerkUser.externalAccounts && clerkUser.externalAccounts.length > 0) {
+      const googleAccount = clerkUser.externalAccounts.find(ea => ea.provider === 'oauth_google')
+      if (googleAccount?.emailAddress) {
+        email = googleAccount.emailAddress
+      } else if (clerkUser.externalAccounts[0]?.emailAddress) {
+        email = clerkUser.externalAccounts[0].emailAddress
+      }
+    }
     
     if (!email) {
-      console.log("getClerkUser: No email in clerkUser")
+      console.log("getClerkUser: No email in clerkUser", {
+        hasEmailAddresses: !!clerkUser.emailAddresses,
+        emailAddressesCount: clerkUser.emailAddresses?.length || 0,
+        hasPrimaryEmailAddress: !!clerkUser.primaryEmailAddress,
+        primaryEmailAddressId: clerkUser.primaryEmailAddressId,
+        externalAccounts: clerkUser.externalAccounts?.map(ea => ({
+          provider: ea.provider,
+          emailAddress: ea.emailAddress,
+        })),
+      })
       return null
     }
 

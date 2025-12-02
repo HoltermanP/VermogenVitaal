@@ -6,8 +6,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/auth/signin(.*)",
   "/api/webhooks(.*)",
-  // Stock API routes - laat de route zelf authenticatie afhandelen
-  "/api/stocks(.*)",
+  // Stock API routes worden nu beschermd door middleware
+  // Authenticatie wordt afgehandeld door Clerk middleware
 ])
 
 // Check of Clerk is geconfigureerd
@@ -24,10 +24,33 @@ export default isClerkConfigured
       
       // Laat public routes door zonder protect
       if (!isPublicRoute(request)) {
-        await auth.protect()
+        // Voor API routes, gebruik protect met betere error handling
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+          try {
+            await auth.protect()
+          } catch (error) {
+            // Als protect faalt, return 401 met CORS headers
+            const origin = request.headers.get('origin')
+            const response = NextResponse.json(
+              { error: "Niet geautoriseerd" },
+              { status: 401 }
+            )
+            
+            if (origin) {
+              response.headers.set('Access-Control-Allow-Credentials', 'true')
+              response.headers.set('Access-Control-Allow-Origin', origin)
+              response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+              response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            }
+            
+            return response
+          }
+        } else {
+          // Voor non-API routes, gebruik normale protect
+          await auth.protect()
+        }
       }
       
-      // Voor public routes (zoals /api/stocks), laat de route zelf authenticatie afhandelen
       // Zorg dat cookies worden doorgegeven in de response
       const response = NextResponse.next()
       

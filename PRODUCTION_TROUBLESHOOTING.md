@@ -2,6 +2,33 @@
 
 ## 401 Unauthorized Errors in Productie
 
+### Google OAuth / OAuth Providers
+
+Als je via Google (of andere OAuth provider) bent ingelogd en je krijgt 401 errors:
+
+1. **Controleer Clerk Dashboard**:
+   - Ga naar je Clerk Dashboard > Users
+   - Zoek je gebruiker (via email)
+   - Controleer of de gebruiker een geldige sessie heeft
+   - Controleer of de email is geverifieerd
+
+2. **OAuth Provider Configuratie**:
+   - In Clerk Dashboard > User & Authentication > Social Connections
+   - Zorg dat Google OAuth is ingeschakeld
+   - Controleer of de OAuth credentials correct zijn ingesteld
+   - Voor productie: gebruik productie OAuth credentials (niet test credentials)
+
+3. **Email Verificatie**:
+   - Voor OAuth providers moet de email mogelijk worden geverifieerd
+   - Controleer in Clerk Dashboard of de email status "Verified" is
+
+4. **Sessie Problemen**:
+   - Probeer uit te loggen en opnieuw in te loggen
+   - Clear browser cookies en cache
+   - Test in een incognito venster
+
+## 401 Unauthorized Errors in Productie (Algemeen)
+
 Als je 401 errors krijgt in productie bij het gebruik van Deep Research of andere API routes, controleer het volgende:
 
 ### 1. Clerk Environment Variables

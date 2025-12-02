@@ -322,7 +322,8 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Haal gebruiker op via getClerkUser (sync met database)
+    // Middleware heeft al auth.protect() aangeroepen, dus auth() zou moeten werken
+    // Maar we gebruiken nog steeds getClerkUser voor database sync
     let user = null
     try {
       user = await getClerkUser(request)
