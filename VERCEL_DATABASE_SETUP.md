@@ -167,3 +167,4 @@ Voordat je deployt:
 - [ ] Geen spaties voor/na de URL
 - [ ] Applicatie is herdeployed na het instellen van `DATABASE_URL`
 
+

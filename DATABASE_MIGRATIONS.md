@@ -301,3 +301,4 @@ Als je problemen hebt met migraties:
 3. Controleer `PRODUCTION_TROUBLESHOOTING.md` voor database connectie problemen
 4. Gebruik `npx prisma migrate status` om migratie status te controleren
 
+

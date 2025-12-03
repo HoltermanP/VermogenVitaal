@@ -106,3 +106,4 @@ npx prisma studio
 - Dit is normaal als migraties al zijn uitgevoerd
 - Check met `npx prisma migrate status`
 
+

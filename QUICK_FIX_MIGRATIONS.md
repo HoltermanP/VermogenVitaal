@@ -86,3 +86,4 @@ Na het uitvoeren van migraties:
 - Dit is normaal als migraties al zijn uitgevoerd
 - Check met `npx prisma migrate status`
 
+
