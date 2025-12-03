@@ -48,7 +48,9 @@ type DeepResearchReport = {
   name: string
   exchange: string | null
   type: string | null
-  status: "GENERATING" | "COMPLETED" | "FAILED"
+  status: "GENERATING" | "COMPLETED" | "FAILED" | "CANCELLED"
+  progressPercentage: number | null
+  progressMessage: string | null
   pdfUrl: string | null
   error: string | null
   report: {
@@ -115,7 +117,7 @@ export default function DeepResearchDetailPage() {
   }, [isLoaded, user, reportId])
 
   useEffect(() => {
-    if (!report || report.status !== "GENERATING") return
+    if (!report || (report.status !== "GENERATING" && report.status !== "CANCELLED")) return
 
     setPolling(true)
     const interval = setInterval(async () => {
@@ -126,24 +128,51 @@ export default function DeepResearchDetailPage() {
         if (response.ok) {
           const updatedReport = await response.json()
           setReport(updatedReport)
-          if (updatedReport.status === "COMPLETED" || updatedReport.status === "FAILED") {
+          if (updatedReport.status === "COMPLETED" || updatedReport.status === "FAILED" || updatedReport.status === "CANCELLED") {
             setPolling(false)
             clearInterval(interval)
             if (updatedReport.status === "COMPLETED") {
               toast.success("Rapport is voltooid!")
+            } else if (updatedReport.status === "CANCELLED") {
+              toast.info("Rapport generatie geannuleerd")
             }
           }
         }
       } catch (error) {
         console.error("Error polling report:", error)
       }
-    }, 3000)
+    }, 2000) // Poll elke 2 seconden voor betere progress updates
 
     return () => {
       clearInterval(interval)
       setPolling(false)
     }
   }, [report, reportId])
+
+  const handleCancel = async () => {
+    if (!confirm("Weet je zeker dat je de generatie wilt annuleren?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/stocks/deep-research/${reportId}/cancel`, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        toast.success("Rapport generatie geannuleerd")
+        // Refresh report status
+        fetchReport()
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Fout bij annuleren")
+      }
+    } catch (error) {
+      console.error("Error cancelling report:", error)
+      toast.error("Fout bij annuleren rapport")
+    }
+  }
 
   const fetchReport = async () => {
     try {
@@ -506,14 +535,52 @@ export default function DeepResearchDetailPage() {
           {report.status === "GENERATING" && (
             <Card className="bg-blue-500/10 border-blue-500/20 mb-6">
               <CardContent className="py-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                      <div>
+                        <div className="font-semibold text-blue-600">
+                          Rapport wordt gegenereerd...
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {report.progressMessage || "Dit kan enkele minuten duren. De pagina wordt automatisch bijgewerkt."}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancel}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                    >
+                      Annuleren
+                    </Button>
+                  </div>
+                  {report.progressPercentage !== null && (
+                    <div className="space-y-2">
+                      <Progress value={report.progressPercentage} className="h-2" />
+                      <div className="text-xs text-muted-foreground text-right">
+                        {report.progressPercentage}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {report.status === "CANCELLED" && (
+            <Card className="bg-yellow-500/10 border-yellow-500/20 mb-6">
+              <CardContent className="py-6">
                 <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                  <AlertCircle className="h-5 w-5 text-yellow-600" />
                   <div>
-                    <div className="font-semibold text-blue-600">
-                      Rapport wordt gegenereerd...
+                    <div className="font-semibold text-yellow-600">
+                      Rapport generatie geannuleerd
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Dit kan enkele minuten duren. De pagina wordt automatisch bijgewerkt.
+                      De generatie is gestopt door de gebruiker.
                     </div>
                   </div>
                 </div>

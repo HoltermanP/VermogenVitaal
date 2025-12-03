@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { 
   Search, 
@@ -36,7 +37,9 @@ type DeepResearchReport = {
   name: string
   exchange: string | null
   type: string | null
-  status: "GENERATING" | "COMPLETED" | "FAILED"
+  status: "GENERATING" | "COMPLETED" | "FAILED" | "CANCELLED"
+  progressPercentage: number | null
+  progressMessage: string | null
   pdfUrl: string | null
   error: string | null
   createdAt: string
@@ -73,11 +76,17 @@ export default function DeepResearchPage() {
         })
         if (response.ok) {
           const report = await response.json()
-          if (report.status === "COMPLETED" || report.status === "FAILED") {
+          // Update het rapport in de lijst met nieuwe progress info
+          setReports(prevReports => 
+            prevReports.map(r => r.id === report.id ? report : r)
+          )
+          if (report.status === "COMPLETED" || report.status === "FAILED" || report.status === "CANCELLED") {
             setPollingReportId(null)
             fetchReports()
             if (report.status === "COMPLETED") {
               toast.success("Rapport succesvol gegenereerd!")
+            } else if (report.status === "CANCELLED") {
+              toast.info("Rapport generatie geannuleerd")
             } else {
               toast.error("Rapport generatie mislukt")
             }
@@ -86,7 +95,7 @@ export default function DeepResearchPage() {
       } catch (error) {
         console.error("Error polling report:", error)
       }
-    }, 3000) // Poll elke 3 seconden
+    }, 2000) // Poll elke 2 seconden voor betere progress updates
 
     return () => clearInterval(interval)
   }, [pollingReportId])
@@ -105,6 +114,30 @@ export default function DeepResearchPage() {
       console.error("Error fetching reports:", error)
     } finally {
       setLoadingReports(false)
+    }
+  }
+
+  const handleCancel = async (reportId: string) => {
+    if (!confirm("Weet je zeker dat je de generatie wilt annuleren?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/stocks/deep-research/${reportId}/cancel`, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        toast.success("Rapport generatie geannuleerd")
+        fetchReports()
+      } else {
+        const data = await response.json()
+        toast.error(data.error || "Fout bij annuleren")
+      }
+    } catch (error) {
+      console.error("Error cancelling report:", error)
+      toast.error("Fout bij annuleren rapport")
     }
   }
 
@@ -167,6 +200,24 @@ export default function DeepResearchPage() {
           fetchReports()
         } else {
           // Nieuw rapport wordt gegenereerd
+          // Voeg het nieuwe rapport direct toe aan de lijst
+          const newReport: DeepResearchReport = {
+            id: data.reportId,
+            symbol: selectedStock.symbol,
+            name: selectedStock.name,
+            exchange: selectedStock.exchange || null,
+            type: selectedStock.type || null,
+            status: "GENERATING",
+            progressPercentage: 0,
+            progressMessage: "Rapport generatie gestart...",
+            pdfUrl: null,
+            error: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+          
+          // Voeg toe aan het begin van de lijst
+          setReports(prevReports => [newReport, ...prevReports])
           setPollingReportId(data.reportId)
           toast.success("Rapport wordt gegenereerd... Dit kan enkele minuten duren.")
         }
@@ -202,11 +253,25 @@ export default function DeepResearchPage() {
             Wordt gegenereerd...
           </Badge>
         )
+      case "CANCELLED":
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+            <XCircle className="h-3 w-3 mr-1" />
+            Geannuleerd
+          </Badge>
+        )
       case "FAILED":
         return (
           <Badge className="bg-red-500/20 text-red-600 dark:text-red-400">
             <XCircle className="h-3 w-3 mr-1" />
             Mislukt
+          </Badge>
+        )
+      case "CANCELLED":
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+            <XCircle className="h-3 w-3 mr-1" />
+            Geannuleerd
           </Badge>
         )
       default:
@@ -427,9 +492,35 @@ export default function DeepResearchPage() {
                           </>
                         )}
                         {report.status === "GENERATING" && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Rapport wordt gegenereerd... Dit kan enkele minuten duren.
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {report.progressMessage || "Rapport wordt gegenereerd... Dit kan enkele minuten duren."}
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancel(report.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                              >
+                                Annuleren
+                              </Button>
+                            </div>
+                            {report.progressPercentage !== null && (
+                              <div className="space-y-2">
+                                <Progress value={report.progressPercentage} className="h-2" />
+                                <div className="text-xs text-muted-foreground text-right">
+                                  {report.progressPercentage}%
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {report.status === "CANCELLED" && (
+                          <div className="flex items-center text-sm text-yellow-600 dark:text-yellow-400">
+                            <AlertCircle className="h-4 w-4 mr-2" />
+                            Rapport generatie geannuleerd
                           </div>
                         )}
                         {report.status === "FAILED" && (

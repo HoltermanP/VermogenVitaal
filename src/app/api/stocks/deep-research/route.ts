@@ -351,36 +351,82 @@ function generateDefaultScores(
   // Normaliseer score tussen 0-100
   baseScore = Math.max(0, Math.min(100, baseScore))
   
-  // Bepaal termijn-specifieke scores
+  // Bepaal termijn-specifieke scores met significante verschillen
   // Short term: meer gewicht op technische factoren, recente ontwikkelingen, sentiment
-  let shortScore = baseScore
+  // Start met lagere base voor short term (technische factoren zijn volatieler)
+  let shortScore = baseScore - 5 // Start lager omdat short term volatieler is
   if (quote && quote.changePercent) {
-    shortScore += quote.changePercent > 0 ? 3 : -3
+    shortScore += quote.changePercent > 0 ? 8 : -8 // Grotere impact voor short term
   }
   if (socialSentiment) {
-    shortScore += (socialSentiment.sentimentScore || 0) * 5
+    shortScore += (socialSentiment.sentimentScore || 0) * 10 // Grotere impact sentiment
+  }
+  // Technische momentum analyse
+  if (history.length > 0 && quote) {
+    const recentPrices = history.slice(-20).map(h => h.close)
+    const olderPrices = history.slice(-60, -20).map(h => h.close)
+    if (recentPrices.length > 0 && olderPrices.length > 0) {
+      const recentAvg = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length
+      const olderAvg = olderPrices.reduce((a, b) => a + b, 0) / olderPrices.length
+      const momentum = (recentAvg - olderAvg) / olderAvg
+      shortScore += momentum > 0.05 ? 6 : momentum < -0.05 ? -6 : 0
+    }
   }
   shortScore = Math.max(0, Math.min(100, shortScore))
   
   // Medium term: meer gewicht op fundamentals, groei trends
+  // Start met base score (fundamentals zijn belangrijk voor medium term)
   let mediumScore = baseScore
   if (fundamentals) {
     const revenueGrowth = fundamentals.revenueGrowth as number
     const profitMargins = fundamentals.profitMargins as number
-    if (revenueGrowth && revenueGrowth > 0.1) mediumScore += 5
-    if (profitMargins && profitMargins > 0.15) mediumScore += 3
+    const earningsGrowth = fundamentals.earningsGrowth as number
+    if (revenueGrowth && revenueGrowth > 0.1) mediumScore += 8
+    if (revenueGrowth && revenueGrowth > 0.2) mediumScore += 5 // Extra bonus voor zeer sterke groei
+    if (profitMargins && profitMargins > 0.15) mediumScore += 6
+    if (earningsGrowth && earningsGrowth > 0.15) mediumScore += 7
+    // Negatieve groei heeft grote impact op medium term
+    if (revenueGrowth && revenueGrowth < -0.1) mediumScore -= 10
+  }
+  // News impact voor medium term
+  if (enhancedNews) {
+    const analystNews = enhancedNews.analystNews?.length || 0
+    if (analystNews > 5) mediumScore += 3
   }
   mediumScore = Math.max(0, Math.min(100, mediumScore))
   
   // Long term: meer gewicht op fundamentale sterkte, concurrentiepositie
-  let longScore = baseScore
+  // Start met hogere base voor long term (fundamentale sterkte telt meer)
+  let longScore = baseScore + 3 // Start hoger omdat fundamentals belangrijker zijn voor long term
   if (fundamentals) {
     const roe = fundamentals.returnOnEquity as number
     const debtToEquity = fundamentals.debtToEquity as number
-    if (roe && roe > 0.15) longScore += 5
-    if (debtToEquity && debtToEquity < 1) longScore += 3
+    const returnOnAssets = fundamentals.returnOnAssets as number
+    if (roe && roe > 0.15) longScore += 8
+    if (roe && roe > 0.25) longScore += 5 // Extra bonus voor uitstekende ROE
+    if (debtToEquity && debtToEquity < 1) longScore += 6
+    if (debtToEquity && debtToEquity < 0.5) longScore += 4 // Extra bonus voor zeer lage schuld
+    if (returnOnAssets && returnOnAssets > 0.1) longScore += 5
+    // Hoge schuld heeft grote negatieve impact op long term
+    if (debtToEquity && debtToEquity > 2) longScore -= 8
+  }
+  // Financiële data kwaliteit telt meer voor long term
+  if (aggregatedFinancialData) {
+    const dataQuality = aggregatedFinancialData.dataQuality
+    if (dataQuality.hasIncomeStatements && dataQuality.hasBalanceSheets && dataQuality.hasCashFlow) {
+      longScore += 5
+    }
   }
   longScore = Math.max(0, Math.min(100, longScore))
+  
+  // Zorg voor minimum verschillen tussen termijnen (minimaal 3 punten verschil)
+  const scores = [shortScore, mediumScore, longScore].sort((a, b) => a - b)
+  if (scores[2] - scores[0] < 3) {
+    // Als verschil te klein is, pas aan:
+    // Short term: -2, Medium: 0, Long: +2
+    shortScore = Math.max(0, Math.min(100, shortScore - 2))
+    longScore = Math.max(0, Math.min(100, longScore + 2))
+  }
   
   // Voeg default key factors toe als er geen zijn
   if (keyFactors.short.length === 0) {
@@ -777,6 +823,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Helper functie om progress bij te werken
+async function updateProgress(reportId: string, percentage: number, message: string) {
+  try {
+    await prisma.deepResearchReport.update({
+      where: { id: reportId },
+      data: {
+        progressPercentage: percentage,
+        progressMessage: message,
+      },
+    })
+  } catch (error) {
+    console.error("Error updating progress:", error)
+  }
+}
+
+// Helper functie om te checken of report gecanceld is
+async function isCancelled(reportId: string): Promise<boolean> {
+  try {
+    const report = await prisma.deepResearchReport.findUnique({
+      where: { id: reportId },
+      select: { status: true },
+    })
+    return report?.status === "CANCELLED"
+  } catch (error) {
+    console.error("Error checking cancellation status:", error)
+    return false
+  }
+}
+
 async function generateReport(
   reportId: string,
   symbol: string,
@@ -784,7 +859,16 @@ async function generateReport(
   openaiApiKey: string
 ) {
   try {
+    await updateProgress(reportId, 5, "Data ophalen van verschillende bronnen...")
+    
+    // Check of gecanceld
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld, stop generatie`)
+      return
+    }
+
     // Haal alle data op (inclusief nieuwe enhanced services)
+    await updateProgress(reportId, 10, "Yahoo Finance data ophalen...")
     const [quote, fundamentals, history, newsData, enhancedFinancialData, enhancedNews, socialSentiment] = await Promise.all([
       fetchQuote(symbol),
       fetchFundamentals(symbol),
@@ -825,6 +909,14 @@ async function generateReport(
       }),
     ])
 
+    // Check of gecanceld
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld tijdens data ophalen`)
+      return
+    }
+
+    await updateProgress(reportId, 30, "Financiële data aggregeren en analyseren...")
+
     // Aggregeer financiële data van alle bronnen
     const aggregatedFinancialData = aggregateFinancialData(fundamentals, enhancedFinancialData)
     console.log(`[DeepResearch] Data kwaliteit:`, aggregatedFinancialData.dataQuality)
@@ -842,6 +934,14 @@ async function generateReport(
       }
       return sma
     }
+
+    // Check of gecanceld
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld tijdens data verwerking`)
+      return
+    }
+
+    await updateProgress(reportId, 40, "Technische indicatoren berekenen...")
 
     const sma50 = calculateSMA(history, 50)
     const sma200 = calculateSMA(history, 200)
@@ -1121,10 +1221,34 @@ BELANGRIJK VOOR SCORE BEPALING:
   * NIEUWS EN ONTWIKKELINGEN: recente ontwikkelingen, sector trends, social sentiment
   * CONCLUSIE: samenvatting van bevindingen
 
+- KRITIEK: De scores voor shortTerm, mediumTerm en longTerm moeten SIGNIFICANT verschillen (minimaal 3-5 punten verschil, vaak 5-15 punten)
+  * Dit is essentieel omdat verschillende factoren belangrijk zijn voor verschillende termijnen
+  * Als alle scores hetzelfde zijn, betekent dit dat je niet goed hebt geanalyseerd welke factoren belangrijk zijn voor welk termijn
+  * Voorbeelden van goede score verschillen:
+    - Sterke fundamentals maar zwakke technische setup: shortTerm=55, mediumTerm=72, longTerm=80
+    - Sterke technische setup maar twijfelachtige fundamentals: shortTerm=75, mediumTerm=60, longTerm=55
+    - Goede groei maar hoge waardering: shortTerm=65, mediumTerm=70, longTerm=68
+    - Sterke fundamentals en goede technische setup: shortTerm=78, mediumTerm=82, longTerm=85
+
 - Weeg verschillende factoren afhankelijk van het tijdshorizon:
-  * SHORT TERM: meer gewicht op technische factoren, recente nieuws, sentiment, korte termijn fundamentals
-  * MEDIUM TERM: meer gewicht op financiële gezondheid, groei trends, sector ontwikkelingen, analyst verwachtingen
-  * LONG TERM: meer gewicht op fundamentale sterkte, concurrentiepositie, duurzaamheid, strategische positie
+  * SHORT TERM (1-3 maanden): 
+    - 60% gewicht: technische factoren (prijs trends, momentum, support/resistance), recente nieuws, sentiment
+    - 30% gewicht: korte termijn fundamentals (recente earnings, guidance updates)
+    - 10% gewicht: lange termijn fundamentals
+    - Score kan significant afwijken van medium/long term als technische setup sterk verschilt van fundamentals
+  
+  * MEDIUM TERM (3-12 maanden):
+    - 50% gewicht: financiële gezondheid, groei trends, sector ontwikkelingen
+    - 30% gewicht: analyst verwachtingen, earnings estimates, guidance
+    - 15% gewicht: technische factoren (trends, niet dagelijkse volatiliteit)
+    - 5% gewicht: lange termijn fundamentals
+  
+  * LONG TERM (1-5 jaar):
+    - 60% gewicht: fundamentale sterkte, concurrentiepositie, duurzaamheid, strategische positie
+    - 25% gewicht: financiële trends over meerdere jaren, cash flow generatie capaciteit
+    - 10% gewicht: sector groei potentieel, markt trends
+    - 5% gewicht: korte termijn factoren (technische setup, recente nieuws)
+    - Score moet vooral reflecteren of het bedrijf duurzaam kan groeien en concurreren
 
 - Geef concrete onderbouwing in de keyFactors op basis van je volledige analyse:
   * Verwijs naar specifieke cijfers uit je financiële analyse
@@ -1132,10 +1256,12 @@ BELANGRIJK VOOR SCORE BEPALING:
   * Verwijs naar risico's en kansen die je hebt geanalyseerd
   * Verwijs naar nieuws en ontwikkelingen die relevant zijn
   * Gebruik concrete voorbeelden uit je analyse
+  * Leg uit WAAROM de score voor dit termijn verschilt van andere termijnen
 
 - De voorspellingen moeten concreet en onderbouwd zijn op basis van ALLE beschikbare data en je volledige analyse
 - Gebruik concrete cijfers en trends uit je analyse om de scores te onderbouwen
 - De scores moeten een accurate reflectie zijn van je volledige analyse, niet alleen van enkele metrics
+- Als je scores te dicht bij elkaar liggen (< 3 punten verschil), heroverweeg dan welke factoren het belangrijkst zijn voor elk termijn
 
 AANDEEL: ${symbol} (${name})
 
@@ -1337,6 +1463,10 @@ BELANGRIJKSTE INSTRUCTIE VOOR FINANCIËLE DETAILS:
 - Wees proactief: geef altijd waardevolle financiële inzichten met concrete cijfers
 
 BELANGRIJKSTE INSTRUCTIE VOOR SCORE BEPALING:
+- KRITIEK: De scores voor shortTerm, mediumTerm en longTerm moeten SIGNIFICANT verschillen (minimaal 3-5 punten, vaak 5-15 punten verschil)
+  * Als alle scores hetzelfde zijn, heb je niet goed geanalyseerd welke factoren belangrijk zijn voor welk termijn
+  * Verschillende termijnen hebben verschillende drivers - reflecteer dit in de scores
+
 - De scores (shortTerm, mediumTerm, longTerm) moeten gebaseerd zijn op je VOLLEDIGE analyse
 - Gebruik informatie uit ALLE secties van je rapport om de scores te bepalen:
   * Financiële analyse: winstgevendheid, groei, gezondheid, cash flow trends
@@ -1346,12 +1476,40 @@ BELANGRIJKSTE INSTRUCTIE VOOR SCORE BEPALING:
   * Risico analyse: geïdentificeerde risico's en kansen
   * Valuatie analyse: huidige waardering vs fair value
   * Bedrijfsanalyse: concurrentiepositie, marktpositie
-- Weeg factoren verschillend per termijn:
-  * SHORT TERM: focus op technische factoren, recente ontwikkelingen, sentiment (60%), fundamentals (40%)
-  * MEDIUM TERM: focus op financiële gezondheid, groei trends, sector ontwikkelingen (70%), technische factoren (30%)
-  * LONG TERM: focus op fundamentale sterkte, concurrentiepositie, duurzaamheid (80%), korte termijn factoren (20%)
+
+- Weeg factoren SIGNIFICANT verschillend per termijn:
+  * SHORT TERM (1-3 maanden): 
+    - 60% gewicht: technische factoren (prijs trends, momentum, support/resistance), recente ontwikkelingen, sentiment
+    - 30% gewicht: korte termijn fundamentals (recente earnings, guidance)
+    - 10% gewicht: lange termijn fundamentals
+    - Als technische setup sterk afwijkt van fundamentals, kan score significant verschillen (bijv. sterke techniek maar zwakke fundamentals: 75 vs 60)
+  
+  * MEDIUM TERM (3-12 maanden):
+    - 50% gewicht: financiële gezondheid, groei trends, sector ontwikkelingen
+    - 30% gewicht: analyst verwachtingen, earnings estimates, guidance
+    - 15% gewicht: technische factoren (trends, niet dagelijkse volatiliteit)
+    - 5% gewicht: lange termijn fundamentals
+    - Score moet vooral reflecteren of bedrijf kan groeien in komende 6-12 maanden
+  
+  * LONG TERM (1-5 jaar):
+    - 60% gewicht: fundamentale sterkte, concurrentiepositie, duurzaamheid, strategische positie
+    - 25% gewicht: financiële trends over meerdere jaren, cash flow generatie capaciteit
+    - 10% gewicht: sector groei potentieel, markt trends
+    - 5% gewicht: korte termijn factoren
+    - Score moet vooral reflecteren of bedrijf duurzaam kan groeien en concurreren over 3-5 jaar
+
 - Geef in keyFactors specifieke voorbeelden uit je analyse die de score onderbouwen
-- De scores moeten logisch consistent zijn met je volledige analyse en conclusies`
+- Leg in keyFactors uit WAAROM de score voor dit termijn verschilt van andere termijnen
+- De scores moeten logisch consistent zijn met je volledige analyse en conclusies
+- Als je denkt dat alle termijnen dezelfde score verdienen, heroverweeg dan welke factoren het belangrijkst zijn voor elk termijn`
+
+    // Check of gecanceld
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld voor AI generatie`)
+      return
+    }
+
+    await updateProgress(reportId, 60, "AI rapport genereren...")
 
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
@@ -1389,6 +1547,14 @@ Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voo
       max_tokens: 4000,
     })
 
+    // Check of gecanceld
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld tijdens AI generatie`)
+      return
+    }
+
+    await updateProgress(reportId, 85, "Rapport verwerken en opslaan...")
+
     const reportContent = response.choices[0]?.message?.content || ""
 
     if (!reportContent) {
@@ -1417,12 +1583,22 @@ Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voo
       scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData, enhancedNews, socialSentiment)
     }
 
+    // Check of gecanceld voordat we opslaan
+    if (await isCancelled(reportId)) {
+      console.log(`Report ${reportId} was gecanceld voordat opslaan`)
+      return
+    }
+
+    await updateProgress(reportId, 95, "Rapport finaliseren...")
+
     // Sla het rapport op
     // Converteer data naar JSON-serialiseerbare formaten voor Prisma
     await prisma.deepResearchReport.update({
       where: { id: reportId },
       data: {
         status: "COMPLETED",
+        progressPercentage: 100,
+        progressMessage: "Voltooid",
         report: {
           content: contentWithoutScores,
           quote: quote ? JSON.parse(JSON.stringify(quote)) : null,
@@ -1443,14 +1619,23 @@ Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voo
     })
   } catch (error) {
     console.error("Error generating report:", error)
-    await prisma.deepResearchReport.update({
+    
+    // Check of het gecanceld was - dan niet als FAILED markeren
+    const report = await prisma.deepResearchReport.findUnique({
       where: { id: reportId },
-      data: {
-        status: "FAILED",
-        error: error instanceof Error ? error.message : "Onbekende fout",
-      },
+      select: { status: true },
     })
-    throw error
+    
+    if (report?.status !== "CANCELLED") {
+      await prisma.deepResearchReport.update({
+        where: { id: reportId },
+        data: {
+          status: "FAILED",
+          error: error instanceof Error ? error.message : "Onbekende fout",
+          progressMessage: "Generatie mislukt",
+        },
+      })
+    }
   }
 }
 
