@@ -323,24 +323,87 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Probeer eerst auth() direct te gebruiken om te zien of we een userId hebben
-    let authResult
+    // Gebruik getClerkUser als primaire authenticatie methode (robuuster voor productie)
+    // Dit sync ook automatisch met de database
+    let user = null
+    let authResult = null
+    
     try {
-      authResult = await auth()
+      user = await getClerkUser(request)
+      
+      // Als getClerkUser geen user teruggeeft, probeer auth() als fallback
+      if (!user || !user.id) {
+        try {
+          authResult = await auth()
+          if (authResult?.userId) {
+            // We hebben een Clerk userId maar geen database user
+            // Probeer handmatig gebruiker aan te maken
+            const { currentUser } = await import("@clerk/nextjs/server")
+            const clerkUser = await currentUser()
+            
+            if (clerkUser) {
+              const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                           clerkUser.primaryEmailAddress?.emailAddress ||
+                           clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
+              
+              if (email) {
+                console.log("Deep Research API: Attempting manual user creation", { email })
+                const newUser = await prisma.user.create({
+                  data: {
+                    email,
+                    name: clerkUser.firstName && clerkUser.lastName
+                      ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                      : clerkUser.firstName || clerkUser.username || email,
+                  },
+                })
+                
+                user = {
+                  id: newUser.id,
+                  email: newUser.email,
+                  name: newUser.name,
+                  tier: newUser.tier,
+                  role: newUser.role,
+                  clerkId: authResult.userId,
+                }
+                
+                console.log("Deep Research API: User created manually", { userId: user.id })
+              }
+            }
+          }
+        } catch (authError) {
+          console.error("Deep Research API: auth() fallback failed", {
+            error: authError instanceof Error ? authError.message : String(authError),
+            url: request.url,
+          })
+        }
+      }
     } catch (authError) {
-      console.error("Deep Research API: auth() failed", {
-        error: authError instanceof Error ? authError.message : String(authError),
-        url: request.url,
+      const errorMessage = authError instanceof Error ? authError.message : "Authenticatie fout"
+      console.error("Error in getClerkUser():", {
+        message: errorMessage,
+        url: request?.url,
       })
+      
+      // Probeer auth() als laatste redmiddel
+      try {
+        authResult = await auth()
+      } catch (fallbackError) {
+        console.error("Deep Research API: All auth methods failed", {
+          getClerkUserError: errorMessage,
+          authError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          url: request.url,
+        })
+      }
     }
     
-    // Als auth() geen userId geeft, probeer getClerkUser
-    if (!authResult?.userId) {
+    // Als we nog steeds geen user hebben, return 401
+    if (!user || !user.id) {
       const cookieHeader = request.headers.get('cookie')
-      console.error("Deep Research API: Geen userId van auth()", {
+      console.error("Deep Research API: Geen gebruiker gevonden", {
+        hasUser: !!user,
+        userId: user?.id,
         hasAuthResult: !!authResult,
-        userId: authResult?.userId,
-        sessionId: authResult?.sessionId,
+        clerkUserId: authResult?.userId,
         hasCookies: !!cookieHeader,
         hasClerkCookie: cookieHeader?.includes('__clerk') || false,
         url: request.url,
@@ -354,87 +417,6 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Nu gebruiken we getClerkUser voor database sync
-    let user = null
-    try {
-      user = await getClerkUser(request)
-    } catch (authError) {
-      const errorMessage = authError instanceof Error ? authError.message : "Authenticatie fout"
-      console.error("Error in getClerkUser():", {
-        message: errorMessage,
-        userId: authResult.userId,
-        url: request?.url,
-      })
-      
-      return NextResponse.json(
-        { 
-          error: "Fout bij ophalen gebruikersgegevens",
-          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-        },
-        { status: 500 }
-      )
-    }
-    
-    if (!user || !user.id) {
-      // Log meer details voor troubleshooting
-      const cookieHeader = request.headers.get('cookie')
-      console.error("Deep Research API: Geen gebruiker gevonden in database", {
-        hasUser: !!user,
-        userId: user?.id,
-        clerkUserId: authResult.userId,
-        hasCookies: !!cookieHeader,
-        url: request.url,
-      })
-      
-      // Probeer de gebruiker handmatig aan te maken als laatste redmiddel
-      try {
-        const { currentUser } = await import("@clerk/nextjs/server")
-        const clerkUser = await currentUser()
-        
-        if (clerkUser) {
-          const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
-                       clerkUser.primaryEmailAddress?.emailAddress ||
-                       clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
-          
-          if (email) {
-            console.log("Deep Research API: Attempting manual user creation", { email })
-            const newUser = await prisma.user.create({
-              data: {
-                email,
-                name: clerkUser.firstName && clerkUser.lastName
-                  ? `${clerkUser.firstName} ${clerkUser.lastName}`
-                  : clerkUser.firstName || clerkUser.username || email,
-              },
-            })
-            
-            user = {
-              id: newUser.id,
-              email: newUser.email,
-              name: newUser.name,
-              tier: newUser.tier,
-              role: newUser.role,
-              clerkId: authResult.userId,
-            }
-            
-            console.log("Deep Research API: User created manually", { userId: user.id })
-          }
-        }
-      } catch (manualCreateError) {
-        console.error("Deep Research API: Manual user creation failed", {
-          error: manualCreateError instanceof Error ? manualCreateError.message : String(manualCreateError),
-        })
-      }
-      
-      if (!user || !user.id) {
-        return NextResponse.json(
-          { 
-            error: "Gebruiker niet gevonden in database. Probeer opnieuw in te loggen.",
-          },
-          { status: 500 }
-        )
-      }
-    }
-    
     const userId = user.id
     
     // Valideer dat userId bestaat en een geldige string is
@@ -442,7 +424,7 @@ export async function POST(request: NextRequest) {
       console.error("Deep Research API: Invalid userId", {
         userId,
         user,
-        clerkUserId: authResult.userId,
+        clerkUserId: authResult?.userId,
       })
       return NextResponse.json(
         { 
@@ -1095,16 +1077,79 @@ Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerke
 // GET endpoint om rapport status op te halen
 export async function GET(request: NextRequest) {
   try {
+    // Check Clerk configuratie eerst
+    const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY
+    
+    if (!clerkPublishableKey || !clerkSecretKey) {
+      console.error("Deep Research API GET: Clerk environment variables niet geconfigureerd")
+      return NextResponse.json(
+        { error: "Authenticatie niet geconfigureerd" },
+        { status: 500 }
+      )
+    }
+    
     // Haal gebruiker op via getClerkUser (sync met database)
     let user = null
     try {
       user = await getClerkUser(request)
+      
+      // Als getClerkUser geen user teruggeeft, probeer auth() als fallback
+      if (!user || !user.id) {
+        try {
+          const authResult = await auth()
+          if (authResult?.userId) {
+            // We hebben een Clerk userId maar geen database user
+            const { currentUser } = await import("@clerk/nextjs/server")
+            const clerkUser = await currentUser()
+            
+            if (clerkUser) {
+              const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                           clerkUser.primaryEmailAddress?.emailAddress ||
+                           clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
+              
+              if (email) {
+                const newUser = await prisma.user.create({
+                  data: {
+                    email,
+                    name: clerkUser.firstName && clerkUser.lastName
+                      ? `${clerkUser.firstName} ${clerkUser.lastName}`
+                      : clerkUser.firstName || clerkUser.username || email,
+                  },
+                })
+                
+                user = {
+                  id: newUser.id,
+                  email: newUser.email,
+                  name: newUser.name,
+                  tier: newUser.tier,
+                  role: newUser.role,
+                  clerkId: authResult.userId,
+                }
+              }
+            }
+          }
+        } catch (authError) {
+          console.error("Deep Research API GET: auth() fallback failed", authError)
+        }
+      }
     } catch (authError) {
       console.error("Error in getClerkUser():", authError)
-      return NextResponse.json(
-        { error: "Authenticatie fout" },
-        { status: 401 }
-      )
+      // Probeer auth() als laatste redmiddel
+      try {
+        const authResult = await auth()
+        if (!authResult?.userId) {
+          return NextResponse.json(
+            { error: "Authenticatie fout" },
+            { status: 401 }
+          )
+        }
+      } catch (fallbackError) {
+        return NextResponse.json(
+          { error: "Authenticatie fout" },
+          { status: 401 }
+        )
+      }
     }
     
     if (!user || !user.id) {

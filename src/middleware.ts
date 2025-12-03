@@ -7,8 +7,9 @@ const isPublicRoute = createRouteMatcher([
   "/auth/signin(.*)",
   "/api/webhooks(.*)",
   // Stock API routes - laat de route zelf authenticatie afhandelen
-  // Dit geeft betere controle en error messages
-  "/api/stocks(.*)",
+  // MAAR: deep-research routes hebben authenticatie nodig via middleware
+  "/api/stocks/search(.*)",
+  "/api/stocks/favorites(.*)",
 ])
 
 // Check of Clerk is geconfigureerd
