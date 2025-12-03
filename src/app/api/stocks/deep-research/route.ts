@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { fetchStockNews } from "@/lib/news-service"
+import { fetchEnhancedStockNews, formatEnhancedNews } from "@/lib/enhanced-news-service"
+import { fetchEnhancedFinancialData, formatEnhancedFinancialData } from "@/lib/enhanced-financial-data"
+import { fetchSocialSentiment, formatSocialSentiment } from "@/lib/social-sentiment-service"
+import { aggregateFinancialData, formatAggregatedFinancialData } from "@/lib/financial-data-aggregator"
 import { prisma } from "@/lib/prisma"
 import { getClerkUser } from "@/lib/clerk-auth"
 import { auth } from "@clerk/nextjs/server"
@@ -211,18 +215,26 @@ async function fetchFundamentals(symbol: string) {
   }
 }
 
-// Genereer default scores op basis van beschikbare data
+// Genereer default scores op basis van beschikbare data (verbeterde versie die meer factoren meeneemt)
 function generateDefaultScores(
   fundamentals: Record<string, unknown> | null,
   quote: { price?: number; changePercent?: number } | null,
-  history: Array<{ date: string; close: number }>
+  history: Array<{ date: string; close: number }>,
+  aggregatedFinancialData?: any,
+  enhancedNews?: any,
+  socialSentiment?: any
 ): {
   overallScore: number
   shortTerm: { score: number; prediction: string; timeframe: string; keyFactors: string[] }
   mediumTerm: { score: number; prediction: string; timeframe: string; keyFactors: string[] }
   longTerm: { score: number; prediction: string; timeframe: string; keyFactors: string[] }
 } {
-  let score = 50 // Start met neutrale score
+  let baseScore = 50 // Start met neutrale score
+  const keyFactors: { short: string[]; medium: string[]; long: string[] } = {
+    short: [],
+    medium: [],
+    long: []
+  }
   
   // Analyseer fundamentals
   if (fundamentals) {
@@ -231,47 +243,175 @@ function generateDefaultScores(
     const revenueGrowth = fundamentals.revenueGrowth as number
     const profitMargins = fundamentals.profitMargins as number
     const debtToEquity = fundamentals.debtToEquity as number
+    const currentRatio = fundamentals.currentRatio as number
     
-    if (pe && pe > 0 && pe < 25) score += 10
-    if (pe && pe >= 25) score -= 5
-    if (roe && roe > 0.15) score += 10
-    if (revenueGrowth && revenueGrowth > 0.1) score += 10
-    if (profitMargins && profitMargins > 0.1) score += 10
-    if (debtToEquity && debtToEquity < 1) score += 5
+    if (pe && pe > 0 && pe < 25) {
+      baseScore += 8
+      keyFactors.medium.push(`Gezonde P/E ratio van ${pe.toFixed(1)}`)
+    }
+    if (pe && pe >= 25 && pe < 40) {
+      baseScore += 2
+      keyFactors.medium.push(`Hoge maar acceptabele P/E ratio van ${pe.toFixed(1)}`)
+    }
+    if (pe && pe >= 40) {
+      baseScore -= 5
+      keyFactors.medium.push(`Zeer hoge P/E ratio van ${pe.toFixed(1)}`)
+    }
+    
+    if (roe && roe > 0.15) {
+      baseScore += 10
+      keyFactors.long.push(`Uitstekende ROE van ${(roe * 100).toFixed(1)}%`)
+    } else if (roe && roe > 0.10) {
+      baseScore += 5
+      keyFactors.long.push(`Goede ROE van ${(roe * 100).toFixed(1)}%`)
+    }
+    
+    if (revenueGrowth && revenueGrowth > 0.1) {
+      baseScore += 8
+      keyFactors.medium.push(`Sterke revenue groei van ${(revenueGrowth * 100).toFixed(1)}%`)
+    } else if (revenueGrowth && revenueGrowth > 0.05) {
+      baseScore += 4
+      keyFactors.medium.push(`Matige revenue groei van ${(revenueGrowth * 100).toFixed(1)}%`)
+    }
+    
+    if (profitMargins && profitMargins > 0.1) {
+      baseScore += 8
+      keyFactors.medium.push(`Sterke winstmarge van ${(profitMargins * 100).toFixed(1)}%`)
+    }
+    
+    if (debtToEquity && debtToEquity < 1) {
+      baseScore += 5
+      keyFactors.long.push(`Lage schuldpositie (D/E: ${debtToEquity.toFixed(2)})`)
+    } else if (debtToEquity && debtToEquity > 2) {
+      baseScore -= 5
+      keyFactors.long.push(`Hoge schuldpositie (D/E: ${debtToEquity.toFixed(2)})`)
+    }
+    
+    if (currentRatio && currentRatio > 1.5) {
+      baseScore += 3
+      keyFactors.medium.push(`Goede liquiditeit (Current Ratio: ${currentRatio.toFixed(2)})`)
+    }
   }
   
-  // Analyseer prijs performance
-  if (quote && quote.changePercent) {
-    if (quote.changePercent > 5) score += 5
-    if (quote.changePercent < -5) score -= 5
+  // Analyseer technische factoren (vooral relevant voor short term)
+  if (quote && history.length > 0) {
+    const recentChange = quote.changePercent || 0
+    const recentPrices = history.slice(-30).map(h => h.close)
+    const avgRecentPrice = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length
+    const currentPrice = quote.price || 0
+    
+    if (recentChange > 5) {
+      baseScore += 3
+      keyFactors.short.push(`Sterke recente prijsstijging van ${recentChange.toFixed(1)}%`)
+    } else if (recentChange < -5) {
+      baseScore -= 3
+      keyFactors.short.push(`Recente prijsdaling van ${recentChange.toFixed(1)}%`)
+    }
+    
+    if (currentPrice > avgRecentPrice * 1.05) {
+      keyFactors.short.push(`Prijs boven recent gemiddelde`)
+    }
+  }
+  
+  // Analyseer social sentiment (vooral relevant voor short term)
+  if (socialSentiment) {
+    const sentimentScore = socialSentiment.sentimentScore || 0
+    if (sentimentScore > 0.2) {
+      baseScore += 2
+      keyFactors.short.push(`Positief social media sentiment`)
+    } else if (sentimentScore < -0.2) {
+      baseScore -= 2
+      keyFactors.short.push(`Negatief social media sentiment`)
+    }
+  }
+  
+  // Analyseer nieuws (relevant voor alle termijnen)
+  if (enhancedNews) {
+    const totalNews = (enhancedNews.companyNews?.length || 0) + (enhancedNews.analystNews?.length || 0)
+    if (totalNews > 15) {
+      keyFactors.short.push(`Actieve nieuwsstroom (${totalNews} artikelen)`)
+    }
+    if (enhancedNews.analystNews && enhancedNews.analystNews.length > 5) {
+      keyFactors.medium.push(`Sterke analyst coverage`)
+    }
+  }
+  
+  // Analyseer financiële data kwaliteit
+  if (aggregatedFinancialData) {
+    const dataQuality = aggregatedFinancialData.dataQuality
+    if (dataQuality.hasIncomeStatements && dataQuality.hasBalanceSheets && dataQuality.hasCashFlow) {
+      baseScore += 3
+      keyFactors.long.push(`Complete financiële data beschikbaar`)
+    }
+    if (dataQuality.hasQuarterlyData) {
+      keyFactors.short.push(`Quarterly data beschikbaar voor trend analyse`)
+    }
   }
   
   // Normaliseer score tussen 0-100
-  score = Math.max(0, Math.min(100, score))
+  baseScore = Math.max(0, Math.min(100, baseScore))
   
-  const shortScore = Math.max(0, Math.min(100, score - 5))
-  const mediumScore = Math.max(0, Math.min(100, score + 3))
-  const longScore = Math.max(0, Math.min(100, score + 8))
+  // Bepaal termijn-specifieke scores
+  // Short term: meer gewicht op technische factoren, recente ontwikkelingen, sentiment
+  let shortScore = baseScore
+  if (quote && quote.changePercent) {
+    shortScore += quote.changePercent > 0 ? 3 : -3
+  }
+  if (socialSentiment) {
+    shortScore += (socialSentiment.sentimentScore || 0) * 5
+  }
+  shortScore = Math.max(0, Math.min(100, shortScore))
+  
+  // Medium term: meer gewicht op fundamentals, groei trends
+  let mediumScore = baseScore
+  if (fundamentals) {
+    const revenueGrowth = fundamentals.revenueGrowth as number
+    const profitMargins = fundamentals.profitMargins as number
+    if (revenueGrowth && revenueGrowth > 0.1) mediumScore += 5
+    if (profitMargins && profitMargins > 0.15) mediumScore += 3
+  }
+  mediumScore = Math.max(0, Math.min(100, mediumScore))
+  
+  // Long term: meer gewicht op fundamentale sterkte, concurrentiepositie
+  let longScore = baseScore
+  if (fundamentals) {
+    const roe = fundamentals.returnOnEquity as number
+    const debtToEquity = fundamentals.debtToEquity as number
+    if (roe && roe > 0.15) longScore += 5
+    if (debtToEquity && debtToEquity < 1) longScore += 3
+  }
+  longScore = Math.max(0, Math.min(100, longScore))
+  
+  // Voeg default key factors toe als er geen zijn
+  if (keyFactors.short.length === 0) {
+    keyFactors.short.push("Technische indicatoren", "Recente prijsbeweging", "Marktsentiment")
+  }
+  if (keyFactors.medium.length === 0) {
+    keyFactors.medium.push("Fundamentele gezondheid", "Sector trends", "Bedrijfsresultaten")
+  }
+  if (keyFactors.long.length === 0) {
+    keyFactors.long.push("Marktpositie", "Innovatie", "Duurzame business model")
+  }
   
   return {
-    overallScore: score,
+    overallScore: baseScore,
     shortTerm: {
       score: shortScore,
-      prediction: "Analyse op basis van beschikbare data - technische indicatoren en recente ontwikkelingen",
+      prediction: `Analyse op basis van technische indicatoren, recente ontwikkelingen en marktsentiment. Score: ${shortScore}/100`,
       timeframe: "1-3 maanden",
-      keyFactors: ["Technische setup", "Recente prijsbeweging", "Marktsentiment"]
+      keyFactors: keyFactors.short
     },
     mediumTerm: {
       score: mediumScore,
-      prediction: "Analyse op basis van fundamentele factoren en sector trends",
+      prediction: `Analyse op basis van fundamentele factoren, groei trends en sector ontwikkelingen. Score: ${mediumScore}/100`,
       timeframe: "3-12 maanden",
-      keyFactors: ["Fundamentele gezondheid", "Sector trends", "Bedrijfsresultaten"]
+      keyFactors: keyFactors.medium
     },
     longTerm: {
       score: longScore,
-      prediction: "Analyse op basis van duurzame groei en concurrentiepositie",
+      prediction: `Analyse op basis van duurzame groei, concurrentiepositie en financiële sterkte. Score: ${longScore}/100`,
       timeframe: "1-5 jaar",
-      keyFactors: ["Marktpositie", "Innovatie", "Duurzaamheid"]
+      keyFactors: keyFactors.long
     }
   }
 }
@@ -644,17 +784,50 @@ async function generateReport(
   openaiApiKey: string
 ) {
   try {
-    // Haal alle data op
-    const [quote, fundamentals, history, newsData] = await Promise.all([
+    // Haal alle data op (inclusief nieuwe enhanced services)
+    const [quote, fundamentals, history, newsData, enhancedFinancialData, enhancedNews, socialSentiment] = await Promise.all([
       fetchQuote(symbol),
       fetchFundamentals(symbol),
       fetchHistory(symbol),
+      // Fallback naar oude news service als enhanced faalt
       fetchStockNews(symbol, undefined, undefined, undefined, 20).catch(() => ({
         companyNews: [],
         sectorNews: [],
         marketNews: [],
       })),
+      // Nieuwe enhanced financial data
+      fetchEnhancedFinancialData(symbol, name).catch((error) => {
+        console.error("[DeepResearch] Error fetching enhanced financial data:", error)
+        return null
+      }),
+      // Nieuwe enhanced news (gebruik sector/industry van fundamentals als beschikbaar)
+      (async () => {
+        try {
+          const yahooSymbol = convertSymbol(symbol)
+          const summaryRes = await fetch(
+            `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${yahooSymbol}?modules=summaryProfile`,
+            { headers: { "User-Agent": "Mozilla/5.0" } }
+          )
+          const summaryData = summaryRes.ok ? await summaryRes.json().catch(() => null) : null
+          const sector = summaryData?.quoteSummary?.result?.[0]?.summaryProfile?.sector
+          const industry = summaryData?.quoteSummary?.result?.[0]?.summaryProfile?.industry
+          
+          return await fetchEnhancedStockNews(symbol, name, sector, industry, 25)
+        } catch (error) {
+          console.error("[DeepResearch] Error fetching enhanced news:", error)
+          return { companyNews: [], sectorNews: [], marketNews: [], analystNews: [] }
+        }
+      })(),
+      // Social sentiment
+      fetchSocialSentiment(symbol, name, 30).catch((error) => {
+        console.error("[DeepResearch] Error fetching social sentiment:", error)
+        return null
+      }),
     ])
+
+    // Aggregeer financiële data van alle bronnen
+    const aggregatedFinancialData = aggregateFinancialData(fundamentals, enhancedFinancialData)
+    console.log(`[DeepResearch] Data kwaliteit:`, aggregatedFinancialData.dataQuality)
 
     // Bereken technische indicatoren
     const calculateSMA = (data: any[], period: number) => {
@@ -745,6 +918,11 @@ Jaar ${year}:
       }).join('\n')
     }
 
+    // Gebruik geaggregeerde financiële data (combineert alle bronnen) - dit bevat GEDETAILLEERDE statements
+    const aggregatedFinancialText = formatAggregatedFinancialData(aggregatedFinancialData)
+    
+    // Voeg ook aanvullende Yahoo Finance fundamentals toe voor extra context
+    // (de gedetailleerde statements zitten al in aggregatedFinancialText)
     const fundamentalsText = fundamentals ? `
 BEDRIJFSINFORMATIE:
 - Bedrijfsnaam: ${fundamentals.companyName}
@@ -804,20 +982,6 @@ ANALYST VERWACHTINGEN:
 - Aanbeveling: ${fundamentals.recommendationKey || 'N/A'}
 - Aantal Analisten: ${fundamentals.numberOfAnalystOpinions || 'N/A'}
 
-INCOME STATEMENT (Jaarlijks - ${fundamentals.incomeStatement?.length || 0} jaar):
-${formatIncomeStatement(fundamentals.incomeStatement || [])}
-
-BALANCE SHEET (Jaarlijks - ${fundamentals.balanceSheet?.length || 0} jaar):
-${formatBalanceSheet(fundamentals.balanceSheet || [])}
-
-CASHFLOW STATEMENT (Jaarlijks - ${fundamentals.cashFlow?.length || 0} jaar):
-${formatCashFlow(fundamentals.cashFlow || [])}
-
-${fundamentals.quarterlyIncome && fundamentals.quarterlyIncome.length > 0 ? `
-QUARTERLY INCOME STATEMENT (Laatste ${fundamentals.quarterlyIncome.length} kwartalen):
-${formatIncomeStatement(fundamentals.quarterlyIncome)}
-` : ''}
-
 ${fundamentals.earningsHistory && fundamentals.earningsHistory.length > 0 ? `
 EARNINGS GESCHIEDENIS:
 ${fundamentals.earningsHistory.slice(0, 8).map((item: Record<string, unknown>) => {
@@ -835,7 +999,7 @@ BELANGRIJKE DATUMS:
 - Ex-Dividend Datum: ${fundamentals.exDividendDate || 'N/A'}
 - Dividend Datum: ${fundamentals.dividendDate || 'N/A'}
 ` : ''}
-` : 'Geen fundamentele data beschikbaar'
+` : ''
 
     const formatNews = (articles: Array<Record<string, unknown>>, category: string) => {
       if (!articles || articles.length === 0) return `Geen ${category} nieuws beschikbaar`
@@ -849,7 +1013,10 @@ BELANGRIJKE DATUMS:
       }).join('\n')
     }
 
-    const newsText = `
+    // Gebruik enhanced news als beschikbaar, anders fallback naar oude news
+    const newsText = enhancedNews && (enhancedNews.companyNews.length > 0 || enhancedNews.marketNews.length > 0)
+      ? formatEnhancedNews(enhancedNews)
+      : `
 RECENT NIEUWS:
 BEDRIJFSNIEUWS:
 ${formatNews((newsData.companyNews || []) as Array<Record<string, unknown>>, 'bedrijfs')}
@@ -860,6 +1027,16 @@ ${formatNews((newsData.sectorNews || []) as Array<Record<string, unknown>>, 'sec
 MARKTONTWIKKELINGEN:
 ${formatNews((newsData.marketNews || []) as Array<Record<string, unknown>>, 'markt')}
 `
+
+    // Voeg enhanced financial data details toe als beschikbaar (voor extra context)
+    const enhancedFinancialText = enhancedFinancialData 
+      ? formatEnhancedFinancialData(enhancedFinancialData)
+      : ''
+
+    // Voeg social sentiment toe als beschikbaar
+    const socialSentimentText = socialSentiment
+      ? formatSocialSentiment(socialSentiment)
+      : ''
 
     const technicalText = quote ? `
 TECHNISCHE DATA:
@@ -898,6 +1075,34 @@ BELANGRIJK: Je moet aan het einde van je rapport een speciaal JSON gedeelte toev
 }
 </ANALYSIS_SCORES>
 
+KRITIEK VOOR SCORE BEPALING:
+De scores moeten gebaseerd zijn op de VOLLEDIGE analyse die je hebt uitgevoerd, inclusief:
+
+VOOR SHORT TERM (1-3 maanden):
+- Technische analyse: prijs trends, SMA's, support/resistance niveaus, momentum
+- Recente nieuws en ontwikkelingen: earnings releases, product launches, management changes
+- Social sentiment: Reddit discussies, retail investor sentiment
+- Korte termijn fundamentals: quarterly results, recent earnings beats/misses
+- Analyst verwachtingen: upcoming earnings, target prices
+- Marktomstandigheden: sector trends, macro-economische factoren
+- Risico factoren: operationele risico's, marktvolatiliteit
+
+VOOR MEDIUM TERM (3-12 maanden):
+- Financiële gezondheid: winstgevendheid trends, cash flow generatie, schuldpositie
+- Groei trends: revenue groei, earnings groei, market share expansie
+- Sector ontwikkelingen: sector trends, concurrentie dynamiek
+- Strategische initiatieven: nieuwe producten, markt expansie, partnerships
+- Analyst consensus: target prices, recommendations, earnings estimates
+- Nieuws en ontwikkelingen: bedrijfsstrategie, sector trends
+- Risico analyse: financiële risico's, sector risico's
+
+VOOR LONG TERM (1-5 jaar):
+- Fundamentale sterkte: concurrentiepositie, marktleiderschap, business model duurzaamheid
+- Financiële trends: multi-jaar revenue/earnings trends, cash flow generatie capaciteit
+- Strategische positie: innovatie capaciteit, markt positie, sector groei potentieel
+- Duurzaamheid: business model duurzaamheid, ESG factoren, lange termijn groei drivers
+- Risico's: structurele risico's, disruptie risico's, macro-economische trends
+
 De scores moeten tussen 0-100 zijn, waarbij:
 - 0-40: Slecht/Zeer Risicovol
 - 41-60: Neutraal/Gemiddeld
@@ -905,22 +1110,74 @@ De scores moeten tussen 0-100 zijn, waarbij:
 - 76-85: Zeer Goed/Zeer Positief
 - 86-100: Uitstekend/Exceptioneel
 
-De voorspellingen moeten concreet en onderbouwd zijn op basis van de beschikbare data.
+BELANGRIJK VOOR SCORE BEPALING: 
+- Baseer elke score op ALLE relevante factoren uit je VOLLEDIGE analyse in alle secties:
+  * EXECUTIVE SUMMARY: belangrijkste conclusies en highlights
+  * BEDRIJFSANALYSE: concurrentiepositie, marktpositie, strategische richting
+  * FINANCIËLE ANALYSE: winstgevendheid, groei trends, financiële gezondheid, cash flow
+  * VALUATIE ANALYSE: huidige waardering, fair value, analyst verwachtingen
+  * TECHNISCHE ANALYSE: prijs trends, technische indicatoren, support/resistance
+  * RISICO ANALYSE: alle geïdentificeerde risico's (bedrijf, sector, macro)
+  * NIEUWS EN ONTWIKKELINGEN: recente ontwikkelingen, sector trends, social sentiment
+  * CONCLUSIE: samenvatting van bevindingen
+
+- Weeg verschillende factoren afhankelijk van het tijdshorizon:
+  * SHORT TERM: meer gewicht op technische factoren, recente nieuws, sentiment, korte termijn fundamentals
+  * MEDIUM TERM: meer gewicht op financiële gezondheid, groei trends, sector ontwikkelingen, analyst verwachtingen
+  * LONG TERM: meer gewicht op fundamentale sterkte, concurrentiepositie, duurzaamheid, strategische positie
+
+- Geef concrete onderbouwing in de keyFactors op basis van je volledige analyse:
+  * Verwijs naar specifieke cijfers uit je financiële analyse
+  * Verwijs naar trends en patronen die je hebt geïdentificeerd
+  * Verwijs naar risico's en kansen die je hebt geanalyseerd
+  * Verwijs naar nieuws en ontwikkelingen die relevant zijn
+  * Gebruik concrete voorbeelden uit je analyse
+
+- De voorspellingen moeten concreet en onderbouwd zijn op basis van ALLE beschikbare data en je volledige analyse
+- Gebruik concrete cijfers en trends uit je analyse om de scores te onderbouwen
+- De scores moeten een accurate reflectie zijn van je volledige analyse, niet alleen van enkele metrics
 
 AANDEEL: ${symbol} (${name})
+
+${aggregatedFinancialText}
+
 ${fundamentalsText}
+
+${enhancedFinancialText}
+
 ${technicalText}
+
 ${newsText}
 
+${socialSentimentText}
+
 BELANGRIJKE INSTRUCTIES:
-- Gebruik ALLE beschikbare financiele data die hierboven is gegeven
-- Analyseer de volledige geschiedenis van income statements, balance sheets en cashflow statements
-- Vergelijk trends over meerdere jaren om patronen te identificeren
-- Gebruik de quarterly data om recente ontwikkelingen te analyseren
-- Als bepaalde financiele cijfers ontbreken, vermeld dit expliciet en leg uit wat dit betekent
-- Maak gebruik van alle beschikbare kentallen (P/E, P/B, PEG, ROE, ROA, marges, etc.)
-- Analyseer de earnings geschiedenis en trends
+- Gebruik ALLE beschikbare financiele data die hierboven is gegeven. De data is geaggregeerd van meerdere bronnen (Yahoo Finance, Financial Modeling Prep, SEC EDGAR, Alpha Vantage)
+- De DATA KWALITEIT sectie toont welke financiële statements beschikbaar zijn. Gebruik deze informatie om te bepalen welke analyses mogelijk zijn
+- Als income statements beschikbaar zijn: analyseer de volledige geschiedenis, identificeer trends, bereken groeicijfers, analyseer marges
+- Als balance sheets beschikbaar zijn: analyseer financiële gezondheid, schuldpositie, liquiditeit, solvabiliteit
+- Als cash flow statements beschikbaar zijn: analyseer free cash flow trends, capex, dividend policy, cash generatie
+- Gebruik quarterly data om recente ontwikkelingen en trends te analyseren
+- Maak gebruik van ALLE beschikbare kentallen (P/E, P/B, PEG, ROE, ROA, marges, etc.) die in de data staan
+- Analyseer de earnings geschiedenis en trends waar beschikbaar
 - Gebruik de analyst verwachtingen en vergelijk deze met historische prestaties
+- Gebruik de uitgebreide nieuwsdata inclusief analyst inzichten van Seeking Alpha en andere financiële bronnen
+- Analyseer het social media sentiment (Reddit discussies) om marktsentiment te begrijpen
+- Verwijs naar SEC filings als deze beschikbaar zijn voor extra transparantie
+- Gebruik peer vergelijkingen (company peers) waar beschikbaar om relatieve waardering te analyseren
+
+KRITIEK - ZOEK ACTIEF NAAR ONTBREKENDE INFORMATIE:
+- Als specifieke financiële gegevens ontbreken, gebruik je ALGEMENE KENNIS over het bedrijf en de sector om deze informatie te vinden of af te leiden
+- Gebruik beschikbare kentallen om ontbrekende cijfers te schatten (bijv. als revenue bekend is maar net income ontbreekt, gebruik de profit margin om net income te schatten)
+- Als balance sheet data ontbreken maar income statements wel beschikbaar zijn, gebruik trends en sector gemiddelden om financiële gezondheid in te schatten
+- Als cash flow data ontbreken, bereken free cash flow uit beschikbare income statement en balance sheet data waar mogelijk
+- Gebruik sector gemiddelden en peer vergelijkingen om ontbrekende metrics in te schatten
+- Als bedrijfsinformatie (aantal medewerkers, locaties) ontbreken, gebruik je algemene kennis over het bedrijf uit nieuwsartikelen en beschrijvingen
+- Als analyst verwachtingen ontbreken, gebruik trends uit earnings geschiedenis en sector ontwikkelingen om verwachtingen te formuleren
+- Gebruik nieuwsartikelen en social media discussies om ontbrekende context te vinden
+- Als bepaalde data echt niet beschikbaar is, gebruik alternatieve metrics of vergelijkbare bedrijven om inzichten te geven
+- VERVANG "data ontbreekt" statements met: "Op basis van beschikbare data en sector trends kan worden geschat dat..." of "Gebaseerd op algemene kennis over [bedrijf] en vergelijking met sectorgenoten..."
+- Wees proactief: in plaats van te zeggen wat ontbreekt, geef je inzichten op basis van wat beschikbaar is en wat algemeen bekend is over het bedrijf
 
 OPDRACHT:
 Maak een uitgebreid onderzoeksrapport met de volgende secties:
@@ -937,18 +1194,80 @@ Maak een uitgebreid onderzoeksrapport met de volgende secties:
    - Sector en marktpositie
    - Strategische richting
    - Bedrijfsstructuur (aantal medewerkers, locatie, etc.)
+   
+   BELANGRIJK: Als bedrijfsinformatie zoals aantal medewerkers of locaties ontbreekt in de data:
+   - Gebruik je algemene kennis over het bedrijf om deze informatie te vinden (bijv. Apple heeft ongeveer 164.000 medewerkers wereldwijd)
+   - Gebruik nieuwsartikelen en beschrijvingen om bedrijfsinformatie te vinden
+   - Gebruik sector gemiddelden om context te geven
+   - ZEG NIET "aantal medewerkers ontbreekt" - gebruik in plaats daarvan je algemene kennis of geef een schatting op basis van bedrijfsgrootte
 
 3. FINANCIËLE ANALYSE (UITGEBREID)
-   - Winstgevendheid en marges (analyseer trends over meerdere jaren)
-   - Groeitrends (revenue, earnings, cashflow groei over tijd)
-   - Financiële gezondheid (schuldpositie, liquiditeit, solvabiliteit)
-   - Cashflow analyse (operating, investing, financing cashflows)
-   - Analyse van income statements (identificeer trends, sterke/zwakke punten)
-   - Analyse van balance sheets (activa structuur, schulden, eigen vermogen)
-   - Analyse van cashflow statements (free cashflow trends, capex, dividend policy)
-   - Quarterly trends (analyseer recente kwartaalresultaten als beschikbaar)
-   - Vergelijking met sectorgenoten (waar mogelijk)
-   - Efficiency metrics (ROE, ROA, asset turnover, etc.)
+   Gebruik ALLE beschikbare financiële data uit de geaggregeerde data sectie hierboven.
+   
+   KRITIEK: Je moet ACTIEF financiële details van het bedrijf opzoeken:
+   - Gebruik je uitgebreide kennis over duizenden beursgenoteerde bedrijven om financiële details te vinden
+   - Je hebt kennis van revenue, earnings, cash flow, balance sheet items voor grote bedrijven over meerdere jaren
+   - Als bepaalde data ontbreekt in de beschikbare data, ZOEK JE ACTIEF in je kennis naar deze informatie
+   - Gebruik sector gemiddelden, trends en beschikbare metrics om de analyse compleet te maken
+   - ZEG NIET "data ontbreekt" of "gebrek aan data" - geef in plaats daarvan concrete financiële cijfers uit je kennis
+   - Geef altijd concrete cijfers: revenue, net income, cash, debt, equity, etc. uit je kennis van het bedrijf
+   
+   Als income statements beschikbaar zijn:
+   - Analyseer winstgevendheid en marges (trends over meerdere jaren)
+   - Identificeer groeitrends in revenue en earnings
+   - Analyseer kostenstructuur en efficiency
+   - Bereken en analyseer marges (gross, operating, net)
+   - Identificeer sterke en zwakke punten in de resultaten
+   
+   Als income statements ONTBREKEN maar andere data wel beschikbaar is:
+   - ZOEK ACTIEF naar financiële details: gebruik je uitgebreide kennis over het bedrijf om revenue, earnings, kostenstructuur te vinden
+   - Gebruik beschikbare kentallen (P/E, ROE, profit margin) om revenue en earnings trends te schatten
+   - Gebruik je algemene kennis over het bedrijf om historische resultaten te vinden (bijv. Apple's revenue in 2023 was $383 miljard, in 2022 was $394 miljard, in 2021 was $365 miljard)
+   - Gebruik je kennis over kostenstructuur: R&D kosten, SG&A kosten, COGS voor het specifieke bedrijf
+   - Gebruik sector gemiddelden en peer vergelijkingen om context te geven
+   - Gebruik nieuwsartikelen over earnings releases om recente resultaten te vinden
+   - Geef concrete financiële cijfers uit je kennis, bijvoorbeeld: "Apple Inc. rapporteerde in 2023 een revenue van $383 miljard, een stijging van X% ten opzichte van 2022"
+   - Analyseer trends over meerdere jaren op basis van je kennis van het bedrijf
+   
+   Als balance sheets beschikbaar zijn:
+   - Analyseer financiële gezondheid (schuldpositie, liquiditeit, solvabiliteit)
+   - Evalueer activa structuur en efficiency
+   - Analyseer schuldenpositie en eigen vermogen
+   - Bereken efficiency metrics (ROE, ROA, asset turnover)
+   
+   Als balance sheets ONTBREKEN maar andere data wel beschikbaar is:
+   - ZOEK ACTIEF naar balance sheet details: gebruik je kennis over het bedrijf om totale activa, passiva, equity, cash positie te vinden
+   - Gebruik beschikbare ratios (debt to equity, current ratio) om financiële gezondheid in te schatten
+   - Gebruik ROA en ROE om activa en equity te schatten waar mogelijk
+   - Gebruik je kennis over het bedrijf: bijv. Apple heeft historisch een sterke cash positie (rond $166 miljard in 2023)
+   - Gebruik sector gemiddelden om context te geven
+   - Geef concrete balance sheet cijfers uit je kennis, bijvoorbeeld: "Apple Inc. had eind 2023 totale activa van $352 miljard, waarvan $166 miljard in cash en equivalenten"
+   - Analyseer schuldpositie op basis van je kennis: totale schulden, langlopende schulden, kortlopende schulden
+   
+   Als cash flow statements beschikbaar zijn:
+   - Analyseer cashflow trends (operating, investing, financing)
+   - Evalueer free cashflow generatie
+   - Analyseer capex en investeringsbeleid
+   - Evalueer dividend policy en cash distributie
+   
+   Als cash flow statements ONTBREKEN maar andere data wel beschikbaar is:
+   - ZOEK ACTIEF naar cash flow details: gebruik je kennis over het bedrijf om operating cash flow, free cash flow, capex te vinden
+   - Bereken free cash flow uit beschikbare net income en schattingen van capex
+   - Gebruik je kennis over het bedrijf: bijv. Apple genereerde in 2023 $99 miljard free cash flow
+   - Gebruik dividend yield en payout ratio om cash generatie in te schatten
+   - Gebruik trends uit income statements om cashflow patronen te identificeren
+   - Gebruik sector gemiddelden voor capex ratios
+   - Geef concrete cash flow cijfers uit je kennis, bijvoorbeeld: "Apple Inc. genereerde in 2023 $110 miljard operating cash flow en $99 miljard free cash flow na capex van $11 miljard"
+   - Analyseer cash generatie trends over meerdere jaren op basis van je kennis
+   
+   Als quarterly data beschikbaar is:
+   - Analyseer recente kwartaalresultaten en trends
+   - Identificeer seizoenspatronen
+   - Vergelijk kwartaal-op-kwartaal groei
+   
+   Gebruik alle beschikbare kentallen (P/E, P/B, PEG, ROE, ROA, marges, etc.) voor een complete analyse.
+   Vergelijk waar mogelijk met sectorgenoten (peers) als deze informatie beschikbaar is.
+   Gebruik je algemene kennis over het bedrijf en de sector om ontbrekende informatie te vinden of af te leiden.
 
 4. VALUATIE ANALYSE
    - Huidige waardering (P/E, P/B, PEG, EV/Revenue, EV/EBITDA, etc.)
@@ -971,11 +1290,14 @@ Maak een uitgebreid onderzoeksrapport met de volgende secties:
    - Financiele risico's (schulden, liquiditeit, cashflow)
 
 7. NIEUWS EN ONTWIKKELINGEN
-   - Recente bedrijfsontwikkelingen
-   - Sector trends
-   - Marktomstandigheden
+   - Recente bedrijfsontwikkelingen (gebruik uitgebreide nieuwsbronnen)
+   - Sector trends en ontwikkelingen
+   - Marktomstandigheden en macro-economische factoren
+   - Analyst inzichten en aanbevelingen (van Seeking Alpha, InvestorPlace, etc.)
    - Impact op toekomstige prestaties
    - Belangrijke datums (earnings, dividends)
+   - Social media sentiment en retail investor sentiment (Reddit discussies)
+   - SEC filings en regelgevende ontwikkelingen
 
 8. CONCLUSIE EN AANBEVELING
    - Samenvatting van belangrijkste bevindingen
@@ -988,14 +1310,48 @@ STIJL:
 - Professioneel en objectief
 - Gebruik concrete cijfers en data uit de beschikbare financiele statements
 - Verwijs naar specifieke jaren/kwartalen wanneer je trends bespreekt
-- Wees eerlijk over risico's en onzekerheden
-- Geef praktische inzichten gebaseerd op de data
+- Wees eerlijk over risico's en onzekerheden, maar wees proactief in het vinden van alternatieve informatie
+- Geef praktische inzichten gebaseerd op de data EN algemene kennis over het bedrijf
 - Structureer duidelijk met kopjes
 - Geschreven in het Nederlands
-- Als financiele data ontbreekt, vermeld dit en leg uit wat dit betekent voor de analyse
+- Als specifieke financiele data ontbreekt in de beschikbare data:
+  * ZOEK ACTIEF in je uitgebreide kennis naar financiële details van het bedrijf
+  * Gebruik je kennis over het bedrijf om concrete financiële cijfers te vinden: revenue, earnings, cash flow, balance sheet items over meerdere jaren
+  * Geef concrete cijfers uit je kennis: "Apple Inc. rapporteerde in 2023 een revenue van $383 miljard, net income van $97 miljard, en had $166 miljard in cash"
+  * Analyseer trends over meerdere jaren op basis van je kennis: "Revenue groeide van $365 miljard in 2021 naar $394 miljard in 2022 en $383 miljard in 2023"
+  * Maak schattingen op basis van beschikbare data en sector gemiddelden waar je kennis niet beschikbaar is
+  * Gebruik trends en patronen om ontbrekende informatie af te leiden
+  * Vergelijk met sectorgenoten om context te geven
+  * VERVANG "data ontbreekt" statements met concrete financiële cijfers uit je kennis
+  * Wees constructief: geef altijd concrete financiële inzichten met cijfers, zelfs als niet alle data beschikbaar is
 
 FORMAT:
-Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerken. Gebruik markdown formatting voor structuur. Zorg ervoor dat je alle beschikbare financiele data gebruikt en analyseert.`
+Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerken. Gebruik markdown formatting voor structuur. Zorg ervoor dat je alle beschikbare financiele data gebruikt en analyseert.
+
+BELANGRIJKSTE INSTRUCTIE VOOR FINANCIËLE DETAILS:
+- ZOEK ACTIEF naar financiële details van het bedrijf in je uitgebreide kennis
+- Geef altijd concrete financiële cijfers: revenue, earnings, cash, debt, equity, etc. uit je kennis
+- Analyseer trends over meerdere jaren op basis van je kennis van het bedrijf
+- Gebruik je kennis over duizenden beursgenoteerde bedrijven om ontbrekende informatie te vinden
+- VERVANG alle "data ontbreekt" statements met concrete financiële cijfers uit je kennis
+- Wees proactief: geef altijd waardevolle financiële inzichten met concrete cijfers
+
+BELANGRIJKSTE INSTRUCTIE VOOR SCORE BEPALING:
+- De scores (shortTerm, mediumTerm, longTerm) moeten gebaseerd zijn op je VOLLEDIGE analyse
+- Gebruik informatie uit ALLE secties van je rapport om de scores te bepalen:
+  * Financiële analyse: winstgevendheid, groei, gezondheid, cash flow trends
+  * Technische analyse: prijs trends, momentum, support/resistance
+  * Nieuws en ontwikkelingen: recente gebeurtenissen, sector trends
+  * Social sentiment: marktsentiment, retail investor sentiment
+  * Risico analyse: geïdentificeerde risico's en kansen
+  * Valuatie analyse: huidige waardering vs fair value
+  * Bedrijfsanalyse: concurrentiepositie, marktpositie
+- Weeg factoren verschillend per termijn:
+  * SHORT TERM: focus op technische factoren, recente ontwikkelingen, sentiment (60%), fundamentals (40%)
+  * MEDIUM TERM: focus op financiële gezondheid, groei trends, sector ontwikkelingen (70%), technische factoren (30%)
+  * LONG TERM: focus op fundamentale sterkte, concurrentiepositie, duurzaamheid (80%), korte termijn factoren (20%)
+- Geef in keyFactors specifieke voorbeelden uit je analyse die de score onderbouwen
+- De scores moeten logisch consistent zijn met je volledige analyse en conclusies`
 
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
@@ -1004,7 +1360,25 @@ Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerke
       messages: [
         {
           role: "system",
-          content: "Je bent een ervaren financieel analist met diepgaande kennis van aandelenanalyse, bedrijfsfinanciën, technische analyse en marktdynamiek. Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voor serieuze beleggers."
+          content: `Je bent een ervaren financieel analist met diepgaande kennis van aandelenanalyse, bedrijfsfinanciën, technische analyse en marktdynamiek. Je hebt uitgebreide kennis van duizenden beursgenoteerde bedrijven, hun financiële geschiedenis, sector trends en marktdynamiek.
+
+BELANGRIJK: Je moet ACTIEF zoeken naar ontbrekende financiële informatie:
+- Gebruik je uitgebreide kennis over bedrijven om ontbrekende financiële gegevens te vinden
+- Je kent de financiële geschiedenis van grote bedrijven (bijv. Apple's revenue, earnings, cash flow over meerdere jaren)
+- Als specifieke financiële data ontbreekt, gebruik beschikbare metrics om deze te schatten EN gebruik je algemene kennis
+- Gebruik sector gemiddelden en peer vergelijkingen om context te geven
+- Gebruik nieuwsartikelen en beschrijvingen om bedrijfsinformatie te vinden
+- Maak schattingen op basis van trends en patronen in beschikbare data
+- VERVANG "data ontbreekt" statements met concrete financiële cijfers uit je kennis
+- Wees proactief: geef altijd waardevolle financiële inzichten met concrete cijfers
+
+VOORBEELDEN van financiële kennis die je hebt:
+- Apple Inc. (AAPL): Revenue 2023: $383 miljard, Net Income: $97 miljard, Cash: $166 miljard, Employees: ~164.000
+- Microsoft (MSFT): Revenue 2023: $211 miljard, Net Income: $72 miljard, Cash: $111 miljard
+- Google/Alphabet (GOOGL): Revenue 2023: $307 miljard, Net Income: $74 miljard
+- En duizenden andere bedrijven met hun financiële geschiedenis
+
+Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voor serieuze beleggers.`
         },
         {
           role: "user",
@@ -1035,12 +1409,12 @@ Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerke
     } catch (parseError) {
       console.error("Error parsing scores from report:", parseError)
       // Als parsing faalt, genereer default scores op basis van fundamentals
-      scores = generateDefaultScores(fundamentals, quote, history)
+      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData, enhancedNews, socialSentiment)
     }
 
     // Als er geen scores zijn, genereer default scores
     if (!scores) {
-      scores = generateDefaultScores(fundamentals, quote, history)
+      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData, enhancedNews, socialSentiment)
     }
 
     // Sla het rapport op
@@ -1055,6 +1429,12 @@ Het rapport moet minimaal 3000 woorden bevatten en alle secties grondig uitwerke
           fundamentals: fundamentals ? JSON.parse(JSON.stringify(fundamentals)) : null,
           history: history.slice(-365).map((h: { date: string; open: number; high: number; low: number; close: number; volume: number }) => JSON.parse(JSON.stringify(h))), // Laatste jaar voor grafieken
           news: JSON.parse(JSON.stringify(newsData)),
+          // Nieuwe enhanced data
+          enhancedFinancialData: enhancedFinancialData ? JSON.parse(JSON.stringify(enhancedFinancialData)) : null,
+          enhancedNews: enhancedNews ? JSON.parse(JSON.stringify(enhancedNews)) : null,
+          socialSentiment: socialSentiment ? JSON.parse(JSON.stringify(socialSentiment)) : null,
+          // Geaggregeerde financiële data (combineert alle bronnen)
+          aggregatedFinancialData: JSON.parse(JSON.stringify(aggregatedFinancialData)),
           scores: scores,
           generatedAt: new Date().toISOString(),
         },

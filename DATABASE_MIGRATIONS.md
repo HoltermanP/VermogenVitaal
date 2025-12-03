@@ -302,3 +302,4 @@ Als je problemen hebt met migraties:
 4. Gebruik `npx prisma migrate status` om migratie status te controleren
 
 
+

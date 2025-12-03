@@ -107,3 +107,4 @@ npx prisma studio
 - Check met `npx prisma migrate status`
 
 
+

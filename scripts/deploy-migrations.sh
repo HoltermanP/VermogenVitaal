@@ -106,3 +106,4 @@ echo "- Test de applicatie (probeer in te loggen)"
 echo "- Check database tabellen met: npx prisma studio"
 
 
+

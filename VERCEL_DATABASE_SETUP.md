@@ -168,3 +168,4 @@ Voordat je deployt:
 - [ ] Applicatie is herdeployed na het instellen van `DATABASE_URL`
 
 
+

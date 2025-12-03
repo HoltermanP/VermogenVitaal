@@ -87,3 +87,4 @@ Na het uitvoeren van migraties:
 - Check met `npx prisma migrate status`
 
 
+

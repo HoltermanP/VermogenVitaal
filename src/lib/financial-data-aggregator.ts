@@ -1,0 +1,496 @@
+/**
+ * Financial Data Aggregator
+ * Combineert en valideert financiële data van meerdere bronnen
+ * Zorgt ervoor dat er altijd zoveel mogelijk data beschikbaar is
+ */
+
+import { fetchEnhancedFinancialData, FinancialData } from './enhanced-financial-data'
+
+interface AggregatedFinancialData {
+  // Basis info
+  symbol: string
+  companyName: string
+  sector?: string
+  industry?: string
+  
+  // Yahoo Finance data
+  yahooData?: any
+  
+  // Enhanced data
+  enhancedData?: FinancialData
+  
+  // Geaggregeerde cijfers (beste beschikbare waarde)
+  marketCap?: number
+  revenue?: number
+  netIncome?: number
+  earningsPerShare?: number
+  priceToEarnings?: number
+  priceToBook?: number
+  returnOnEquity?: number
+  returnOnAssets?: number
+  debtToEquity?: number
+  currentRatio?: number
+  profitMargin?: number
+  operatingMargin?: number
+  
+  // Financial statements (gecombineerd van alle bronnen)
+  incomeStatements: any[]
+  balanceSheets: any[]
+  cashFlowStatements: any[]
+  
+  // Quarterly data
+  quarterlyIncome: any[]
+  quarterlyBalance: any[]
+  quarterlyCashFlow: any[]
+  
+  // Earnings data
+  earningsHistory: any[]
+  earningsTrend: any[]
+  
+  // Data kwaliteit indicator
+  dataQuality: {
+    hasIncomeStatements: boolean
+    hasBalanceSheets: boolean
+    hasCashFlow: boolean
+    hasQuarterlyData: boolean
+    hasEarningsData: boolean
+    sources: string[]
+  }
+}
+
+/**
+ * Combineer Yahoo Finance data met Enhanced Financial Data
+ */
+export function aggregateFinancialData(
+  yahooFundamentals: any,
+  enhancedData: FinancialData | null
+): AggregatedFinancialData {
+  const result: AggregatedFinancialData = {
+    symbol: yahooFundamentals?.symbol || enhancedData?.symbol || '',
+    companyName: yahooFundamentals?.companyName || enhancedData?.companyName || '',
+    sector: yahooFundamentals?.sector || enhancedData?.sector,
+    industry: yahooFundamentals?.industry || enhancedData?.industry,
+    yahooData: yahooFundamentals,
+    enhancedData: enhancedData || undefined,
+    incomeStatements: [],
+    balanceSheets: [],
+    cashFlowStatements: [],
+    quarterlyIncome: [],
+    quarterlyBalance: [],
+    quarterlyCashFlow: [],
+    earningsHistory: [],
+    earningsTrend: [],
+    dataQuality: {
+      hasIncomeStatements: false,
+      hasBalanceSheets: false,
+      hasCashFlow: false,
+      hasQuarterlyData: false,
+      hasEarningsData: false,
+      sources: []
+    }
+  }
+
+  // Combineer income statements
+  if (yahooFundamentals?.incomeStatement && yahooFundamentals.incomeStatement.length > 0) {
+    result.incomeStatements.push(...yahooFundamentals.incomeStatement)
+    result.dataQuality.hasIncomeStatements = true
+    result.dataQuality.sources.push('Yahoo Finance')
+  }
+  
+  if (enhancedData?.fmpData?.incomeStatement && enhancedData.fmpData.incomeStatement.length > 0) {
+    // Voeg FMP data toe als het niet al bestaat
+    const existingDates = new Set(result.incomeStatements.map((s: any) => {
+      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      return date
+    }))
+    
+    enhancedData.fmpData.incomeStatement.forEach((statement: any) => {
+      const date = statement.date || statement.calendarYear
+      if (!existingDates.has(date)) {
+        result.incomeStatements.push(statement)
+      }
+    })
+    
+    if (!result.dataQuality.hasIncomeStatements) {
+      result.dataQuality.hasIncomeStatements = true
+    }
+    if (!result.dataQuality.sources.includes('Financial Modeling Prep')) {
+      result.dataQuality.sources.push('Financial Modeling Prep')
+    }
+  }
+
+  // Combineer balance sheets
+  if (yahooFundamentals?.balanceSheet && yahooFundamentals.balanceSheet.length > 0) {
+    result.balanceSheets.push(...yahooFundamentals.balanceSheet)
+    result.dataQuality.hasBalanceSheets = true
+    if (!result.dataQuality.sources.includes('Yahoo Finance')) {
+      result.dataQuality.sources.push('Yahoo Finance')
+    }
+  }
+  
+  if (enhancedData?.fmpData?.balanceSheet && enhancedData.fmpData.balanceSheet.length > 0) {
+    const existingDates = new Set(result.balanceSheets.map((s: any) => {
+      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      return date
+    }))
+    
+    enhancedData.fmpData.balanceSheet.forEach((sheet: any) => {
+      const date = sheet.date || sheet.calendarYear
+      if (!existingDates.has(date)) {
+        result.balanceSheets.push(sheet)
+      }
+    })
+    
+    if (!result.dataQuality.hasBalanceSheets) {
+      result.dataQuality.hasBalanceSheets = true
+    }
+    if (!result.dataQuality.sources.includes('Financial Modeling Prep')) {
+      result.dataQuality.sources.push('Financial Modeling Prep')
+    }
+  }
+
+  // Combineer cash flow statements
+  if (yahooFundamentals?.cashFlow && yahooFundamentals.cashFlow.length > 0) {
+    result.cashFlowStatements.push(...yahooFundamentals.cashFlow)
+    result.dataQuality.hasCashFlow = true
+    if (!result.dataQuality.sources.includes('Yahoo Finance')) {
+      result.dataQuality.sources.push('Yahoo Finance')
+    }
+  }
+  
+  if (enhancedData?.fmpData?.cashFlow && enhancedData.fmpData.cashFlow.length > 0) {
+    const existingDates = new Set(result.cashFlowStatements.map((s: any) => {
+      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      return date
+    }))
+    
+    enhancedData.fmpData.cashFlow.forEach((flow: any) => {
+      const date = flow.date || flow.calendarYear
+      if (!existingDates.has(date)) {
+        result.cashFlowStatements.push(flow)
+      }
+    })
+    
+    if (!result.dataQuality.hasCashFlow) {
+      result.dataQuality.hasCashFlow = true
+    }
+    if (!result.dataQuality.sources.includes('Financial Modeling Prep')) {
+      result.dataQuality.sources.push('Financial Modeling Prep')
+    }
+  }
+
+  // Quarterly data
+  if (yahooFundamentals?.quarterlyIncome && yahooFundamentals.quarterlyIncome.length > 0) {
+    result.quarterlyIncome.push(...yahooFundamentals.quarterlyIncome)
+    result.dataQuality.hasQuarterlyData = true
+  }
+  
+  if (yahooFundamentals?.quarterlyBalance && yahooFundamentals.quarterlyBalance.length > 0) {
+    result.quarterlyBalance.push(...yahooFundamentals.quarterlyBalance)
+  }
+  
+  if (yahooFundamentals?.quarterlyCashFlow && yahooFundamentals.quarterlyCashFlow.length > 0) {
+    result.quarterlyCashFlow.push(...yahooFundamentals.quarterlyCashFlow)
+  }
+
+  // Earnings data
+  if (yahooFundamentals?.earningsHistory && yahooFundamentals.earningsHistory.length > 0) {
+    result.earningsHistory.push(...yahooFundamentals.earningsHistory)
+    result.dataQuality.hasEarningsData = true
+  }
+  
+  if (enhancedData?.alphaVantageData?.earnings?.annualEarnings) {
+    enhancedData.alphaVantageData.earnings.annualEarnings.forEach((earn: any) => {
+      result.earningsHistory.push({
+        fiscalDateEnding: earn.fiscalDateEnding,
+        reportedEPS: earn.reportedEPS
+      })
+    })
+    if (!result.dataQuality.hasEarningsData) {
+      result.dataQuality.hasEarningsData = true
+    }
+    if (!result.dataQuality.sources.includes('Alpha Vantage')) {
+      result.dataQuality.sources.push('Alpha Vantage')
+    }
+  }
+  
+  if (yahooFundamentals?.earningsTrend && yahooFundamentals.earningsTrend.length > 0) {
+    result.earningsTrend.push(...yahooFundamentals.earningsTrend)
+  }
+
+  // Aggregeer key metrics (gebruik beste beschikbare waarde)
+  result.marketCap = yahooFundamentals?.marketCap || 
+                     enhancedData?.fmpData?.profile?.mktCap ||
+                     (enhancedData?.alphaVantageData?.overview?.MarketCapitalization ? 
+                     parseFloat(enhancedData.alphaVantageData.overview.MarketCapitalization) : undefined)
+
+  result.earningsPerShare = yahooFundamentals?.earningsPerShare ||
+                            enhancedData?.fmpData?.keyMetrics?.peRatio || undefined
+
+  result.priceToEarnings = yahooFundamentals?.trailingPE ||
+                           enhancedData?.fmpData?.keyMetrics?.peRatio ||
+                           (enhancedData?.alphaVantageData?.overview?.PERatio ?
+                           parseFloat(enhancedData.alphaVantageData.overview.PERatio) : undefined)
+
+  result.priceToBook = yahooFundamentals?.priceToBook ||
+                       enhancedData?.fmpData?.keyMetrics?.pbRatio ||
+                       (enhancedData?.alphaVantageData?.overview?.PriceToBookRatio ?
+                       parseFloat(enhancedData.alphaVantageData.overview.PriceToBookRatio) : undefined)
+
+  result.returnOnEquity = yahooFundamentals?.returnOnEquity ||
+                          enhancedData?.fmpData?.keyMetrics?.roe ||
+                          (enhancedData?.alphaVantageData?.overview?.ReturnOnEquityTTM ?
+                          parseFloat(enhancedData.alphaVantageData.overview.ReturnOnEquityTTM) : undefined)
+
+  result.returnOnAssets = yahooFundamentals?.returnOnAssets ||
+                           enhancedData?.fmpData?.keyMetrics?.roa ||
+                           (enhancedData?.alphaVantageData?.overview?.ReturnOnAssetsTTM ?
+                           parseFloat(enhancedData.alphaVantageData.overview.ReturnOnAssetsTTM) : undefined)
+
+  result.debtToEquity = yahooFundamentals?.debtToEquity ||
+                        enhancedData?.fmpData?.keyMetrics?.debtToEquity ||
+                        (enhancedData?.alphaVantageData?.overview?.DebtToEquity ?
+                        parseFloat(enhancedData.alphaVantageData.overview.DebtToEquity) : undefined)
+
+  result.currentRatio = yahooFundamentals?.currentRatio ||
+                        enhancedData?.fmpData?.financialRatios?.currentRatio || undefined
+
+  result.profitMargin = yahooFundamentals?.profitMargins ||
+                        enhancedData?.fmpData?.financialRatios?.netProfitMargin ||
+                        (enhancedData?.alphaVantageData?.overview?.ProfitMargin ?
+                        parseFloat(enhancedData.alphaVantageData.overview.ProfitMargin) : undefined)
+
+  result.operatingMargin = yahooFundamentals?.operatingMargins ||
+                           enhancedData?.fmpData?.financialRatios?.operatingProfitMargin || undefined
+
+  // Haal revenue en net income uit meest recente income statement
+  if (result.incomeStatements.length > 0) {
+    const latestIncome = result.incomeStatements[0]
+    result.revenue = latestIncome.totalRevenue?.raw || latestIncome.revenue || latestIncome.totalRevenue
+    result.netIncome = latestIncome.netIncome?.raw || latestIncome.netIncome
+  }
+
+  // Sorteer statements op datum (nieuwste eerst)
+  result.incomeStatements.sort((a: any, b: any) => {
+    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
+    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
+    return dateB.localeCompare(dateA)
+  })
+
+  result.balanceSheets.sort((a: any, b: any) => {
+    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
+    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
+    return dateB.localeCompare(dateA)
+  })
+
+  result.cashFlowStatements.sort((a: any, b: any) => {
+    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
+    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
+    return dateB.localeCompare(dateA)
+  })
+
+  return result
+}
+
+/**
+ * Format geaggregeerde data voor AI prompt
+ */
+export function formatAggregatedFinancialData(data: AggregatedFinancialData): string {
+  let formatted = `\n=== FINANCIËLE DATA (Geaggregeerd van ${data.dataQuality.sources.join(', ')}) ===\n`
+
+  // Data kwaliteit indicator
+  formatted += `\nDATA KWALITEIT:\n`
+  formatted += `- Income Statements: ${data.dataQuality.hasIncomeStatements ? `✅ (${data.incomeStatements.length} jaar)` : '❌ Ontbrekend'}\n`
+  formatted += `- Balance Sheets: ${data.dataQuality.hasBalanceSheets ? `✅ (${data.balanceSheets.length} jaar)` : '❌ Ontbrekend'}\n`
+  formatted += `- Cash Flow Statements: ${data.dataQuality.hasCashFlow ? `✅ (${data.cashFlowStatements.length} jaar)` : '❌ Ontbrekend'}\n`
+  formatted += `- Quarterly Data: ${data.dataQuality.hasQuarterlyData ? '✅' : '❌ Ontbrekend'}\n`
+  formatted += `- Earnings Data: ${data.dataQuality.hasEarningsData ? `✅ (${data.earningsHistory.length} periodes)` : '❌ Ontbrekend'}\n`
+
+  // Key metrics
+  formatted += `\nBELANGRIJKE KENTALLEN:\n`
+  if (data.marketCap) {
+    formatted += `- Marktkapitalisatie: $${(data.marketCap / 1e9).toFixed(2)}B\n`
+  }
+  if (data.revenue) {
+    formatted += `- Revenue (meest recent): $${(data.revenue / 1e9).toFixed(2)}B\n`
+  }
+  if (data.netIncome) {
+    formatted += `- Netto Inkomen (meest recent): $${(data.netIncome / 1e9).toFixed(2)}B\n`
+  }
+  if (data.earningsPerShare) {
+    formatted += `- Earnings per Share: $${data.earningsPerShare.toFixed(2)}\n`
+  }
+  if (data.priceToEarnings) {
+    formatted += `- P/E Ratio: ${data.priceToEarnings.toFixed(2)}\n`
+  }
+  if (data.priceToBook) {
+    formatted += `- Price to Book: ${data.priceToBook.toFixed(2)}\n`
+  }
+  if (data.returnOnEquity) {
+    formatted += `- Return on Equity: ${(data.returnOnEquity * 100).toFixed(2)}%\n`
+  }
+  if (data.returnOnAssets) {
+    formatted += `- Return on Assets: ${(data.returnOnAssets * 100).toFixed(2)}%\n`
+  }
+  if (data.debtToEquity) {
+    formatted += `- Debt to Equity: ${data.debtToEquity.toFixed(2)}\n`
+  }
+  if (data.currentRatio) {
+    formatted += `- Current Ratio: ${data.currentRatio.toFixed(2)}\n`
+  }
+  if (data.profitMargin) {
+    formatted += `- Profit Margin: ${(data.profitMargin * 100).toFixed(2)}%\n`
+  }
+  if (data.operatingMargin) {
+    formatted += `- Operating Margin: ${(data.operatingMargin * 100).toFixed(2)}%\n`
+  }
+
+  // Helper functie voor formatting
+  const formatFinancialValue = (value: number | null | undefined, isPercentage = false, isCurrency = false) => {
+    if (value === null || value === undefined || isNaN(value)) return 'N/A'
+    if (isPercentage) return `${(value * 100).toFixed(2)}%`
+    if (isCurrency) {
+      if (Math.abs(value) >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
+      if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
+      if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+      return `$${value.toFixed(2)}`
+    }
+    return value.toFixed(2)
+  }
+
+  // Income statements - GEDETAILLEERD
+  if (data.incomeStatements.length > 0) {
+    formatted += `\n=== INCOME STATEMENTS (${data.incomeStatements.length} jaar beschikbaar) ===\n`
+    data.incomeStatements.slice(0, 10).forEach((stmt: any, idx: number) => {
+      const date = stmt.endDate?.fmt || stmt.endDate?.raw || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`
+      formatted += `\nJaar ${date}:\n`
+      formatted += `- Totale Omzet (Revenue): ${formatFinancialValue(stmt.totalRevenue?.raw || stmt.revenue || stmt.totalRevenue, false, true)}\n`
+      formatted += `- Kosten van Omzet (COGS): ${formatFinancialValue(stmt.costOfRevenue?.raw || stmt.costOfRevenue || stmt.costOfGoodsSold, false, true)}\n`
+      formatted += `- Bruto Winst (Gross Profit): ${formatFinancialValue(stmt.grossProfit?.raw || stmt.grossProfit, false, true)}\n`
+      formatted += `- Research & Development: ${formatFinancialValue(stmt.researchDevelopment?.raw || stmt.researchAndDevelopment || stmt.researchDevelopment, false, true)}\n`
+      formatted += `- Verkoop, Algemeen & Administratief (SG&A): ${formatFinancialValue(stmt.sellingGeneralAdministrative?.raw || stmt.sellingGeneralAndAdministrative || stmt.sellingGeneralAdministrative, false, true)}\n`
+      formatted += `- Operationeel Inkomen (Operating Income): ${formatFinancialValue(stmt.operatingIncome?.raw || stmt.operatingIncome, false, true)}\n`
+      formatted += `- EBITDA: ${formatFinancialValue(stmt.ebitda?.raw || stmt.ebitda, false, true)}\n`
+      formatted += `- Rente Kosten: ${formatFinancialValue(stmt.interestExpense?.raw || stmt.interestExpense, false, true)}\n`
+      formatted += `- Belastingen: ${formatFinancialValue(stmt.incomeTaxExpense?.raw || stmt.incomeTaxExpense || stmt.taxProvision, false, true)}\n`
+      formatted += `- Netto Inkomen (Net Income): ${formatFinancialValue(stmt.netIncome?.raw || stmt.netIncome, false, true)}\n`
+      formatted += `- Netto Inkomen per Aandeel (EPS): ${formatFinancialValue(stmt.netIncomeCommonStockholders?.raw || stmt.netIncomeCommonStockholders, false, true)}\n`
+      
+      // Bereken marges als data beschikbaar is
+      const revenue = stmt.totalRevenue?.raw || stmt.revenue || stmt.totalRevenue
+      if (revenue && revenue > 0) {
+        const grossProfit = stmt.grossProfit?.raw || stmt.grossProfit
+        const operatingIncome = stmt.operatingIncome?.raw || stmt.operatingIncome
+        const netIncome = stmt.netIncome?.raw || stmt.netIncome
+        
+        if (grossProfit) formatted += `- Bruto Winstmarge: ${formatFinancialValue(grossProfit / revenue, true)}\n`
+        if (operatingIncome) formatted += `- Operationele Marge: ${formatFinancialValue(operatingIncome / revenue, true)}\n`
+        if (netIncome) formatted += `- Netto Winstmarge: ${formatFinancialValue(netIncome / revenue, true)}\n`
+      }
+    })
+  }
+
+  // Balance sheets - GEDETAILLEERD
+  if (data.balanceSheets.length > 0) {
+    formatted += `\n=== BALANCE SHEETS (${data.balanceSheets.length} jaar beschikbaar) ===\n`
+    data.balanceSheets.slice(0, 10).forEach((sheet: any, idx: number) => {
+      const date = sheet.endDate?.fmt || sheet.endDate?.raw || sheet.date || sheet.calendarYear || `Jaar ${idx + 1}`
+      formatted += `\nJaar ${date}:\n`
+      formatted += `ACTIVA:\n`
+      formatted += `- Cash en Equivalenten: ${formatFinancialValue(sheet.cash?.raw || sheet.cashAndCashEquivalents || sheet.cash, false, true)}\n`
+      formatted += `- Kortlopende Investeringen: ${formatFinancialValue(sheet.shortTermInvestments?.raw || sheet.shortTermInvestments, false, true)}\n`
+      formatted += `- Vorderingen (Accounts Receivable): ${formatFinancialValue(sheet.netReceivables?.raw || sheet.accountsReceivable || sheet.netReceivables, false, true)}\n`
+      formatted += `- Voorraden (Inventory): ${formatFinancialValue(sheet.inventory?.raw || sheet.inventory, false, true)}\n`
+      formatted += `- Vlottende Activa (Current Assets): ${formatFinancialValue(sheet.totalCurrentAssets?.raw || sheet.totalCurrentAssets, false, true)}\n`
+      formatted += `- Vaste Activa (Property, Plant & Equipment): ${formatFinancialValue(sheet.propertyPlantEquipment?.raw || sheet.propertyPlantEquipmentNet || sheet.propertyPlantEquipment, false, true)}\n`
+      formatted += `- Goodwill: ${formatFinancialValue(sheet.goodWill?.raw || sheet.goodwill || sheet.goodWill, false, true)}\n`
+      formatted += `- Immateriële Activa (Intangible Assets): ${formatFinancialValue(sheet.intangibleAssets?.raw || sheet.intangibleAssets, false, true)}\n`
+      formatted += `- Totale Activa: ${formatFinancialValue(sheet.totalAssets?.raw || sheet.totalAssets, false, true)}\n`
+      
+      formatted += `PASSIVA:\n`
+      formatted += `- Kortlopende Schulden (Current Liabilities): ${formatFinancialValue(sheet.totalCurrentLiabilities?.raw || sheet.totalCurrentLiabilities, false, true)}\n`
+      formatted += `- Langlopende Schuld (Long Term Debt): ${formatFinancialValue(sheet.longTermDebt?.raw || sheet.longTermDebt, false, true)}\n`
+      formatted += `- Totale Schulden (Total Liabilities): ${formatFinancialValue(sheet.totalLiab?.raw || sheet.totalLiabilities || sheet.totalLiab, false, true)}\n`
+      formatted += `- Eigen Vermogen (Stockholders Equity): ${formatFinancialValue(sheet.totalStockholderEquity?.raw || sheet.totalStockholderEquity || sheet.commonStock, false, true)}\n`
+      formatted += `- Retained Earnings: ${formatFinancialValue(sheet.retainedEarnings?.raw || sheet.retainedEarnings, false, true)}\n`
+      
+      // Bereken ratios als data beschikbaar is
+      const totalAssets = sheet.totalAssets?.raw || sheet.totalAssets
+      const totalLiabilities = sheet.totalLiab?.raw || sheet.totalLiabilities || sheet.totalLiab
+      const equity = sheet.totalStockholderEquity?.raw || sheet.totalStockholderEquity
+      const currentAssets = sheet.totalCurrentAssets?.raw || sheet.totalCurrentAssets
+      const currentLiabilities = sheet.totalCurrentLiabilities?.raw || sheet.totalCurrentLiabilities
+      
+      if (equity && equity > 0 && totalLiabilities) {
+        formatted += `- Debt to Equity Ratio: ${formatFinancialValue(totalLiabilities / equity)}\n`
+      }
+      if (currentAssets && currentLiabilities && currentLiabilities > 0) {
+        formatted += `- Current Ratio: ${formatFinancialValue(currentAssets / currentLiabilities)}\n`
+      }
+    })
+  }
+
+  // Cash flow statements - GEDETAILLEERD
+  if (data.cashFlowStatements.length > 0) {
+    formatted += `\n=== CASH FLOW STATEMENTS (${data.cashFlowStatements.length} jaar beschikbaar) ===\n`
+    data.cashFlowStatements.slice(0, 10).forEach((flow: any, idx: number) => {
+      const date = flow.endDate?.fmt || flow.endDate?.raw || flow.date || flow.calendarYear || `Jaar ${idx + 1}`
+      formatted += `\nJaar ${date}:\n`
+      
+      const operating = flow.totalCashFromOperatingActivities?.raw || flow.operatingCashFlow || flow.netCashProvidedByOperatingActivities
+      const capex = flow.capitalExpenditures?.raw || flow.capitalExpenditures || flow.capitalExpenditure
+      const investing = flow.totalCashflowsFromInvestingActivities?.raw || flow.investingCashFlow || flow.netCashUsedForInvestingActivites
+      const financing = flow.totalCashFromFinancingActivities?.raw || flow.financingCashFlow || flow.netCashUsedProvidedByFinancingActivities
+      const dividends = flow.dividendsPaid?.raw || flow.dividendsPaid
+      const netBorrowings = flow.netBorrowings?.raw || flow.netBorrowings
+      const freeCashFlow = operating && capex ? operating - Math.abs(capex) : null
+      
+      formatted += `OPERATING ACTIVITIES:\n`
+      formatted += `- Netto Cash van Operationele Activiteiten: ${formatFinancialValue(operating, false, true)}\n`
+      formatted += `- Netto Inkomen: ${formatFinancialValue(flow.netIncome?.raw || flow.netIncome, false, true)}\n`
+      formatted += `- Depreciatie & Amortisatie: ${formatFinancialValue(flow.depreciation?.raw || flow.depreciationAndAmortization || flow.depreciation, false, true)}\n`
+      formatted += `- Verandering in Working Capital: ${formatFinancialValue(flow.changeInWorkingCapital?.raw || flow.changeInWorkingCapital, false, true)}\n`
+      
+      formatted += `INVESTING ACTIVITIES:\n`
+      formatted += `- Capital Expenditures (CapEx): ${formatFinancialValue(capex, false, true)}\n`
+      formatted += `- Netto Cash van Investeringen: ${formatFinancialValue(investing, false, true)}\n`
+      
+      formatted += `FINANCING ACTIVITIES:\n`
+      formatted += `- Dividenden Betaald: ${formatFinancialValue(dividends, false, true)}\n`
+      formatted += `- Netto Leningen: ${formatFinancialValue(netBorrowings, false, true)}\n`
+      formatted += `- Netto Cash van Financiering: ${formatFinancialValue(financing, false, true)}\n`
+      
+      formatted += `TOTAAL:\n`
+      formatted += `- Free Cash Flow: ${formatFinancialValue(freeCashFlow, false, true)}\n`
+      formatted += `- Netto Verandering in Cash: ${formatFinancialValue(flow.changeInCash?.raw || flow.changeInCash || (operating && investing && financing ? operating + investing + financing : null), false, true)}\n`
+    })
+  }
+
+  // Quarterly data - GEDETAILLEERD
+  if (data.quarterlyIncome.length > 0) {
+    formatted += `\n=== QUARTERLY INCOME STATEMENTS (${data.quarterlyIncome.length} kwartalen) ===\n`
+    data.quarterlyIncome.slice(0, 8).forEach((q: any, idx: number) => {
+      const date = q.endDate?.fmt || q.endDate?.raw || q.date || `Q${idx + 1}`
+      formatted += `\nKwartaal ${date}:\n`
+      formatted += `- Totale Omzet: ${formatFinancialValue(q.totalRevenue?.raw || q.revenue || q.totalRevenue, false, true)}\n`
+      formatted += `- Bruto Winst: ${formatFinancialValue(q.grossProfit?.raw || q.grossProfit, false, true)}\n`
+      formatted += `- Operationeel Inkomen: ${formatFinancialValue(q.operatingIncome?.raw || q.operatingIncome, false, true)}\n`
+      formatted += `- Netto Inkomen: ${formatFinancialValue(q.netIncome?.raw || q.netIncome, false, true)}\n`
+      formatted += `- Earnings per Share: ${formatFinancialValue(q.netIncomeCommonStockholders?.raw || q.netIncomeCommonStockholders, false, true)}\n`
+    })
+  }
+
+  // Earnings history
+  if (data.earningsHistory.length > 0) {
+    formatted += `\nEARNINGS GESCHIEDENIS:\n`
+    data.earningsHistory.slice(0, 8).forEach((earn: any) => {
+      const date = earn.fiscalDateEnding || earn.quarter || earn.date || 'N/A'
+      const eps = earn.reportedEPS || earn.actual?.raw || earn.actual || 'N/A'
+      const estimate = earn.estimatedEPS || earn.estimate?.raw || earn.estimate || 'N/A'
+      formatted += `${date}: Actual EPS ${eps}, Estimate ${estimate}\n`
+    })
+  }
+
+  return formatted
+}
+
