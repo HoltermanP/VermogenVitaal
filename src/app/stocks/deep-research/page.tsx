@@ -219,12 +219,30 @@ export default function DeepResearchPage() {
           // Voeg toe aan het begin van de lijst
           setReports(prevReports => [newReport, ...prevReports])
           setPollingReportId(data.reportId)
+          
+          // Sluit dialog eerst
+          setSearchDialogOpen(false)
+          setSelectedStock(null)
+          setSearchQuery("")
+          
+          // Haal na een korte delay de volledige lijst op om zeker te zijn dat alles gesynchroniseerd is
+          setTimeout(() => {
+            fetchReports().then(() => {
+              // Scroll naar de rapporten sectie na update
+              setTimeout(() => {
+                const reportsSection = document.getElementById("reports-section")
+                if (reportsSection) {
+                  reportsSection.scrollIntoView({ behavior: "smooth", block: "start" })
+                } else {
+                  // Fallback: scroll naar boven
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }
+              }, 100)
+            })
+          }, 500)
+          
           toast.success("Rapport wordt gegenereerd... Dit kan enkele minuten duren.")
         }
-        
-        setSearchDialogOpen(false)
-        setSelectedStock(null)
-        setSearchQuery("")
       } else {
         const error = await response.json()
         toast.error(error.error || "Fout bij genereren rapport")
@@ -411,7 +429,7 @@ export default function DeepResearchPage() {
           </Card>
 
           {/* Reports List */}
-          <div className="mb-6">
+          <div id="reports-section" className="mb-6">
             <h2 className="text-2xl font-semibold text-foreground mb-4">Mijn Rapporten</h2>
             {loadingReports ? (
               <div className="space-y-4">
