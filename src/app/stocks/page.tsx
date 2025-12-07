@@ -133,6 +133,29 @@ function StocksPageContent() {
   const [gainers, setGainers] = useState<Array<{ symbol: string; name: string; price: number; change: number; changePercent: number; volume: number }>>([])
   const [losers, setLosers] = useState<Array<{ symbol: string; name: string; price: number; change: number; changePercent: number; volume: number }>>([])
   const [loadingGainersLosers, setLoadingGainersLosers] = useState(false)
+  const [selectedCurrency, setSelectedCurrency] = useState<"EUR" | "USD">("EUR")
+  
+  // Wisselkoers EUR/USD (kan later worden uitgebreid met een echte API)
+  const EUR_TO_USD_RATE = 1.10
+  
+  // Helper functie om prijzen te converteren en formatteren
+  const formatPrice = (price: number, decimals: number = 2): string => {
+    const convertedPrice = selectedCurrency === "EUR" ? price / EUR_TO_USD_RATE : price
+    const symbol = selectedCurrency === "EUR" ? "€" : "$"
+    return `${symbol}${convertedPrice.toFixed(decimals)}`
+  }
+  
+  // Helper functie om alleen de geconverteerde prijs te krijgen (zonder symbool)
+  const convertPrice = (price: number): number => {
+    return selectedCurrency === "EUR" ? price / EUR_TO_USD_RATE : price
+  }
+  
+  // Helper functie voor tekstuele prijsweergave (gebruikt in analyses)
+  const formatPriceText = (price: number, decimals: number = 2): string => {
+    const convertedPrice = convertPrice(price)
+    const symbol = selectedCurrency === "EUR" ? "€" : "$"
+    return `${symbol}${convertedPrice.toFixed(decimals)}`
+  }
 
   // Technische analyse functies
   const calculateSMA = (data: StockHistory[], period: number): number[] => {
@@ -2119,6 +2142,15 @@ function StocksPageContent() {
                   Congressional Trades
                 </Link>
               </Button> */}
+              <Select value={selectedCurrency} onValueChange={(value: "EUR" | "USD") => setSelectedCurrency(value)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Valuta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                </SelectContent>
+              </Select>
               <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -2331,7 +2363,7 @@ function StocksPageContent() {
                       <div className="flex items-center gap-4 text-right">
                         <div>
                           <div className="font-semibold text-foreground">
-                            €{stock.price.toFixed(2)}
+                            {formatPrice(stock.price)}
                           </div>
                           <div className="text-sm text-green-500 flex items-center gap-1">
                             <ArrowUp className="h-3 w-3" />
@@ -2395,7 +2427,7 @@ function StocksPageContent() {
                       <div className="flex items-center gap-4 text-right">
                         <div>
                           <div className="font-semibold text-foreground">
-                            €{stock.price.toFixed(2)}
+                            {formatPrice(stock.price)}
                           </div>
                           <div className="text-sm text-red-500 flex items-center gap-1">
                             <ArrowDown className="h-3 w-3" />
@@ -2562,7 +2594,7 @@ function StocksPageContent() {
                                 {quote ? (
                                   <div>
                                     <div className="font-bold text-foreground">
-                                      ${quote.price.toFixed(2)}
+                                      {formatPrice(quote.price)}
                                     </div>
                                     <div
                                       className={`text-sm flex items-center gap-1 ${
@@ -2766,7 +2798,7 @@ function StocksPageContent() {
                         ) : (
                           <TrendingDown className="h-4 w-4 mr-2" />
                         )}
-                        ${quote.price.toFixed(2)}
+                        {formatPrice(quote.price)}
                       </Badge>
                     </div>
                   </div>
@@ -2788,19 +2820,19 @@ function StocksPageContent() {
                     <div>
                       <div className="text-sm text-muted-foreground">Open</div>
                       <div className="text-lg font-semibold text-foreground">
-                        ${quote.open.toFixed(2)}
+                        {formatPrice(quote.open)}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-muted-foreground">Hoog</div>
                       <div className="text-lg font-semibold text-foreground">
-                        ${quote.high.toFixed(2)}
+                        {formatPrice(quote.high)}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-muted-foreground">Laag</div>
                       <div className="text-lg font-semibold text-foreground">
-                        ${quote.low.toFixed(2)}
+                        {formatPrice(quote.low)}
                       </div>
                     </div>
                     <div>
@@ -2814,7 +2846,7 @@ function StocksPageContent() {
                         Vorige Sluiting
                       </div>
                       <div className="text-lg font-semibold text-foreground">
-                        ${quote.previousClose.toFixed(2)}
+                        {formatPrice(quote.previousClose)}
                       </div>
                     </div>
                     <div>
@@ -2964,8 +2996,8 @@ function StocksPageContent() {
                                               </div>
                                               <div className="text-xs text-muted-foreground mt-1">
                                                 Betrouwbaarheid: {(pattern.confidence * 100).toFixed(0)}%
-                                                {pattern.entry && ` | Entry: $${pattern.entry.toFixed(2)}`}
-                                                {pattern.target && ` | Target: $${pattern.target.toFixed(2)}`}
+                                                {pattern.entry && ` | Entry: ${formatPriceText(pattern.entry)}`}
+                                                {pattern.target && ` | Target: ${formatPriceText(pattern.target)}`}
                                               </div>
                                               <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded">
                                                 {explanation}
@@ -3142,7 +3174,11 @@ function StocksPageContent() {
                         domain={[yAxisMin, yAxisMax]}
                         stroke="oklch(0.60 0 0)"
                         style={{ fontSize: "12px" }}
-                        tickFormatter={(value) => `$${value.toFixed(0)}`}
+                        tickFormatter={(value) => {
+                          const convertedValue = convertPrice(value)
+                          const symbol = selectedCurrency === "EUR" ? "€" : "$"
+                          return `${symbol}${convertedValue.toFixed(0)}`
+                        }}
                       />
                       <Tooltip
                         contentStyle={{
@@ -3166,10 +3202,10 @@ function StocksPageContent() {
                                   {label ? new Date(label).toLocaleString("nl-NL") : ""}
                                 </div>
                                 <div style={{ fontSize: "12px" }}>
-                                  <div>Open: ${data.open.toFixed(2)}</div>
-                                  <div>High: ${data.high.toFixed(2)}</div>
-                                  <div>Low: ${data.low.toFixed(2)}</div>
-                                  <div>Close: ${data.close.toFixed(2)}</div>
+                                  <div>Open: {formatPrice(data.open)}</div>
+                                  <div>High: {formatPrice(data.high)}</div>
+                                  <div>Low: {formatPrice(data.low)}</div>
+                                  <div>Close: {formatPrice(data.close)}</div>
                                 </div>
                               </div>
                             )
@@ -3464,14 +3500,14 @@ function StocksPageContent() {
                           </div>
                           <div className="p-4 bg-accent/10 rounded-lg border border-border">
                             <div className="text-sm text-muted-foreground mb-1">Support</div>
-                            <div className="text-2xl font-bold text-foreground">${support.toFixed(2)}</div>
+                            <div className="text-2xl font-bold text-foreground">{formatPrice(support)}</div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {((currentPrice - support) / support * 100).toFixed(1)}% boven support
                             </div>
                           </div>
                           <div className="p-4 bg-accent/10 rounded-lg border border-border">
                             <div className="text-sm text-muted-foreground mb-1">Resistance</div>
-                            <div className="text-2xl font-bold text-foreground">${resistance.toFixed(2)}</div>
+                            <div className="text-2xl font-bold text-foreground">{formatPrice(resistance)}</div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {((resistance - currentPrice) / currentPrice * 100).toFixed(1)}% boven huidige prijs
                             </div>
@@ -3505,7 +3541,7 @@ function StocksPageContent() {
                           <div className="p-4 bg-accent/10 rounded-lg border border-border">
                             <div className="text-sm text-muted-foreground mb-1">SMA (20)</div>
                             <div className="text-2xl font-bold text-foreground">
-                              ${!isNaN(currentSMA20) ? currentSMA20.toFixed(2) : "N/A"}
+                              {!isNaN(currentSMA20) ? formatPrice(currentSMA20) : "N/A"}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {!isNaN(currentSMA20) && currentPrice > currentSMA20 
@@ -3519,7 +3555,7 @@ function StocksPageContent() {
                           <div className="p-4 bg-accent/10 rounded-lg border border-border">
                             <div className="text-sm text-muted-foreground mb-1">SMA (50)</div>
                             <div className="text-2xl font-bold text-foreground">
-                              ${!isNaN(currentSMA50) ? currentSMA50.toFixed(2) : "N/A"}
+                              {!isNaN(currentSMA50) ? formatPrice(currentSMA50) : "N/A"}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {!isNaN(currentSMA50) && currentPrice > currentSMA50 
@@ -3533,7 +3569,7 @@ function StocksPageContent() {
                           <div className="p-4 bg-accent/10 rounded-lg border border-border">
                             <div className="text-sm text-muted-foreground mb-1">EMA (12)</div>
                             <div className="text-2xl font-bold text-foreground">
-                              ${!isNaN(currentEMA12) ? currentEMA12.toFixed(2) : "N/A"}
+                              {!isNaN(currentEMA12) ? formatPrice(currentEMA12) : "N/A"}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {!isNaN(currentEMA12) && currentPrice > currentEMA12 
@@ -3586,19 +3622,19 @@ function StocksPageContent() {
                               <div className="flex justify-between">
                                 <span className="text-xs text-muted-foreground">Bovenste Band</span>
                                 <span className="text-sm font-semibold">
-                                  ${!isNaN(currentBBUpper) ? currentBBUpper.toFixed(2) : "N/A"}
+                                  {!isNaN(currentBBUpper) ? formatPrice(currentBBUpper) : "N/A"}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-xs text-muted-foreground">Midden (SMA20)</span>
                                 <span className="text-sm font-semibold">
-                                  ${!isNaN(currentBBMiddle) ? currentBBMiddle.toFixed(2) : "N/A"}
+                                  {!isNaN(currentBBMiddle) ? formatPrice(currentBBMiddle) : "N/A"}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-xs text-muted-foreground">Onderste Band</span>
                                 <span className="text-sm font-semibold">
-                                  ${!isNaN(currentBBLower) ? currentBBLower.toFixed(2) : "N/A"}
+                                  {!isNaN(currentBBLower) ? formatPrice(currentBBLower) : "N/A"}
                                 </span>
                               </div>
                             </div>
@@ -3732,7 +3768,7 @@ function StocksPageContent() {
                                       {level < currentPrice ? "Support" : "Resistance"}
                                     </span>
                                     <span className="text-sm font-semibold">
-                                      ${level.toFixed(2)}
+                                      {formatPrice(level)}
                                     </span>
                                   </div>
                                 ))}

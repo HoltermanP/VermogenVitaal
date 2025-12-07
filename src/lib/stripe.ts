@@ -1,8 +1,23 @@
 import Stripe from 'stripe'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-})
+// Initialize Stripe only if API key is available
+// During build, this might not be set, so we handle it gracefully
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+
+// Use a function to get stripe instance to avoid build-time initialization errors
+function createStripeInstance(): Stripe {
+  if (!stripeSecretKey) {
+    // During build, return a mock object that satisfies TypeScript
+    // This will throw at runtime if actually used
+    return {} as Stripe
+  }
+  return new Stripe(stripeSecretKey, {
+    apiVersion: '2025-09-30.clover',
+  })
+}
+
+// Export stripe instance - will be properly initialized at runtime
+export const stripe = createStripeInstance()
 
 export const PRICING = {
   PREMIUM: {
@@ -42,6 +57,10 @@ export async function createCheckoutSession(
   cancelUrl?: string,
   hasUsedTrial?: boolean // Of de gebruiker al een trial heeft gebruikt
 ) {
+  if (!stripeSecretKey) {
+    throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.")
+  }
+
   // Determine if this is a subscription or one-time payment
   const isOneTime = 
     priceId === PRICING.FISCALE_OPTIMALISATIE_CHECK.priceId ||
@@ -83,6 +102,10 @@ export async function createCheckoutSession(
 }
 
 export async function createCustomerPortalSession(customerId: string) {
+  if (!stripeSecretKey) {
+    throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.")
+  }
+
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${process.env.NEXTAUTH_URL}/account`,
@@ -92,6 +115,10 @@ export async function createCustomerPortalSession(customerId: string) {
 }
 
 export async function getSubscription(customerId: string) {
+  if (!stripeSecretKey) {
+    throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.")
+  }
+
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     status: 'active',

@@ -19,7 +19,15 @@ export async function POST(request: NextRequest) {
     if (!webhookSecret) {
       console.error("STRIPE_WEBHOOK_SECRET is not set")
       return NextResponse.json(
-        { error: "Webhook secret not configured" },
+        { error: "Stripe webhook secret not configured" },
+        { status: 500 }
+      )
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("Stripe is not configured")
+      return NextResponse.json(
+        { error: "Stripe is not configured" },
         { status: 500 }
       )
     }

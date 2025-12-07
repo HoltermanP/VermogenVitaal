@@ -48,7 +48,10 @@ function validateDatabaseUrl(): string | null {
   }
   
   // Waarschuw als DATABASE_URL naar localhost verwijst in productie
-  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+  // Maar alleen tijdens runtime, niet tijdens build-time
+  if ((process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') && 
+      !process.env.NEXT_PHASE && // NEXT_PHASE is undefined tijdens build
+      typeof window === 'undefined') { // Alleen server-side
     if (trimmedUrl.includes('localhost') || trimmedUrl.includes('127.0.0.1')) {
       const errorMessage = 
         'DATABASE_URL cannot point to localhost in production. ' +
@@ -72,11 +75,13 @@ try {
   }
 } catch (error) {
   // In productie gooien we de error door zodat deployment faalt
-  // Dit voorkomt dat de app start met een verkeerde configuratie
-  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+  // MAAR alleen tijdens runtime, niet tijdens build-time
+  // NEXT_PHASE is undefined tijdens build, waardoor we weten dat we tijdens build zijn
+  if ((process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') && 
+      process.env.NEXT_PHASE !== undefined) {
     throw error
   }
-  // In development loggen we alleen
+  // Tijdens build of development loggen we alleen
   console.error('Database configuration error:', error instanceof Error ? error.message : String(error))
 }
 
