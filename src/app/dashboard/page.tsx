@@ -10,7 +10,7 @@ import { DailyTop3 } from "@/components/daily-top-3"
 export default function DashboardPage() {
   // Temporarily disabled authentication for testing
   const user = { name: "Test Gebruiker", email: "test@example.com" }
-  const tier: 'FREE' | 'BASIC' | 'PRO' | 'ELITE' = 'FREE'
+  const tier: 'FREE' | 'PREMIUM' = 'FREE' as 'FREE' | 'PREMIUM'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
@@ -265,31 +265,8 @@ export default function DashboardPage() {
                   </>
                 )}
 
-                {/* Tier-specific features - will be shown when tier is upgraded */}
-                {tier !== 'FREE' && tier === 'BASIC' && (
-                  <>
-                    <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all duration-300">
-                      <div className="flex items-center mb-2">
-                        <Zap className="h-5 w-5 text-gray-300 mr-2 animate-pulse" />
-                        <h4 className="font-semibold text-gray-200">Upgrade naar Pro</h4>
-                      </div>
-                      <p className="text-sm text-gray-300">
-                        Upload documenten en krijg persoonlijke ondersteuning
-                      </p>
-                    </div>
-                    <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all duration-300">
-                      <div className="flex items-center mb-2">
-                        <Target className="h-5 w-5 text-gray-300 mr-2 animate-pulse" />
-                        <h4 className="font-semibold text-gray-200">Genereer rapporten</h4>
-                      </div>
-                      <p className="text-sm text-gray-300">
-                        Export je berekeningen als PDF
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {tier !== 'FREE' && tier === 'PRO' && (
+                {/* Premium features */}
+                {tier === 'PREMIUM' && (
                   <>
                     <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all duration-300">
                       <div className="flex items-center mb-2">
@@ -309,27 +286,13 @@ export default function DashboardPage() {
                         Gebruik de Q&A voor specifieke vragen
                       </p>
                     </div>
-                  </>
-                )}
-
-                {tier !== 'FREE' && tier === 'ELITE' && (
-                  <>
                     <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all duration-300">
                       <div className="flex items-center mb-2">
                         <Target className="h-5 w-5 text-gray-300 mr-2 animate-pulse" />
-                        <h4 className="font-semibold text-gray-200">Persoonlijke ondersteuning</h4>
+                        <h4 className="font-semibold text-gray-200">Genereer rapporten</h4>
                       </div>
                       <p className="text-sm text-gray-300">
-                        Krijg maatwerk fiscale optimalisatie ondersteuning
-                      </p>
-                    </div>
-                    <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all duration-300">
-                      <div className="flex items-center mb-2">
-                        <Zap className="h-5 w-5 text-gray-300 mr-2 animate-pulse" />
-                        <h4 className="font-semibold text-gray-200">White-label rapporten</h4>
-                      </div>
-                      <p className="text-sm text-gray-300">
-                        Genereer professionele rapporten met je eigen branding
+                        Export je berekeningen als PDF
                       </p>
                     </div>
                   </>

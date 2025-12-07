@@ -58,7 +58,7 @@ function ClerkUserContent() {
   }
   
   const isAdmin = user?.publicMetadata?.role === 'ADMIN'
-  const tier: 'FREE' | 'BASIC' | 'PRO' | 'ELITE' = 'FREE' // TODO: Haal tier op uit database
+  const tier: 'FREE' | 'PREMIUM' = 'FREE' // TODO: Haal tier op uit database
   
   return (
     <>

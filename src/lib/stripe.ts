@@ -5,23 +5,12 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export const PRICING = {
-  BASIC: {
-    priceId: process.env.STRIPE_BASIC_PRICE_ID!,
-    amount: 1200, // €12.00 in cents
+  PREMIUM: {
+    priceId: process.env.STRIPE_PREMIUM_PRICE_ID!,
+    amount: 1995, // €19.95 in cents
     currency: 'eur',
-    interval: 'month'
-  },
-  PRO: {
-    priceId: process.env.STRIPE_PRO_PRICE_ID!,
-    amount: 3900, // €39.00 in cents
-    currency: 'eur',
-    interval: 'month'
-  },
-  ELITE: {
-    priceId: process.env.STRIPE_ELITE_PRICE_ID!,
-    amount: 9900, // €99.00 in cents
-    currency: 'eur',
-    interval: 'month'
+    interval: 'month',
+    trialPeriodDays: 30 // 30 dagen gratis proefperiode
   },
   // Add-ons (one-time payments)
   FISCALE_OPTIMALISATIE_CHECK: {
@@ -50,7 +39,8 @@ export async function createCheckoutSession(
   priceId: string,
   customerId?: string,
   successUrl?: string,
-  cancelUrl?: string
+  cancelUrl?: string,
+  hasUsedTrial?: boolean // Of de gebruiker al een trial heeft gebruikt
 ) {
   // Determine if this is a subscription or one-time payment
   const isOneTime = 
@@ -58,7 +48,11 @@ export async function createCheckoutSession(
     priceId === PRICING.PREMIUM_DOCUMENT_ANALYSE.priceId ||
     priceId === PRICING.DUE_DILIGENCE_VASTGOED.priceId
 
-  const session = await stripe.checkout.sessions.create({
+  // Voor Premium subscriptions: voeg trial period toe als gebruiker nog geen trial heeft gebruikt
+  const isPremiumSubscription = priceId === PRICING.PREMIUM.priceId && !isOneTime
+  const shouldAddTrial = isPremiumSubscription && !hasUsedTrial
+
+  const sessionConfig: Stripe.Checkout.SessionCreateParams = {
     mode: isOneTime ? 'payment' : 'subscription',
     payment_method_types: ['card'],
     line_items: [
@@ -74,7 +68,16 @@ export async function createCheckoutSession(
       priceId,
       type: isOneTime ? 'addon' : 'subscription',
     },
-  })
+  }
+
+  // Voeg trial period toe voor Premium subscriptions
+  if (shouldAddTrial && PRICING.PREMIUM.trialPeriodDays) {
+    sessionConfig.subscription_data = {
+      trial_period_days: PRICING.PREMIUM.trialPeriodDays,
+    }
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionConfig)
 
   return session
 }
@@ -98,9 +101,7 @@ export async function getSubscription(customerId: string) {
   return subscriptions.data[0] || null
 }
 
-export function getTierFromPriceId(priceId: string): 'FREE' | 'BASIC' | 'PRO' | 'ELITE' {
-  if (priceId === PRICING.BASIC.priceId) return 'BASIC'
-  if (priceId === PRICING.PRO.priceId) return 'PRO'
-  if (priceId === PRICING.ELITE.priceId) return 'ELITE'
+export function getTierFromPriceId(priceId: string): 'FREE' | 'PREMIUM' {
+  if (priceId === PRICING.PREMIUM.priceId) return 'PREMIUM'
   return 'FREE'
 }

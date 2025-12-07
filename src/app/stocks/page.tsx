@@ -84,6 +84,20 @@ const PERIODS = [
   { value: "ALL", label: "Alles" },
 ]
 
+const EXCHANGES = [
+  { value: "ALL", label: "Alle Beurzen" },
+  { value: "AMS", label: "Amsterdam (AEX)" },
+  { value: "NYQ", label: "New York Stock Exchange (NYSE)" },
+  { value: "NMS", label: "NASDAQ" },
+  { value: "LON", label: "London Stock Exchange (LSE)" },
+  { value: "FRA", label: "Frankfurt (XETR)" },
+  { value: "PAR", label: "Paris (Euronext)" },
+  { value: "BRU", label: "Brussels (Euronext)" },
+  { value: "TSE", label: "Tokyo Stock Exchange" },
+  { value: "HKG", label: "Hong Kong Stock Exchange" },
+  { value: "SIX", label: "Swiss Exchange (SIX)" },
+]
+
 function StocksPageContent() {
   // Gebruik Clerk hook - moet altijd worden aangeroepen (React hook regel)
   const { user, isLoaded } = useUser()
@@ -104,6 +118,11 @@ function StocksPageContent() {
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
+  const [selectedExchange, setSelectedExchange] = useState<string>("ALL")
+  const [addFavoriteDialogOpen, setAddFavoriteDialogOpen] = useState(false)
+  const [favoriteSearchQuery, setFavoriteSearchQuery] = useState("")
+  const [favoriteSearchResults, setFavoriteSearchResults] = useState<StockSearchResult[]>([])
+  const [favoriteSearching, setFavoriteSearching] = useState(false)
   const [showCandlestick, setShowCandlestick] = useState(true)
   const [showLine, setShowLine] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
@@ -1493,10 +1512,14 @@ function StocksPageContent() {
     }
   }
 
+  // Alle zoekresultaten (zonder filter)
+  const [allSearchResults, setAllSearchResults] = useState<StockSearchResult[]>([])
+
   // Zoek aandelen
   const searchStocks = async (query: string) => {
     if (query.length < 2) {
       setSearchResults([])
+      setAllSearchResults([])
       return
     }
 
@@ -1505,7 +1528,20 @@ function StocksPageContent() {
       const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`)
       if (response.ok) {
         const data = await response.json()
-        setSearchResults(data.results || [])
+        const results = data.results || []
+        
+        // Bewaar alle resultaten
+        setAllSearchResults(results)
+        
+        // Filter op beurs als er een geselecteerd is
+        if (selectedExchange !== "ALL") {
+          const filtered = results.filter((result: StockSearchResult) => 
+            result.exchange === selectedExchange
+          )
+          setSearchResults(filtered)
+        } else {
+          setSearchResults(results)
+        }
       }
     } catch (error) {
       console.error("Error searching stocks:", error)
@@ -1514,6 +1550,58 @@ function StocksPageContent() {
       setSearching(false)
     }
   }
+
+  // Filter zoekresultaten wanneer beurs verandert
+  useEffect(() => {
+    if (allSearchResults.length > 0) {
+      if (selectedExchange !== "ALL") {
+        const filtered = allSearchResults.filter((result: StockSearchResult) => 
+          result.exchange === selectedExchange
+        )
+        setSearchResults(filtered)
+      } else {
+        setSearchResults(allSearchResults)
+      }
+    }
+  }, [selectedExchange, allSearchResults])
+
+  // Gefilterde zoekresultaten op basis van beurs
+  const filteredSearchResults = searchResults
+
+  // Zoek aandelen voor favorieten dialog
+  const searchStocksForFavorite = async (query: string) => {
+    if (query.length < 2) {
+      setFavoriteSearchResults([])
+      return
+    }
+
+    setFavoriteSearching(true)
+    try {
+      const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setFavoriteSearchResults(data.results || [])
+      }
+    } catch (error) {
+      console.error("Error searching stocks:", error)
+      toast.error("Fout bij zoeken")
+    } finally {
+      setFavoriteSearching(false)
+    }
+  }
+
+  // Effect voor favorieten zoeken
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (favoriteSearchQuery) {
+        searchStocksForFavorite(favoriteSearchQuery)
+      } else {
+        setFavoriteSearchResults([])
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [favoriteSearchQuery])
 
   // Voeg favoriet toe
   const addFavorite = async (stock: StockSearchResult) => {
@@ -1531,13 +1619,16 @@ function StocksPageContent() {
     try {
       const response = await fetch("/api/stocks/favorites", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+        },
         credentials: "include", // Zorg dat cookies worden meegestuurd
+        cache: "no-store", // Voorkom caching
         body: JSON.stringify({
           symbol: stock.symbol,
-          name: stock.name,
-          exchange: stock.exchange,
-          type: stock.type,
+          name: stock.name || stock.symbol, // Fallback naar symbol als naam ontbreekt
+          exchange: stock.exchange || null,
+          type: stock.type || "STOCK",
         }),
       })
 
@@ -1944,7 +2035,7 @@ function StocksPageContent() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, selectedExchange])
 
   // Refresh functie
   const handleRefresh = async () => {
@@ -2022,11 +2113,12 @@ function StocksPageContent() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild>
+              {/* Congressional Trades tijdelijk uitgeschakeld */}
+              {/* <Button variant="outline" size="sm" asChild>
                 <Link href="/stocks/pelosi-trades">
                   Congressional Trades
                 </Link>
-              </Button>
+              </Button> */}
               <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -2042,23 +2134,50 @@ function StocksPageContent() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Zoek op naam of symbool (bijv. Apple, AAPL, ASML)..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Zoek op naam of symbool (bijv. Apple, AAPL, ASML)..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <Select value={selectedExchange} onValueChange={setSelectedExchange}>
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Selecteer beurs" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EXCHANGES.map((exchange) => (
+                            <SelectItem key={exchange.value} value={exchange.value}>
+                              {exchange.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    {selectedExchange !== "ALL" && (
+                      <div className="text-sm text-muted-foreground">
+                        Gefilterd op: <span className="font-medium">{EXCHANGES.find(e => e.value === selectedExchange)?.label}</span>
+                      </div>
+                    )}
                     {searching && (
                       <div className="flex items-center justify-center py-8">
                         <Skeleton className="h-8 w-full" />
                       </div>
                     )}
-                    {!searching && searchResults.length > 0 && (
+                    {!searching && filteredSearchResults.length === 0 && searchResults.length > 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Geen resultaten gevonden voor deze beurs. Probeer een andere beurs of verwijder het filter.
+                      </div>
+                    )}
+                    {!searching && filteredSearchResults.length > 0 && (
                       <div className="max-h-96 overflow-y-auto space-y-2">
-                        {searchResults.map((result) => (
+                        <div className="text-xs text-muted-foreground mb-2">
+                          {filteredSearchResults.length} resultaat{filteredSearchResults.length !== 1 ? 'en' : ''} gevonden
+                        </div>
+                        {filteredSearchResults.map((result) => (
                           <div
                             key={result.symbol}
                             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
@@ -2071,7 +2190,7 @@ function StocksPageContent() {
                                 {result.name}
                               </div>
                               <div className="text-xs text-muted-foreground mt-1">
-                                {result.exchange} • {result.type}
+                                <Badge variant="outline" className="mr-1">{result.exchange}</Badge> • {result.type}
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -2298,17 +2417,118 @@ function StocksPageContent() {
             {isMounted && isLoaded && user?.emailAddresses?.[0]?.emailAddress ? (
               <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
                 <CardHeader>
-                  <CardTitle className="text-foreground">Mijn Favorieten</CardTitle>
-                  <CardDescription>
-                    Je opgeslagen aandelen en ETF&apos;s
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-foreground">Mijn Favorieten</CardTitle>
+                      <CardDescription>
+                        Je opgeslagen aandelen en ETF&apos;s
+                      </CardDescription>
+                    </div>
+                    <Dialog 
+                      open={addFavoriteDialogOpen} 
+                      onOpenChange={(open) => {
+                        setAddFavoriteDialogOpen(open)
+                        if (!open) {
+                          setFavoriteSearchQuery("")
+                          setFavoriteSearchResults([])
+                        }
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Star className="h-4 w-4 mr-2" />
+                          Toevoegen
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Favoriet Toevoegen</DialogTitle>
+                          <DialogDescription>
+                            Typ het symbool of de naam van het aandeel
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Typ symbool of naam (bijv. AAPL, ASML)..."
+                              value={favoriteSearchQuery}
+                              onChange={(e) => setFavoriteSearchQuery(e.target.value)}
+                              className="pl-10"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && favoriteSearchResults.length > 0) {
+                                  addFavorite(favoriteSearchResults[0])
+                                  setAddFavoriteDialogOpen(false)
+                                  setFavoriteSearchQuery("")
+                                  setFavoriteSearchResults([])
+                                }
+                              }}
+                            />
+                          </div>
+                          {favoriteSearching && (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
+                          {!favoriteSearching && favoriteSearchResults.length > 0 && (
+                            <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
+                              {favoriteSearchResults.map((result) => (
+                                <div
+                                  key={result.symbol}
+                                  className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer ${
+                                    isFavorite(result.symbol) 
+                                      ? "opacity-50 cursor-not-allowed bg-muted" 
+                                      : "hover:bg-accent/50"
+                                  }`}
+                                  onClick={() => {
+                                    if (!isFavorite(result.symbol)) {
+                                      addFavorite(result).then(() => {
+                                        setAddFavoriteDialogOpen(false)
+                                        setFavoriteSearchQuery("")
+                                        setFavoriteSearchResults([])
+                                      }).catch(() => {
+                                        // Error wordt al getoond door addFavorite
+                                      })
+                                    } else {
+                                      toast.info("Dit aandeel staat al in je favorieten")
+                                    }
+                                  }}
+                                >
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-foreground">
+                                      {result.symbol}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {result.name}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      <Badge variant="outline" className="mr-1">{result.exchange}</Badge> • {result.type}
+                                    </div>
+                                  </div>
+                                  <Button size="sm" variant="ghost">
+                                    <Star className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {!favoriteSearching && favoriteSearchQuery.length >= 2 && favoriteSearchResults.length === 0 && (
+                            <div className="text-center py-4 text-muted-foreground text-sm">
+                              Geen resultaten gevonden
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {favorites.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Star className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Nog geen favorieten</p>
-                      <p className="text-sm mt-2">Zoek en voeg aandelen toe</p>
+                      <p className="text-sm mt-2">Klik op &quot;Toevoegen&quot; om een favoriet toe te voegen</p>
                     </div>
                   ) : (
                     <div className="space-y-3">

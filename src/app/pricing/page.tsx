@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Sparkles, Brain, Zap, Bot } from "lucide-react"
 
 export default function PricingPage() {
   return (
@@ -25,15 +25,19 @@ export default function PricingPage() {
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
+          <Badge variant="secondary" className="mb-4 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <Sparkles className="mr-2 h-3 w-3" />
+            Kies je abonnement
+          </Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 animate-fade-in">
-            <span className="text-gradient-financial">Kies je abonnement</span>
+            <span className="text-gradient-financial">Eenvoudige prijzen</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200">
-            Van gratis tot volledig service - kies wat bij je past
+            Start gratis en upgrade naar Premium wanneer je klaar bent voor alle functionaliteiten
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20">
           {/* Gratis */}
           <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300">
             <CardHeader>
@@ -62,7 +66,7 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">3 kennisbankartikelen</span>
+                  <span className="text-muted-foreground">3 kennisbankartikelen per maand</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
@@ -75,229 +79,106 @@ export default function PricingPage() {
             </CardContent>
           </Card>
 
-          {/* Basic */}
-          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-400">
-            <CardHeader>
-              <CardTitle className="text-2xl text-foreground">Basic</CardTitle>
-              <CardDescription className="text-muted-foreground">Voor startende ondernemers</CardDescription>
-              <div className="text-4xl font-bold mt-4 text-gradient-financial">€12</div>
-              <p className="text-sm text-muted-foreground">per maand</p>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Alles van Gratis</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Uitgebreide calculators</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">PDF export</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">RAG-samenvattingen</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Onbeperkte kennisbank</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Community posten</span>
-                </li>
-              </ul>
-              <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
-                <Link href="/auth/signin">Start Basic</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Pro */}
-          <Card className="bg-card/80 backdrop-blur-sm border-primary border-2 relative shadow-financial-lg hover:shadow-financial-lg transition-all duration-500 animate-fade-in delay-500 group">
+          {/* Premium */}
+          <Card className="bg-card/80 backdrop-blur-sm border-primary border-2 relative shadow-financial-lg hover:shadow-financial-lg transition-all duration-500 animate-fade-in delay-400 group">
             <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 gradient-financial text-white shadow-financial">
               Meest populair
             </Badge>
             <CardHeader>
-              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Pro</CardTitle>
-              <CardDescription className="text-muted-foreground">Voor serieuze ondernemers</CardDescription>
-              <div className="text-4xl font-bold mt-4 text-gradient-financial">€39</div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Premium</CardTitle>
+                <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/50 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI-Powered
+                </Badge>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                Alle functionaliteiten met <strong className="text-purple-400">AI-powered</strong> intelligentie
+              </CardDescription>
+              <div className="text-4xl font-bold mt-4 text-gradient-financial">€19,95</div>
               <p className="text-sm text-muted-foreground">per maand</p>
+              <Badge variant="secondary" className="mt-2 bg-green-500/20 text-green-400 border-green-500/50">
+                30 dagen gratis proefperiode
+              </Badge>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Alles van Basic</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Persoonlijke dossieronboarding</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Document upload</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Scenariovergelijking met dossiers</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Async Q&A met expert</span>
-                </li>
-              </ul>
+              {/* AI Features Highlight */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain className="h-5 w-5 text-purple-400" />
+                  <h4 className="font-semibold text-foreground">AI-Powered Functionaliteiten</h4>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <Bot className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">AI Document Analyse:</strong> Automatische analyse van fiscale documenten</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Zap className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">Intelligente AI-samenvattingen:</strong> Intelligente samenvattingen met bronvermelding</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">AI Deep Research:</strong> Uitgebreide AI-onderzoek rapporten voor aandelen</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Brain className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">AI Expert Q&A:</strong> Chat met AI-expert voor fiscale vragen</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Other Features */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-foreground mb-3 text-sm">Overige Premium Features:</h4>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Alles van Gratis</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Uitgebreide calculators</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">PDF export</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Onbeperkte kennisbank</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Community posten</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Scenariovergelijking met dossiers</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                    <span className="text-sm text-muted-foreground">Portfolio tracking</span>
+                  </li>
+                </ul>
+              </div>
               <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
-                <Link href="/auth/signin">Start Pro</Link>
+                <Link href="/auth/signin">Start gratis proefperiode</Link>
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-3">
+                Geen creditcard nodig voor proefperiode. Annuleer op elk moment.
+              </p>
             </CardContent>
           </Card>
-
-          {/* Elite */}
-          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-600 group">
-            <CardHeader>
-              <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">Elite</CardTitle>
-              <CardDescription className="text-muted-foreground">Volledig service</CardDescription>
-              <div className="text-4xl font-bold mt-4 text-gradient-premium">€99</div>
-              <p className="text-sm text-muted-foreground">per maand</p>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Alles van Pro</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Prioriteitssupport</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Persoonlijke begeleider</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">White-label rapporten</span>
-                </li>
-              </ul>
-              <Button className="w-full gradient-premium text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
-                <Link href="/auth/signin">Start Elite</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Add-ons */}
-        <div className="mt-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4 animate-fade-in delay-700">
-              Add-ons
-            </h2>
-            <p className="text-lg text-muted-foreground animate-fade-in delay-800">
-              Extra services voor Pro en Elite gebruikers
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-700">
-              <CardHeader>
-                <CardTitle className="text-foreground">Fiscale Optimalisatie Check</CardTitle>
-                <CardDescription className="text-muted-foreground">Laat je fiscale situatie analyseren en optimaliseren</CardDescription>
-                <div className="text-3xl font-bold mt-4 text-gradient-financial">€99</div>
-                <p className="text-sm text-muted-foreground">per dossier</p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Volledige fiscale analyse</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Optimalisatie suggesties</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Expert feedback en tips</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">48u response tijd</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-800">
-              <CardHeader>
-                <CardTitle className="text-foreground">Premium Document Analyse</CardTitle>
-                <CardDescription className="text-muted-foreground">Diepgaande AI-analyse van je documenten</CardDescription>
-                <div className="text-3xl font-bold mt-4 text-gradient-financial">€49</div>
-                <p className="text-sm text-muted-foreground">per document</p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">AI-powered document analyse</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Fiscale inzichten en risico&apos;s</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Gedetailleerd rapport</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">24u response tijd</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-900">
-              <CardHeader>
-                <CardTitle className="text-foreground">Due Diligence Vastgoed</CardTitle>
-                <CardDescription className="text-muted-foreground">Professionele vastgoed analyse</CardDescription>
-                <div className="text-3xl font-bold mt-4 text-gradient-financial">€299</div>
-                <p className="text-sm text-muted-foreground">per pand</p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Financiële analyse</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Marktonderzoek</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Risico assessment</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="h-4 w-4 text-primary mr-2" />
-                    <span className="text-muted-foreground">Investeringsondersteuning</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
         </div>
 
         {/* FAQ */}
         <div className="mt-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4 animate-fade-in delay-900">
+            <h2 className="text-3xl font-bold text-foreground mb-4 animate-fade-in delay-700">
               Veelgestelde vragen
             </h2>
-            <p className="text-lg text-muted-foreground animate-fade-in delay-1000">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-800">
               Alles wat je moet weten over onze abonnementen
             </p>
           </div>
@@ -308,16 +189,28 @@ export default function PricingPage() {
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1">
                     <AccordionTrigger className="text-left text-foreground">
+                      Hoe werkt de gratis proefperiode?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Je krijgt 30 dagen volledige toegang tot alle Premium functionaliteiten zonder kosten. 
+                        Na de proefperiode kun je kiezen om door te gaan met Premium (€19,95/maand) of terug te gaan naar Gratis. 
+                        Je kunt op elk moment tijdens de proefperiode annuleren zonder kosten.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger className="text-left text-foreground">
                       Kan ik mijn abonnement opzeggen?
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
                         Ja, je kunt je abonnement op elk moment opzeggen via je account pagina. 
-                        Je behoudt toegang tot het einde van je betaalperiode.
+                        Je behoudt toegang tot het einde van je betaalperiode of proefperiode.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
-                  <AccordionItem value="item-2">
+                  <AccordionItem value="item-3">
                     <AccordionTrigger className="text-left text-foreground">
                       Wat gebeurt er met mijn data bij opzegging?
                     </AccordionTrigger>
@@ -328,25 +221,24 @@ export default function PricingPage() {
                       </p>
                     </AccordionContent>
                   </AccordionItem>
-                  <AccordionItem value="item-3">
+                  <AccordionItem value="item-4">
                     <AccordionTrigger className="text-left text-foreground">
                       Zijn er verborgen kosten?
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
-                        Nee, alle prijzen zijn inclusief BTW. Add-ons zoals Fiscale Optimalisatie Check, 
-                        Premium Document Analyse en Due Diligence Vastgoed zijn extra kosten.
+                        Nee, alle prijzen zijn inclusief BTW. Er zijn geen verborgen kosten of setup fees.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
-                  <AccordionItem value="item-4">
+                  <AccordionItem value="item-5">
                     <AccordionTrigger className="text-left text-foreground">
-                      Kan ik upgraden of downgraden?
+                      Kan ik functionaliteiten gebruiken zonder account?
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
-                        Ja, je kunt op elk moment upgraden of downgraden. Wijzigingen gaan 
-                        direct in en je betaalt/ontvangt het verschil.
+                        Je kunt alle functionaliteiten bekijken en verkennen zonder account. 
+                        Voor het gebruik van calculators en het opslaan van resultaten heb je een gratis account nodig.
                       </p>
                     </AccordionContent>
                   </AccordionItem>

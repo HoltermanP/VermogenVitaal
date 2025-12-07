@@ -1,8 +1,75 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
+import { getClerkUser } from "@/lib/clerk-auth"
+import { prisma } from "@/lib/prisma"
+
+const FREE_TIER_AI_CALL_LIMIT = 10
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticatie check
+    const user = await getClerkUser(request)
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: "Niet geautoriseerd. Log in om de chatbot te gebruiken." },
+        { status: 401 }
+      )
+    }
+
+    // Haal gebruiker op uit database met tier informatie
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { tier: true, trialEndsAt: true, isTrialActive: true }
+    })
+
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: "Gebruiker niet gevonden" },
+        { status: 404 }
+      )
+    }
+
+    // Check of gebruiker FREE tier is (niet PREMIUM en niet in actieve trial)
+    const isFreeTier = dbUser.tier === "FREE" && !dbUser.isTrialActive
+
+    if (isFreeTier) {
+      // Tel aantal AI aanroepen in de laatste 30 dagen (gratis maand periode)
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+      const aiCallCount = await prisma.aiCall.count({
+        where: {
+          userId: user.id,
+          endpoint: "chat",
+          createdAt: {
+            gte: thirtyDaysAgo
+          }
+        }
+      })
+
+      // Check of limiet is bereikt
+      if (aiCallCount >= FREE_TIER_AI_CALL_LIMIT) {
+        return NextResponse.json(
+          { 
+            error: "AI_LIMIT_REACHED",
+            message: "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen.",
+            limit: FREE_TIER_AI_CALL_LIMIT,
+            used: aiCallCount
+          },
+          { status: 403 }
+        )
+      }
+
+      // Registreer AI aanroep
+      await prisma.aiCall.create({
+        data: {
+          userId: user.id,
+          endpoint: "chat"
+        }
+      })
+    }
+
     const { message, conversationHistory = [] } = await request.json()
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {

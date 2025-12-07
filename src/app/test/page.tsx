@@ -17,7 +17,7 @@ export default function TestPage() {
                 <li>✅ shadcn/ui Components</li>
                 <li>✅ Prisma Schema</li>
                 <li>✅ Calculator Logic</li>
-                <li>✅ RAG System</li>
+                <li>✅ Intelligente Samenvattingen Systeem</li>
                 <li>✅ Stripe Integration</li>
                 <li>✅ PDF Generation</li>
                 <li>✅ Community Q&A</li>
@@ -31,7 +31,7 @@ export default function TestPage() {
                 <li>📈 ETF Groei Calculator</li>
                 <li>🏠 Vastgoed Cashflow Calculator</li>
                 <li>₿ Crypto Allocatie Calculator</li>
-                <li>🤖 AI-Powered RAG</li>
+                <li>🤖 Intelligente AI-Samenvattingen</li>
                 <li>📄 PDF Report Generation</li>
                 <li>👥 Community Q&A</li>
                 <li>💳 Stripe Subscriptions</li>

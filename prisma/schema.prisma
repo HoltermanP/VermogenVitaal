@@ -11,13 +11,15 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      UserRole @default(USER)
-  tier      UserTier @default(FREE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  role            UserRole  @default(USER)
+  tier            UserTier  @default(FREE)
+  trialEndsAt     DateTime? // Wanneer de gratis proefmaand eindigt
+  isTrialActive   Boolean   @default(false) // Of de gebruiker momenteel in trial periode is
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   profileFinancials      ProfileFinancials?
@@ -32,6 +34,7 @@ model User {
   stockFavorites         StockFavorite[]
   deepResearchReports    DeepResearchReport[]
   portfolioItems         PortfolioItem[]
+  aiCalls               AiCall[]
 
   @@map("users")
 }
@@ -290,6 +293,19 @@ model PortfolioItem {
   @@map("portfolio_items")
 }
 
+model AiCall {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   // Bijv. "chat", "analyze", etc.
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("ai_calls")
+}
+
 // Enums
 enum UserRole {
   USER
@@ -298,9 +314,7 @@ enum UserRole {
 
 enum UserTier {
   FREE
-  BASIC
-  PRO
-  ELITE
+  PREMIUM
 }
 
 enum LegalForm {

@@ -4,13 +4,17 @@ declare module "next-auth" {
       id: string
       email: string
       name?: string
-      tier: 'FREE' | 'BASIC' | 'PRO' | 'ELITE'
+      tier: 'FREE' | 'PREMIUM'
       role: 'USER' | 'ADMIN'
+      isTrialActive?: boolean
+      trialEndsAt?: Date | null
     }
   }
 
   interface User {
-    tier: 'FREE' | 'BASIC' | 'PRO' | 'ELITE'
+    tier: 'FREE' | 'PREMIUM'
     role: 'USER' | 'ADMIN'
+    isTrialActive?: boolean
+    trialEndsAt?: Date | null
   }
 }

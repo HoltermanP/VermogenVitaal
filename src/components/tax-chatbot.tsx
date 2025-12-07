@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Send, Bot, User, Loader2 } from "lucide-react"
+import { Send, Bot, User, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import Link from "next/link"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Message {
   role: "user" | "assistant"
@@ -24,6 +26,7 @@ export function TaxChatbot() {
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [limitReached, setLimitReached] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -38,7 +41,7 @@ export function TaxChatbot() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || limitReached) return
 
     const userMessage: Message = {
       role: "user",
@@ -70,11 +73,26 @@ export function TaxChatbot() {
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("Fout bij het ophalen van antwoord")
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        // Check of het een limiet error is
+        if (response.status === 403 && data.error === "AI_LIMIT_REACHED") {
+          setLimitReached(true)
+          const errorMessage: Message = {
+            role: "assistant",
+            content: data.message || "Je hebt je limiet van 10 gratis AI aanroepen bereikt.",
+            timestamp: new Date().toISOString()
+          }
+          setMessages(prev => [...prev, errorMessage])
+          toast.error("Limiet bereikt", {
+            description: "Upgrade naar Premium voor onbeperkte AI aanroepen."
+          })
+          return
+        }
+        
+        throw new Error(data.error || "Fout bij het ophalen van antwoord")
+      }
 
       const assistantMessage: Message = {
         role: "assistant",
@@ -114,6 +132,24 @@ export function TaxChatbot() {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
+        {/* Limit reached alert */}
+        {limitReached && (
+          <div className="p-4 border-b">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Limiet bereikt</AlertTitle>
+              <AlertDescription className="mt-2">
+                Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen.
+                <Link href="/pricing">
+                  <Button className="mt-3 w-full" size="sm">
+                    Upgrade naar Premium
+                  </Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message, index) => (
@@ -171,13 +207,13 @@ export function TaxChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Stel je vraag over belastingondersteuning..."
+              placeholder={limitReached ? "Upgrade naar Premium om verder te gaan..." : "Stel je vraag over belastingondersteuning..."}
               className="min-h-[60px] resize-none"
-              disabled={isLoading}
+              disabled={isLoading || limitReached}
             />
             <Button
               type="submit"
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || limitReached}
               className="self-end"
             >
               {isLoading ? (
@@ -187,9 +223,11 @@ export function TaxChatbot() {
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Druk op Enter om te verzenden, Shift+Enter voor een nieuwe regel
-          </p>
+          {!limitReached && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Druk op Enter om te verzenden, Shift+Enter voor een nieuwe regel
+            </p>
+          )}
         </form>
       </CardContent>
     </Card>

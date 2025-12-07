@@ -56,13 +56,44 @@ export async function POST(request: NextRequest) {
   }
   
   try {
+    // Check eerst of Clerk is geconfigureerd
+    const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY
+    
+    if (!clerkPublishableKey || !clerkSecretKey) {
+      console.error("POST /api/stocks/favorites - Clerk niet geconfigureerd")
+      return NextResponse.json(
+        { error: "Authenticatie niet geconfigureerd" },
+        { status: 500 }
+      )
+    }
+    
     // Test direct auth() eerst
-    const authResult = await auth()
+    let authResult
+    try {
+      authResult = await auth()
+    } catch (authError) {
+      console.error("POST /api/stocks/favorites - Auth error:", authError)
+      return NextResponse.json(
+        { error: "Niet geautoriseerd. Log in om favorieten toe te voegen." },
+        { status: 401 }
+      )
+    }
+    
     console.log("POST /api/stocks/favorites - Direct auth() result:", {
       userId: authResult.userId,
       sessionId: authResult.sessionId,
       orgId: authResult.orgId
     })
+    
+    // Als auth() geen userId heeft, is de gebruiker niet ingelogd
+    if (!authResult.userId) {
+      console.log("POST /api/stocks/favorites - Geen userId in auth result")
+      return NextResponse.json(
+        { error: "Niet geautoriseerd. Log in om favorieten toe te voegen." },
+        { status: 401 }
+      )
+    }
     
     // Probeer gebruiker op te halen, maar vang alle errors op
     let user = null
@@ -80,7 +111,7 @@ export async function POST(request: NextRequest) {
     }
     
     if (!user || !user.id) {
-      console.log("POST /api/stocks/favorites - Geen gebruiker gevonden")
+      console.log("POST /api/stocks/favorites - Geen gebruiker gevonden in database")
       return NextResponse.json(
         { error: "Niet geautoriseerd. Log in om favorieten toe te voegen." },
         { status: 401 }
@@ -90,12 +121,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { symbol, name, exchange, type } = body
 
-    if (!symbol || !name) {
+    if (!symbol) {
       return NextResponse.json(
-        { error: "Symbol en naam zijn verplicht" },
+        { error: "Symbol is verplicht" },
         { status: 400 }
       )
     }
+
+    // Als naam niet is opgegeven, gebruik symbol als naam
+    const stockName = name || symbol
 
     // Check of favoriet al bestaat
     let existing = null
@@ -130,7 +164,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: user.id,
           symbol,
-          name,
+          name: stockName,
           exchange: exchange || null,
           type: type || null,
         },

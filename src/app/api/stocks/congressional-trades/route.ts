@@ -57,7 +57,50 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       url: "https://raw.githubusercontent.com/washingtonpost/data-congressional-trading/main/all_transactions.json",
       name: "Washington Post GitHub Repository",
     },
-    // Alternatieve repositories kunnen hier worden toegevoegd
+    {
+      url: "https://raw.githubusercontent.com/unusualwhales/congress-trading/main/data/all_transactions.json",
+      name: "Unusual Whales GitHub Repository",
+    },
+    {
+      url: "https://raw.githubusercontent.com/QuiverQuant/congressional-trading-data/main/data/all_transactions.json",
+      name: "Quiver Quantitative GitHub Repository",
+    },
+    {
+      url: "https://raw.githubusercontent.com/congressional-trading/congressional-trading-data/main/all_transactions.json",
+      name: "Congressional Trading Data GitHub",
+    },
+    {
+      url: "https://raw.githubusercontent.com/opensecrets/congressional-trading/main/data/all_transactions.json",
+      name: "OpenSecrets GitHub Repository",
+    },
+    {
+      url: "https://raw.githubusercontent.com/unitedstates/congress-legislators/main/data/all_transactions.json",
+      name: "United States Congress Legislators GitHub",
+    },
+    {
+      url: "https://raw.githubusercontent.com/govtrack/us-congress-legislators/main/data/trades.json",
+      name: "GovTrack Congressional Trades",
+    },
+    {
+      url: "https://raw.githubusercontent.com/congressional-stock-watcher/data/main/all_transactions.json",
+      name: "Congressional Stock Watcher GitHub",
+    },
+    {
+      url: "https://raw.githubusercontent.com/pelosi-tracker/data/main/trades.json",
+      name: "Pelosi Tracker GitHub",
+    },
+    {
+      url: "https://raw.githubusercontent.com/congress-trades/data/main/all_transactions.json",
+      name: "Congress Trades GitHub",
+    },
+    {
+      url: "https://raw.githubusercontent.com/stock-watcher/congressional-trades/main/data/all_transactions.json",
+      name: "Stock Watcher Congressional Trades",
+    },
+    {
+      url: "https://raw.githubusercontent.com/public-disclosure/congressional-trading/main/all_transactions.json",
+      name: "Public Disclosure Congressional Trading",
+    },
   ]
 
   for (const githubEndpoint of githubEndpoints) {
@@ -70,7 +113,8 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           "Accept": "application/json",
         },
         cache: "no-store",
-        })
+        signal: AbortSignal.timeout(10000), // 10 seconden timeout
+      })
 
       if (!response.ok) {
         console.warn(`[Congressional Trades] ⚠️ GitHub ${githubEndpoint.name} returned ${response.status} ${response.statusText}`)
@@ -97,17 +141,17 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       
       const trades = data
         .filter((trade: any) => {
-          const repName = (trade.representative || trade.politician || trade.name || trade.Representative || "").toLowerCase()
+          const repName = (trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || "").toLowerCase()
           const searchName = politician.toLowerCase()
           return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
         })
         .map((trade: any) => ({
-          representative: trade.representative || trade.politician || trade.name || trade.Representative || politician,
+          representative: trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || politician,
           party: trade.party || trade.Party || "D",
           state: trade.state || trade.State || "CA",
           district: trade.district || trade.District,
-          ticker: trade.ticker || trade.symbol || trade.Ticker || trade.Symbol || "",
-          company: trade.company || trade.stockName || trade.Company || trade.StockName || "",
+          ticker: trade.ticker || trade.symbol || trade.Ticker || trade.Symbol || trade.stock_symbol || "",
+          company: trade.company || trade.stockName || trade.Company || trade.StockName || trade.stock_name || "",
           transactionType: trade.transactionType || trade.type || trade.action || trade.Transaction || trade.Type || "Unknown",
           amount: trade.amount || trade.value || trade.amountRange || trade.Amount || trade.Value || "Unknown",
           transactionDate: trade.transactionDate || trade.tradedDate || trade.date || trade.TransactionDate || trade.Date || "",
@@ -136,7 +180,303 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
     }
   }
   
-  console.log(`[Congressional Trades] ⚠️ Alle GitHub repositories gefaald, probeer andere bronnen...`)
+  console.log(`[Congressional Trades] ⚠️ Alle GitHub repositories gefaald, probeer andere gratis bronnen...`)
+
+  // NIEUWE GRATIS BRON: House Stock Watcher alternatieve endpoints
+  const houseStockWatcherEndpoints = [
+    "https://housestockwatcher.com/api/trades",
+    "https://api.housestockwatcher.com/trades",
+    "https://housestockwatcher.com/api/all-transactions",
+    "https://housestockwatcher.com/api/v1/trades",
+    "https://housestockwatcher.com/api/v1/all-transactions",
+    "https://www.housestockwatcher.com/api/trades",
+  ]
+
+  for (const endpoint of houseStockWatcherEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying House Stock Watcher: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (Array.isArray(data)) {
+            trades = data
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          } else if (data.transactions && Array.isArray(data.transactions)) {
+            trades = data.transactions
+          }
+          
+          const filteredTrades = trades
+            .filter((trade: any) => {
+              const repName = (trade.representative || trade.politician || trade.name || "").toLowerCase()
+              return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
+            })
+            .map((trade: any) => ({
+              representative: trade.representative || trade.politician || trade.name || politician,
+              party: trade.party || "D",
+              state: trade.state || "CA",
+              district: trade.district,
+              ticker: trade.ticker || trade.symbol || "",
+              company: trade.company || trade.stockName || "",
+              transactionType: trade.transactionType || trade.type || "Unknown",
+              amount: trade.amount || trade.value || "Unknown",
+              transactionDate: trade.transactionDate || trade.date || "",
+              disclosureDate: trade.disclosureDate || trade.filedDate || "",
+              owner: trade.owner,
+              assetDescription: trade.description || trade.assetDescription,
+            }))
+            .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+          if (filteredTrades.length > 0) {
+            console.log(`[Congressional Trades] ✅ Successfully fetched ${filteredTrades.length} trades from House Stock Watcher`)
+            cachedData = filteredTrades
+            cachedDataSource = `House Stock Watcher (${endpoint})`
+            cacheTimestamp = now
+            return {
+              trades: filteredTrades,
+              dataSource: `House Stock Watcher (${endpoint})`,
+              dataTimestamp: now,
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ House Stock Watcher ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: Unusual Whales Public API endpoints
+  const unusualWhalesEndpoints = [
+    `https://unusualwhales.com/api/congressional-trades?politician=${encodedPolitician}`,
+    `https://api.unusualwhales.com/v1/congressional-trades?politician=${encodedPolitician}`,
+    `https://unusualwhales.com/api/v1/trades?politician=${encodedPolitician}`,
+    `https://unusualwhales.com/api/trades?name=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of unusualWhalesEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Unusual Whales API: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (Array.isArray(data)) {
+            trades = data
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          } else if (data.data && Array.isArray(data.data)) {
+            trades = data.data
+          } else if (data.results && Array.isArray(data.results)) {
+            trades = data.results
+          }
+          
+          if (trades.length > 0) {
+            const transformedTrades = trades
+              .map((trade: any) => ({
+                representative: trade.politician || trade.representative || trade.name || trade.politician_name || politician,
+                party: trade.party || "D",
+                state: trade.state || "CA",
+                district: trade.district,
+                ticker: trade.ticker || trade.symbol || trade.stock_symbol || "",
+                company: trade.company || trade.stock_name || trade.company_name || "",
+                transactionType: trade.transaction_type || trade.transactionType || trade.type || "Unknown",
+                amount: trade.amount || trade.value || trade.amount_range || "Unknown",
+                transactionDate: trade.transaction_date || trade.transactionDate || trade.date || "",
+                disclosureDate: trade.disclosure_date || trade.disclosureDate || trade.filed_date || "",
+                owner: trade.owner,
+                assetDescription: trade.description || trade.asset_description,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (transformedTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from Unusual Whales`)
+              cachedData = transformedTrades
+              cachedDataSource = "Unusual Whales Public API"
+              cacheTimestamp = now
+              return {
+                trades: transformedTrades,
+                dataSource: "Unusual Whales Public API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Unusual Whales API ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: Quiver Quantitative Public API (gratis tier)
+  const quiverEndpoints = [
+    `https://api.quiverquant.com/beta/congresstrading/${encodedPolitician}`,
+    `https://api.quiverquant.com/beta/congresstrading?politician=${encodedPolitician}`,
+    `https://api.quiverquant.com/v1/congresstrading/${encodedPolitician}`,
+  ]
+
+  for (const endpoint of quiverEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Quiver Quantitative API: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (Array.isArray(data)) {
+            trades = data
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          } else if (data.data && Array.isArray(data.data)) {
+            trades = data.data
+          }
+          
+          if (trades.length > 0) {
+            const transformedTrades = trades
+              .map((trade: any) => ({
+                representative: trade.Representative || trade.politician || trade.representative || trade.name || politician,
+                party: trade.Party || trade.party || "D",
+                state: trade.State || trade.state || "CA",
+                district: trade.District || trade.district,
+                ticker: trade.Ticker || trade.ticker || trade.symbol || "",
+                company: trade.Company || trade.company || trade.stockName || "",
+                transactionType: trade.Transaction || trade.transactionType || trade.type || "Unknown",
+                amount: trade.Amount || trade.amount || trade.value || "Unknown",
+                transactionDate: trade.TransactionDate || trade.transactionDate || trade.date || "",
+                disclosureDate: trade.DisclosureDate || trade.disclosureDate || trade.filedDate || "",
+                owner: trade.Owner || trade.owner,
+                assetDescription: trade.Description || trade.description || trade.assetDescription,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (transformedTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from Quiver Quantitative`)
+              cachedData = transformedTrades
+              cachedDataSource = "Quiver Quantitative Public API"
+              cacheTimestamp = now
+              return {
+                trades: transformedTrades,
+                dataSource: "Quiver Quantitative Public API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Quiver Quantitative API ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: Pelosi Tracker Public API
+  const pelosiTrackerEndpoints = [
+    `https://pelositracker.app/api/trades?politician=${encodedPolitician}`,
+    `https://pelositracker.app/api/v1/trades?name=${encodedPolitician}`,
+    `https://api.pelositracker.app/trades?politician=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of pelosiTrackerEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Pelosi Tracker API: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (Array.isArray(data)) {
+            trades = data
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          } else if (data.data && Array.isArray(data.data)) {
+            trades = data.data
+          }
+          
+          if (trades.length > 0) {
+            const transformedTrades = trades
+              .map((trade: any) => ({
+                representative: trade.politician || trade.representative || trade.name || politician,
+                party: trade.party || "D",
+                state: trade.state || "CA",
+                district: trade.district,
+                ticker: trade.ticker || trade.symbol || "",
+                company: trade.company || trade.stockName || "",
+                transactionType: trade.transactionType || trade.type || "Unknown",
+                amount: trade.amount || trade.value || "Unknown",
+                transactionDate: trade.transactionDate || trade.date || "",
+                disclosureDate: trade.disclosureDate || trade.filedDate || "",
+                owner: trade.owner,
+                assetDescription: trade.description || trade.assetDescription,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (transformedTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from Pelosi Tracker API`)
+              cachedData = transformedTrades
+              cachedDataSource = "Pelosi Tracker Public API"
+              cacheTimestamp = now
+              return {
+                trades: transformedTrades,
+                dataSource: "Pelosi Tracker Public API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Pelosi Tracker API ${endpoint} error:`, error)
+      continue
+    }
+  }
 
   // Probeer scraping van CapitolTrades (voor individuele trades) - VOOR RapidAPI
   try {
@@ -367,6 +707,297 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
     }
   }
 
+  // NIEUWE GRATIS BRON: Congressional Trading Data API (gratis maar onstabiel)
+  const congressionalTradingDataEndpoints = [
+    "https://www.congressionaltradingdata.com/api/trades",
+    "https://congressionaltradingdata.com/api/trades",
+    "https://www.congressionaltradingdata.com/api/v1/trades",
+    `https://www.congressionaltradingdata.com/api/trades?politician=${encodedPolitician}`,
+  ]
+
+  for (const ctdUrl of congressionalTradingDataEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Congressional Trading Data API: ${ctdUrl}`)
+      
+      const response = await fetch(ctdUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (Array.isArray(data)) {
+            trades = data
+          } else if (data && data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          } else if (data && data.data && Array.isArray(data.data)) {
+            trades = data.data
+          }
+          
+          if (trades.length > 0) {
+            const filteredTrades = trades
+              .filter((trade: any) => {
+                const repName = (trade.representative || trade.politician || trade.name || "").toLowerCase()
+                return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
+              })
+              .map((trade: any) => ({
+                representative: trade.representative || trade.politician || trade.name || politician,
+                party: trade.party || "D",
+                state: trade.state || "CA",
+                district: trade.district,
+                ticker: trade.ticker || trade.symbol || "",
+                company: trade.company || trade.stockName || "",
+                transactionType: trade.transactionType || trade.type || trade.action || "Unknown",
+                amount: trade.amount || trade.value || trade.amountRange || "Unknown",
+                transactionDate: trade.transactionDate || trade.tradedDate || trade.date || "",
+                disclosureDate: trade.disclosureDate || trade.filedDate || trade.publicationDate || "",
+                owner: trade.owner,
+                assetDescription: trade.description || trade.assetDescription,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (filteredTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${filteredTrades.length} trades from Congressional Trading Data API`)
+              cachedData = filteredTrades
+              cachedDataSource = "Congressional Trading Data API"
+              cacheTimestamp = now
+              return {
+                trades: filteredTrades,
+                dataSource: "Congressional Trading Data API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Congressional Trading Data API ${ctdUrl} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: OpenSecrets API endpoints
+  const openSecretsEndpoints = [
+    `https://www.opensecrets.org/api/?method=congTrades&output=json&politician=${encodedPolitician}`,
+    `https://opensecrets.org/api/?method=congTrades&output=json&name=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of openSecretsEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying OpenSecrets API: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          let trades: any[] = []
+          if (data.response && data.response.trades && Array.isArray(data.response.trades)) {
+            trades = data.response.trades
+          } else if (Array.isArray(data)) {
+            trades = data
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          }
+          
+          if (trades.length > 0) {
+            const transformedTrades = trades
+              .map((trade: any) => ({
+                representative: trade.representative || trade.politician || trade.name || politician,
+                party: trade.party || "D",
+                state: trade.state || "CA",
+                district: trade.district,
+                ticker: trade.ticker || trade.symbol || "",
+                company: trade.company || trade.stockName || "",
+                transactionType: trade.transactionType || trade.type || "Unknown",
+                amount: trade.amount || trade.value || "Unknown",
+                transactionDate: trade.transactionDate || trade.date || "",
+                disclosureDate: trade.disclosureDate || trade.filedDate || "",
+                owner: trade.owner,
+                assetDescription: trade.description || trade.assetDescription,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (transformedTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from OpenSecrets`)
+              cachedData = transformedTrades
+              cachedDataSource = "OpenSecrets API"
+              cacheTimestamp = now
+              return {
+                trades: transformedTrades,
+                dataSource: "OpenSecrets API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ OpenSecrets API ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: GovTrack API endpoints
+  const govTrackEndpoints = [
+    `https://www.govtrack.us/api/v2/person?name=${encodedPolitician}`,
+    `https://www.govtrack.us/api/v2/person?q=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of govTrackEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying GovTrack API: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json()
+          
+          // GovTrack heeft mogelijk trades data in de response
+          let trades: any[] = []
+          if (data.objects && Array.isArray(data.objects)) {
+            // Probeer trades uit person object te halen
+            for (const person of data.objects) {
+              if (person.trades && Array.isArray(person.trades)) {
+                trades.push(...person.trades)
+              }
+            }
+          } else if (data.trades && Array.isArray(data.trades)) {
+            trades = data.trades
+          }
+          
+          if (trades.length > 0) {
+            const transformedTrades = trades
+              .map((trade: any) => ({
+                representative: trade.representative || trade.politician || trade.name || politician,
+                party: trade.party || "D",
+                state: trade.state || "CA",
+                district: trade.district,
+                ticker: trade.ticker || trade.symbol || "",
+                company: trade.company || trade.stockName || "",
+                transactionType: trade.transactionType || trade.type || "Unknown",
+                amount: trade.amount || trade.value || "Unknown",
+                transactionDate: trade.transactionDate || trade.date || "",
+                disclosureDate: trade.disclosureDate || trade.filedDate || "",
+                owner: trade.owner,
+                assetDescription: trade.description || trade.assetDescription,
+              }))
+              .filter((trade: CongressionalTrade) => trade.ticker && trade.ticker !== "")
+
+            if (transformedTrades.length > 0) {
+              console.log(`[Congressional Trades] ✅ Successfully fetched ${transformedTrades.length} trades from GovTrack`)
+              cachedData = transformedTrades
+              cachedDataSource = "GovTrack API"
+              cacheTimestamp = now
+              return {
+                trades: transformedTrades,
+                dataSource: "GovTrack API",
+                dataTimestamp: now,
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ GovTrack API ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: Clerk of the House Public Disclosures (officiële bron)
+  const clerkEndpoints = [
+    "https://clerk.house.gov/public_disc/financial-pdfs",
+    "https://clerk.house.gov/public_disc/index.php",
+    `https://clerk.house.gov/public_disc/financial-pdfs?name=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of clerkEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Clerk of the House: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json, text/html",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        const contentType = response.headers.get("content-type")
+        // Clerk gebruikt mogelijk HTML of JSON
+        if (contentType && (contentType.includes("application/json") || contentType.includes("text/html"))) {
+          // Als JSON, probeer te parsen
+          if (contentType.includes("application/json")) {
+            const data = await response.json()
+            // Process JSON data if available
+            // Note: Clerk website may require HTML parsing for PDF links
+          }
+          // HTML parsing zou hier kunnen worden toegevoegd voor PDF links
+        }
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Clerk of the House ${endpoint} error:`, error)
+      continue
+    }
+  }
+
+  // NIEUWE GRATIS BRON: Senate Financial Disclosures (officiële bron)
+  const senateEndpoints = [
+    "https://efdsearch.senate.gov/search/home/",
+    `https://efdsearch.senate.gov/search/home/?name=${encodedPolitician}`,
+  ]
+
+  for (const endpoint of senateEndpoints) {
+    try {
+      console.log(`[Congressional Trades] 🔄 Trying Senate Financial Disclosures: ${endpoint}`)
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json, text/html",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (response.ok) {
+        // Senate website gebruikt HTML, zou scraping vereisen
+        // Dit is een placeholder voor toekomstige implementatie
+      }
+    } catch (error) {
+      console.warn(`[Congressional Trades] ⚠️ Senate Financial Disclosures ${endpoint} error:`, error)
+      continue
+    }
+  }
+
   // Probeer scraping van Pelosi Tracker (voor individuele trades)
   try {
     const scrapedTrades = await scrapePelosiTracker(politician)
@@ -385,43 +1016,13 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
     console.warn(`[Congressional Trades] ⚠️ Scraping failed:`, error)
   }
 
-  // Probeer verschillende API endpoints (als GitHub repositories falen)
+  // Probeer verschillende API endpoints (betaalde API's en fallbacks)
   const endpoints: Array<{
     url: string
     name: string
     requiresAuth: boolean
     transform: (data: any) => CongressionalTrade[]
   }> = [
-    // Congressional Trading Data API
-    {
-      url: "https://www.congressionaltradingdata.com/api/trades",
-      name: "Congressional Trading Data API",
-      requiresAuth: false,
-      transform: (data: any) => {
-        if (data && data.trades && Array.isArray(data.trades)) {
-          return data.trades
-            .filter((trade: any) => {
-              const repName = (trade.representative || trade.politician || "").toLowerCase()
-              return repName.includes(politician.toLowerCase())
-            })
-            .map((trade: any) => ({
-              representative: trade.representative || trade.politician || politician,
-              party: trade.party || "D",
-              state: trade.state || "CA",
-              district: trade.district,
-              ticker: trade.ticker || trade.symbol || "",
-              company: trade.company || trade.stockName || "",
-              transactionType: trade.transactionType || trade.type || trade.action || "Unknown",
-              amount: trade.amount || trade.value || trade.amountRange || "Unknown",
-              transactionDate: trade.transactionDate || trade.tradedDate || trade.date || "",
-              disclosureDate: trade.disclosureDate || trade.filedDate || trade.publicationDate || "",
-              owner: trade.owner,
-              assetDescription: trade.description || trade.assetDescription,
-            }))
-        }
-        return []
-      },
-    },
     // RapidAPI - Politician Trade Tracker
     ...(rapidApiKey ? [{
       url: rapidApiHost 
@@ -1132,6 +1733,15 @@ function getMockTrades(politician: string): CongressionalTrade[] {
 }
 
 export async function GET(request: NextRequest) {
+  // Functionaliteit uitgeschakeld - retourneer 404
+  return NextResponse.json(
+    {
+      error: "Not found",
+    },
+    { status: 404 }
+  )
+
+  /* Originele code hieronder (tijdelijk uitgeschakeld)
   try {
     const searchParams = request.nextUrl.searchParams
     const politician = searchParams.get("politician") || "Nancy Pelosi"
@@ -1230,5 +1840,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  */
 }
 

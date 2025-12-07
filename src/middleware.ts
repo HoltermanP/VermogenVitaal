@@ -5,11 +5,14 @@ import type { NextRequest } from "next/server"
 const isPublicRoute = createRouteMatcher([
   "/",
   "/auth/signin(.*)",
+  "/auth/signup(.*)",
+  "/pricing",
+  "/calculators(.*)", // Alle calculators zijn publiek om te bekijken
   "/api/webhooks(.*)",
   // Stock API routes - laat de route zelf authenticatie afhandelen
   // MAAR: deep-research routes hebben authenticatie nodig via middleware
   "/api/stocks/search(.*)",
-  "/api/stocks/favorites(.*)",
+  // /api/stocks/favorites is NIET public - vereist authenticatie
 ])
 
 // Check of Clerk is geconfigureerd
