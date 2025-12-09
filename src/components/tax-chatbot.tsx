@@ -81,12 +81,12 @@ export function TaxChatbot() {
           setLimitReached(true)
           const errorMessage: Message = {
             role: "assistant",
-            content: data.message || "Je hebt je limiet van 10 gratis AI aanroepen bereikt.",
+            content: data.message || "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
             timestamp: new Date().toISOString()
           }
           setMessages(prev => [...prev, errorMessage])
           toast.error("Limiet bereikt", {
-            description: "Upgrade naar Premium voor onbeperkte AI aanroepen."
+            description: data.message || "Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen."
           })
           return
         }

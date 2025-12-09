@@ -8,6 +8,10 @@ import { aggregateFinancialData, formatAggregatedFinancialData } from "@/lib/fin
 import { prisma } from "@/lib/prisma"
 import { getClerkUser } from "@/lib/clerk-auth"
 import { auth } from "@clerk/nextjs/server"
+import { getOrCreateAnonymousSessionId } from "@/lib/anonymous-session"
+
+const FREE_TIER_AI_CALL_LIMIT = 10
+const ANONYMOUS_SESSION_DURATION_HOURS = 24 // 24 uur tijdslimiet voor anonieme gebruikers
 
 // Converteer Nederlandse symbolen naar Yahoo Finance format
 function convertSymbol(symbol: string): string {
@@ -582,41 +586,98 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Als we nog steeds geen user hebben, return 401
-    if (!user || !user.id) {
-      const cookieHeader = request.headers.get('cookie')
-      console.error("Deep Research API: Geen gebruiker gevonden", {
-        hasUser: !!user,
-        userId: user?.id,
-        hasAuthResult: !!authResult,
-        clerkUserId: authResult?.userId,
-        hasCookies: !!cookieHeader,
-        hasClerkCookie: cookieHeader?.includes('__clerk') || false,
-        url: request.url,
+    // Ondersteun anonieme gebruikers
+    let userId: string | null = null
+    let sessionId: string | null = null
+    let isPremium = false
+
+    if (user && user.id) {
+      // Ingelogde gebruiker
+      userId = user.id
+
+      // Haal gebruiker op uit database met tier informatie
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { tier: true, trialEndsAt: true, isTrialActive: true }
       })
-      
-      return NextResponse.json(
-        { 
-          error: "Niet geautoriseerd. Log in om een Deep Research rapport te genereren.",
-        },
-        { status: 401 }
-      )
+
+      if (dbUser) {
+        isPremium = dbUser.tier === "PREMIUM" || dbUser.isTrialActive
+      }
+    } else {
+      // Anonieme gebruiker - gebruik sessie ID
+      sessionId = await getOrCreateAnonymousSessionId(request)
     }
     
-    const userId = user.id
-    
-    // Valideer dat userId bestaat en een geldige string is
-    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-      console.error("Deep Research API: Invalid userId", {
-        userId,
-        user,
-        clerkUserId: authResult?.userId,
+    // Check AI call limiet voor FREE tier of anonieme gebruikers
+    if (!isPremium) {
+      const whereClause = userId
+        ? {
+            userId: userId,
+            endpoint: "deep-research",
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Laatste 30 dagen voor ingelogde gebruikers
+            }
+          }
+        : {
+            sessionId: sessionId,
+            endpoint: "deep-research",
+            createdAt: {
+              gte: new Date(Date.now() - ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60 * 1000) // 24 uur voor anonieme gebruikers
+            }
+          }
+
+      const aiCallCount = await prisma.aiCall.count({
+        where: whereClause
       })
+
+      if (aiCallCount >= FREE_TIER_AI_CALL_LIMIT) {
+        const response = NextResponse.json(
+          { 
+            error: "AI_LIMIT_REACHED",
+            message: userId 
+              ? "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen."
+              : "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
+            limit: FREE_TIER_AI_CALL_LIMIT,
+            used: aiCallCount
+          },
+          { status: 403 }
+        )
+
+        if (sessionId && !userId) {
+          response.cookies.set("anonymous_session_id", sessionId, {
+            path: "/",
+            maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+            sameSite: "lax",
+            httpOnly: true
+          })
+        }
+
+        return response
+      }
+    }
+
+    // Voor anonieme gebruikers: maak een tijdelijke gebruiker aan of gebruik een speciale "guest" gebruiker
+    // Voor nu: anonieme gebruikers moeten inloggen om deep research te gebruiken
+    // Dit is complexer omdat deep research rapporten gekoppeld zijn aan gebruikers
+    if (!userId) {
+      const remainingCalls = sessionId 
+        ? FREE_TIER_AI_CALL_LIMIT - (await prisma.aiCall.count({ 
+            where: { 
+              sessionId: sessionId, 
+              endpoint: "deep-research",
+              createdAt: {
+                gte: new Date(Date.now() - ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60 * 1000)
+              }
+            } 
+          }))
+        : FREE_TIER_AI_CALL_LIMIT
       return NextResponse.json(
         { 
-          error: "Ongeldige gebruikers-ID",
+          error: "ACCOUNT_REQUIRED",
+          message: `Voor Deep Research rapporten moet je een account aanmaken. Je hebt nog ${remainingCalls} gratis AI aanroepen over.`,
         },
-        { status: 500 }
+        { status: 403 }
       )
     }
 
@@ -733,6 +794,15 @@ export async function POST(request: NextRequest) {
           report: {},
         },
       })
+
+      // Registreer AI aanroep
+      await prisma.aiCall.create({
+        data: {
+          userId: userId || undefined,
+          sessionId: sessionId || undefined,
+          endpoint: "deep-research"
+        }
+      })
       
       console.log("Deep Research API: Report created successfully", {
         reportId: report.id,
@@ -776,11 +846,23 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    return NextResponse.json({
+    const jsonResponse = NextResponse.json({
       reportId: report.id,
       status: "GENERATING",
       message: "Rapport wordt gegenereerd...",
     })
+
+    // Stel cookie in voor anonieme gebruikers (als die er zijn)
+    if (sessionId && !userId) {
+      jsonResponse.cookies.set("anonymous_session_id", sessionId, {
+        path: "/",
+        maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+        sameSite: "lax",
+        httpOnly: true
+      })
+    }
+
+    return jsonResponse
   } catch (error) {
     // Catch-all voor onverwachte errors - zorg altijd voor JSON response
     const errorMessage = error instanceof Error ? error.message : "Interne server fout"

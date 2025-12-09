@@ -174,18 +174,6 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/accounting"
-                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      isActive("/accounting") ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    EasyBook
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
                     href="/pricing"
                     className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
                       isActive("/pricing") ? "text-primary" : "text-muted-foreground"
@@ -268,14 +256,6 @@ export function Header() {
                   }`}
                 >
                   Portefeuille
-                </Link>
-                <Link
-                  href="/accounting"
-                  className={`text-lg font-medium ${
-                    isActive("/accounting") ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  EasyBook
                 </Link>
                 <Link
                   href="/pricing"

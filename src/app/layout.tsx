@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/session-provider";
+import { FinnChatbotWrapper } from "@/components/finn-chatbot-wrapper";
 
 // Dynamisch importeren van Header om Clerk hooks te vermijden tijdens static generation
 const Header = dynamic(() => import("@/components/header").then(mod => ({ default: mod.Header })), {
@@ -45,6 +46,7 @@ export default function RootLayout({
           >
             <Header />
             {children}
+            <FinnChatbotWrapper />
             <Toaster />
           </ThemeProvider>
         </SessionProvider>

@@ -30,10 +30,22 @@ type DailyTop3Response = {
   top3: Top3Stock[]
 }
 
-export function DailyTop3() {
+type DailyTop3Props = {
+  selectedCurrency?: "EUR" | "USD"
+  eurToUsdRate?: number
+}
+
+export function DailyTop3({ selectedCurrency = "EUR", eurToUsdRate = 1.10 }: DailyTop3Props) {
   const [data, setData] = useState<DailyTop3Response | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Helper functie om prijzen te converteren en formatteren
+  const formatPrice = (price: number, decimals: number = 2): string => {
+    const convertedPrice = selectedCurrency === "EUR" ? price / eurToUsdRate : price
+    const symbol = selectedCurrency === "EUR" ? "€" : "$"
+    return `${symbol}${convertedPrice.toFixed(decimals)}`
+  }
 
   useEffect(() => {
     const fetchTop3 = async () => {
@@ -169,7 +181,7 @@ export function DailyTop3() {
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span>€{stock.quote.price.toFixed(2)}</span>
+                      <span>{formatPrice(stock.quote.price)}</span>
                       <span
                         className={`flex items-center gap-1 font-medium ${
                           stock.quote.changePercent >= 0

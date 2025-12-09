@@ -2309,7 +2309,7 @@ function StocksPageContent() {
 
         {/* Dag-Top 3 Beleggingsproducten */}
         <div className="mb-8">
-          <DailyTop3 />
+          <DailyTop3 selectedCurrency={selectedCurrency} eurToUsdRate={EUR_TO_USD_RATE} />
         </div>
 
         {/* Top Stijgers en Dalers */}

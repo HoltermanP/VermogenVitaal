@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Home, FileText, TrendingUp, Plug, Linkedin } from "lucide-react"
+import { Home, FileText, TrendingUp, Linkedin } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
 import { ClerkErrorBoundary } from "./clerk-error-boundary"
@@ -104,12 +104,6 @@ function ClerkUserContent() {
             <Link href="/reports" className="flex items-center">
               <FileText className="mr-2 h-4 w-4" />
               Rapporten
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/accounting" className="flex items-center">
-              <Plug className="mr-2 h-4 w-4" />
-              EasyBook
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

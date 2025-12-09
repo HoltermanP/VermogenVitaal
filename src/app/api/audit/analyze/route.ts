@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma"
 import { analyzeTransactionsWithAI } from "@/lib/audit-service"
 import OpenAI from "openai"
 import type { Session } from "next-auth"
+import { getOrCreateAnonymousSessionId } from "@/lib/anonymous-session"
+
+const FREE_TIER_AI_CALL_LIMIT = 10
+const ANONYMOUS_SESSION_DURATION_HOURS = 24 // 24 uur tijdslimiet voor anonieme gebruikers
 
 export async function POST(request: NextRequest) {
   // Declareer variabelen voor error handling
@@ -22,6 +26,9 @@ export async function POST(request: NextRequest) {
     }
     
     let userEmail = session?.user?.email
+    let userId: string | null = null
+    let sessionId: string | null = null
+    let isPremium = false
     
     // Development fallback: als er geen sessie is, gebruik test email
     if (!userEmail && isDevelopment) {
@@ -29,8 +36,9 @@ export async function POST(request: NextRequest) {
       console.log('Development mode: using test email for authentication')
     }
     
+    // Als er geen sessie is, probeer anonieme sessie
     if (!userEmail) {
-      return NextResponse.json({ error: "Niet geautoriseerd. Log in om analyses uit te voeren." }, { status: 401 })
+      sessionId = await getOrCreateAnonymousSessionId(request)
     }
 
     // Check eerst of database beschikbaar is
@@ -49,26 +57,39 @@ export async function POST(request: NextRequest) {
     
     if (dbAvailable) {
       try {
-        user = await prisma.user.findUnique({
-          where: { email: userEmail }
-        })
+        if (userEmail) {
+          user = await prisma.user.findUnique({
+            where: { email: userEmail }
+          })
 
-        // In development mode, maak gebruiker aan als deze niet bestaat
-        if (!user && isDevelopment) {
-          try {
-            user = await prisma.user.create({
-              data: {
-                email: userEmail,
-                name: 'Test Gebruiker',
-                role: 'USER',
-                tier: 'FREE'
-              }
+          // In development mode, maak gebruiker aan als deze niet bestaat
+          if (!user && isDevelopment) {
+            try {
+              user = await prisma.user.create({
+                data: {
+                  email: userEmail,
+                  name: 'Test Gebruiker',
+                  role: 'USER',
+                  tier: 'FREE'
+                }
+              })
+              console.log('Development mode: created test user')
+            } catch (createError) {
+              console.error('Failed to create user:', createError)
+              user = { id: 'dev-user-id', email: userEmail } as { id: string; email: string }
+              console.log('Development mode: using mock user')
+            }
+          }
+
+          if (user && 'id' in user) {
+            userId = user.id as string
+            const dbUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { tier: true, trialEndsAt: true, isTrialActive: true }
             })
-            console.log('Development mode: created test user')
-          } catch (createError) {
-            console.error('Failed to create user:', createError)
-            user = { id: 'dev-user-id', email: userEmail } as { id: string; email: string }
-            console.log('Development mode: using mock user')
+            if (dbUser) {
+              isPremium = dbUser.tier === "PREMIUM" || dbUser.isTrialActive
+            }
           }
         }
       } catch (dbError) {
@@ -78,20 +99,92 @@ export async function POST(request: NextRequest) {
     }
     
     // Als database niet beschikbaar is, gebruik mock user in development
-    if (!user && !dbAvailable && isDevelopment) {
+    if (!user && !dbAvailable && isDevelopment && userEmail) {
       user = { id: 'dev-user-id', email: userEmail } as { id: string; email: string }
+      userId = 'dev-user-id'
       console.log('Development mode: using mock user (database unavailable)')
     }
     
-    if (!user && !isDevelopment) {
+    // Voor audit checks hebben we een gebruiker nodig (omdat audit checks gekoppeld zijn aan gebruikers)
+    // Maar we kunnen wel AI call tracking doen voor anonieme gebruikers
+    if (!user && !isDevelopment && !sessionId) {
       return NextResponse.json({ 
         error: "Database niet beschikbaar en niet in development mode" 
       }, { status: 503 })
     }
     
+    // Check AI call limiet voor FREE tier of anonieme gebruikers
+    if (dbAvailable && !isPremium) {
+      const whereClause = userId
+        ? {
+            userId: userId,
+            endpoint: "audit-analyze",
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            }
+          }
+        : {
+            sessionId: sessionId,
+            endpoint: "audit-analyze",
+            createdAt: {
+              gte: new Date(Date.now() - ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60 * 1000) // 24 uur voor anonieme gebruikers
+            }
+          }
+
+      const aiCallCount = await prisma.aiCall.count({
+        where: whereClause
+      })
+
+      if (aiCallCount >= FREE_TIER_AI_CALL_LIMIT) {
+        const response = NextResponse.json(
+          { 
+            error: "AI_LIMIT_REACHED",
+            message: userId 
+              ? "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen."
+              : "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
+            limit: FREE_TIER_AI_CALL_LIMIT,
+            used: aiCallCount
+          },
+          { status: 403 }
+        )
+
+        if (sessionId && !userId) {
+          response.cookies.set("anonymous_session_id", sessionId, {
+            path: "/",
+            maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+            sameSite: "lax",
+            httpOnly: true
+          })
+        }
+
+        return response
+      }
+    }
+
+    // Voor audit checks hebben we een gebruiker nodig
+    if (!user && !isDevelopment) {
+      const remainingCalls = dbAvailable && sessionId 
+        ? FREE_TIER_AI_CALL_LIMIT - (await prisma.aiCall.count({ 
+            where: { 
+              sessionId: sessionId, 
+              endpoint: "audit-analyze",
+              createdAt: {
+                gte: new Date(Date.now() - ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60 * 1000)
+              }
+            } 
+          }))
+        : FREE_TIER_AI_CALL_LIMIT
+      return NextResponse.json({ 
+        error: "ACCOUNT_REQUIRED",
+        message: `Voor audit analyses moet je een account aanmaken. Je hebt nog ${remainingCalls} gratis AI aanroepen over.`
+      }, { status: 403 })
+    }
+    
     if (!user) {
       return NextResponse.json({ error: "Gebruiker niet gevonden" }, { status: 404 })
     }
+    
+    userId = user.id as string
 
     // Check OpenAI API key
     const openaiApiKey = process.env.OPENAI_API_KEY
@@ -248,6 +341,15 @@ export async function POST(request: NextRequest) {
             recommendations: recommendations
           }
         })
+
+        // Registreer AI aanroep na succesvolle analyse
+        await prisma.aiCall.create({
+          data: {
+            userId: userId || undefined,
+            sessionId: sessionId || undefined,
+            endpoint: "audit-analyze"
+          }
+        })
       } catch (dbError) {
         console.error('Failed to save results to database:', dbError)
         // In development mode kunnen we doorgaan zonder database
@@ -259,12 +361,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const jsonResponse = NextResponse.json({
       id: updated.id,
       findings,
       recommendations,
       status: updated.status
     })
+
+    // Stel cookie in voor anonieme gebruikers
+    if (sessionId && !userId && dbAvailable) {
+      jsonResponse.cookies.set("anonymous_session_id", sessionId, {
+        path: "/",
+        maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+        sameSite: "lax",
+        httpOnly: true
+      })
+    }
+
+    return jsonResponse
   } catch (error) {
     console.error("Analyse error:", error)
     console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace')

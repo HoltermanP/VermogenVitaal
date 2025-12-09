@@ -295,14 +295,16 @@ model PortfolioItem {
 
 model AiCall {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String?  // Optioneel voor anonieme gebruikers
+  sessionId String?  // Voor anonieme gebruikers (unieke sessie identifier)
   endpoint  String   // Bijv. "chat", "analyze", etc.
   createdAt DateTime @default(now())
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
   @@map("ai_calls")
 }
 
