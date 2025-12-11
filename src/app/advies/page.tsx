@@ -65,7 +65,7 @@ export default function AdviesPage() {
             </p>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span>Vraag Finn rechtsonder voor persoonlijk advies</span>
+              <span>Vraag Finn rechtsonder voor persoonlijke informatie</span>
             </div>
           </div>
 
@@ -165,7 +165,7 @@ export default function AdviesPage() {
                   Alle Belastingonderwerpen 2025
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Klik op een onderwerp om uitgebreide informatie te bekijken. Gebruik Finn rechtsonder voor persoonlijk advies.
+                  Klik op een onderwerp om uitgebreide informatie te bekijken. Gebruik Finn rechtsonder voor persoonlijke informatie.
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -218,9 +218,10 @@ export default function AdviesPage() {
                       <h3 className="font-semibold text-foreground mb-2 text-lg">Belangrijke opmerking</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         De informatie op deze pagina is bedoeld als algemene richtlijn en kan niet worden beschouwd als 
-                        persoonlijke belastingondersteuning. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
+                        persoonlijke belastingondersteuning of investeringsadvies. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
                         individuele situatie. Voor persoonlijke begeleiding raden we aan om een gecertificeerd belastingadviseur 
-                        te raadplegen. Finn, onze AI-assistent, geeft algemene informatie en kan geen vervanging zijn voor professionele begeleiding.
+                        te raadplegen. Finn, onze AI-assistent, geeft algemene informatie en ideeën en kan geen vervanging zijn voor professionele begeleiding. 
+                        Wij geven geen investeringsadvies zoals bedoeld in de Wet op het financieel toezicht.
                       </p>
                     </div>
                   </div>

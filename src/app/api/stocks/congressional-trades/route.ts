@@ -34,6 +34,49 @@ type FetchResult = {
   dataTimestamp: number
 }
 
+// Raw trade data interface voor verschillende data bronnen
+interface RawTradeData {
+  representative?: string
+  politician?: string
+  name?: string
+  Representative?: string
+  politician_name?: string
+  party?: string
+  Party?: string
+  state?: string
+  State?: string
+  district?: string
+  District?: string
+  ticker?: string
+  symbol?: string
+  Ticker?: string
+  Symbol?: string
+  stock_symbol?: string
+  company?: string
+  stockName?: string
+  Company?: string
+  StockName?: string
+  stock_name?: string
+  transaction_type?: string
+  transactionType?: string
+  TransactionType?: string
+  type?: string
+  amount?: string
+  Amount?: string
+  transaction_date?: string
+  transactionDate?: string
+  TransactionDate?: string
+  date?: string
+  disclosure_date?: string
+  disclosureDate?: string
+  DisclosureDate?: string
+  owner?: string
+  Owner?: string
+  asset_description?: string
+  assetDescription?: string
+  AssetDescription?: string
+}
+
 async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<FetchResult> {
   // Check cache
   const now = Date.now()
@@ -139,13 +182,13 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
 
       console.log(`[Congressional Trades] 📊 Processing ${data.length} total trades from ${githubEndpoint.name}`)
       
-      const trades = data
-        .filter((trade: any) => {
+      const trades = (data as RawTradeData[])
+        .filter((trade) => {
           const repName = (trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || "").toLowerCase()
           const searchName = politician.toLowerCase()
           return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
         })
-        .map((trade: any) => ({
+        .map((trade) => ({
           representative: trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || politician,
           party: trade.party || trade.Party || "D",
           state: trade.state || trade.State || "CA",
@@ -174,7 +217,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       } else {
         console.warn(`[Congressional Trades] ⚠️ No trades found for ${politician} in ${githubEndpoint.name} (filtered from ${data.length} total trades)`)
       }
-    } catch (error) {
+    } catch {
       console.error(`[Congressional Trades] ❌ GitHub ${githubEndpoint.name} error:`, error)
       continue // Probeer volgende GitHub repository
     }
@@ -210,21 +253,21 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
-            trades = data
+            trades = data as RawTradeData[]
           } else if (data.trades && Array.isArray(data.trades)) {
-            trades = data.trades
+            trades = data.trades as RawTradeData[]
           } else if (data.transactions && Array.isArray(data.transactions)) {
-            trades = data.transactions
+            trades = data.transactions as RawTradeData[]
           }
           
           const filteredTrades = trades
-            .filter((trade: any) => {
+            .filter((trade) => {
               const repName = (trade.representative || trade.politician || trade.name || "").toLowerCase()
               return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
             })
-            .map((trade: any) => ({
+            .map((trade) => ({
               representative: trade.representative || trade.politician || trade.name || politician,
               party: trade.party || "D",
               state: trade.state || "CA",
@@ -253,7 +296,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ House Stock Watcher ${endpoint} error:`, error)
       continue
     }
@@ -285,7 +328,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
             trades = data
           } else if (data.trades && Array.isArray(data.trades)) {
@@ -298,7 +341,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.politician || trade.representative || trade.name || trade.politician_name || politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -328,7 +371,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Unusual Whales API ${endpoint} error:`, error)
       continue
     }
@@ -359,7 +402,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
             trades = data
           } else if (data.trades && Array.isArray(data.trades)) {
@@ -370,7 +413,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.Representative || trade.politician || trade.representative || trade.name || politician,
                 party: trade.Party || trade.party || "D",
                 state: trade.State || trade.state || "CA",
@@ -400,7 +443,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Quiver Quantitative API ${endpoint} error:`, error)
       continue
     }
@@ -431,7 +474,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
             trades = data
           } else if (data.trades && Array.isArray(data.trades)) {
@@ -442,7 +485,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.politician || trade.representative || trade.name || politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -472,7 +515,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Pelosi Tracker API ${endpoint} error:`, error)
       continue
     }
@@ -536,7 +579,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.representative || trade.politician || trade.name || trade.Representative || politician,
                 party: trade.party || trade.Party || data.party || data.Party || "D",
                 state: trade.state || trade.State || data.state || data.State || "CA",
@@ -569,7 +612,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         const errorText = await response.text().catch(() => "")
         console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_profile returned ${response.status}: ${errorText.substring(0, 200)}`)
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_profile error:`, error)
     }
 
@@ -594,7 +637,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           const data = await response.json()
           
           // Transform latest trades data
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
             trades = data
           } else if (data.trades && Array.isArray(data.trades)) {
@@ -605,11 +648,11 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           // Filter op specifieke politicus
           const filteredTrades = trades
-            .filter((trade: any) => {
+            .filter((trade) => {
               const repName = (trade.representative || trade.politician || trade.name || trade.Representative || "").toLowerCase()
               return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
             })
-            .map((trade: any) => ({
+            .map((trade) => ({
               representative: trade.representative || trade.politician || trade.name || trade.Representative || politician,
               party: trade.party || trade.Party || "D",
               state: trade.state || trade.State || "CA",
@@ -638,7 +681,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_latest_trades error:`, error)
     }
 
@@ -702,7 +745,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians error:`, error)
     }
   }
@@ -733,7 +776,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (Array.isArray(data)) {
             trades = data
           } else if (data && data.trades && Array.isArray(data.trades)) {
@@ -744,11 +787,11 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const filteredTrades = trades
-              .filter((trade: any) => {
+              .filter((trade) => {
                 const repName = (trade.representative || trade.politician || trade.name || "").toLowerCase()
                 return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
               })
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.representative || trade.politician || trade.name || politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -778,7 +821,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Congressional Trading Data API ${ctdUrl} error:`, error)
       continue
     }
@@ -808,7 +851,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json()
           
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (data.response && data.response.trades && Array.isArray(data.response.trades)) {
             trades = data.response.trades
           } else if (Array.isArray(data)) {
@@ -819,7 +862,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.representative || trade.politician || trade.name || politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -849,7 +892,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ OpenSecrets API ${endpoint} error:`, error)
       continue
     }
@@ -880,7 +923,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           const data = await response.json()
           
           // GovTrack heeft mogelijk trades data in de response
-          let trades: any[] = []
+          let trades: RawTradeData[] = []
           if (data.objects && Array.isArray(data.objects)) {
             // Probeer trades uit person object te halen
             for (const person of data.objects) {
@@ -894,7 +937,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           
           if (trades.length > 0) {
             const transformedTrades = trades
-              .map((trade: any) => ({
+              .map((trade) => ({
                 representative: trade.representative || trade.politician || trade.name || politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -924,7 +967,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ GovTrack API ${endpoint} error:`, error)
       continue
     }
@@ -956,14 +999,14 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         if (contentType && (contentType.includes("application/json") || contentType.includes("text/html"))) {
           // Als JSON, probeer te parsen
           if (contentType.includes("application/json")) {
-            const data = await response.json()
+            // const data = await response.json() // Voor toekomstig gebruik
             // Process JSON data if available
             // Note: Clerk website may require HTML parsing for PDF links
           }
           // HTML parsing zou hier kunnen worden toegevoegd voor PDF links
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Clerk of the House ${endpoint} error:`, error)
       continue
     }
@@ -992,7 +1035,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         // Senate website gebruikt HTML, zou scraping vereisen
         // Dit is een placeholder voor toekomstige implementatie
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ Senate Financial Disclosures ${endpoint} error:`, error)
       continue
     }
@@ -1021,7 +1064,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
     url: string
     name: string
     requiresAuth: boolean
-    transform: (data: any) => CongressionalTrade[]
+    transform: (data: unknown) => CongressionalTrade[]
   }> = [
     // RapidAPI - Politician Trade Tracker
     ...(rapidApiKey ? [{
@@ -1030,28 +1073,28 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         : `https://politician-trade-tracker1.p.rapidapi.com/get_trades?politician=${encodedPolitician}`,
       name: "RapidAPI Politician Trade Tracker",
       requiresAuth: true,
-      transform: (data: any) => {
-        let trades: any[] = []
+      transform: (data: unknown) => {
+        let trades: RawTradeData[] = []
         
         // Probeer verschillende data structuren
         if (Array.isArray(data)) {
-          trades = data
-        } else if (data && data.trades && Array.isArray(data.trades)) {
-          trades = data.trades
-        } else if (data && data.data && Array.isArray(data.data)) {
-          trades = data.data
-        } else if (data && data.results && Array.isArray(data.results)) {
-          trades = data.results
-        } else if (data && data.transactions && Array.isArray(data.transactions)) {
-          trades = data.transactions
+          trades = data as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'trades' in data && Array.isArray(data.trades)) {
+          trades = data.trades as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+          trades = data.data as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
+          trades = data.results as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'transactions' in data && Array.isArray(data.transactions)) {
+          trades = data.transactions as RawTradeData[]
         }
         
         return trades
-          .filter((trade: any) => {
+          .filter((trade) => {
             const repName = (trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || "").toLowerCase()
             return repName.includes(politician.toLowerCase()) || politician.toLowerCase().includes(repName.split(" ")[0])
           })
-          .map((trade: any) => ({
+          .map((trade) => ({
             representative: trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || politician,
             party: trade.party || trade.Party || "D",
             state: trade.state || trade.State || "CA",
@@ -1075,22 +1118,22 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         : `https://api.poliapi.com/api/politician/${encodedPolitician}`,
       name: poliApiKey ? "PoliAPI (Betaald)" : "PoliAPI (Gratis Tier)",
       requiresAuth: !!poliApiKey,
-      transform: (data: any) => {
+      transform: (data: unknown) => {
         // PoliAPI kan verschillende formats hebben
-        let trades: any[] = []
+        let trades: RawTradeData[] = []
         
         if (Array.isArray(data)) {
-          trades = data
-        } else if (data && data.trades && Array.isArray(data.trades)) {
-          trades = data.trades
-        } else if (data && data.data && Array.isArray(data.data)) {
-          trades = data.data
+          trades = data as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'trades' in data && Array.isArray(data.trades)) {
+          trades = data.trades as RawTradeData[]
+        } else if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+          trades = data.data as RawTradeData[]
         } else if (data && typeof data === 'object') {
           // Mogelijk een enkel object, maak array
-          trades = [data]
+          trades = [data as RawTradeData]
         }
         
-        return trades.map((trade: any) => ({
+        return trades.map((trade) => ({
           representative: trade.politician || trade.representative || trade.name || politician,
           party: trade.party || "D",
           state: trade.state || "CA",
@@ -1111,7 +1154,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       url: "https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json",
       name: "House Stock Watcher S3",
       requiresAuth: false,
-      transform: (data: any) => Array.isArray(data) ? data : [],
+      transform: (data: unknown) => Array.isArray(data) ? (data as RawTradeData[]) : [],
     },
   ]
 
@@ -1208,7 +1251,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         dataSource: dataSourceName,
         dataTimestamp: now,
       }
-    } catch (error) {
+    } catch {
       const endpoint = typeof endpointConfig === "string" ? endpointConfig : endpointConfig.url
       console.error(`[Congressional Trades] ❌ Error fetching from ${endpoint}:`, error)
       continue // Probeer volgende endpoint
@@ -1282,7 +1325,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         const errorText = await response.text().catch(() => "")
         console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians returned ${response.status}: ${errorText.substring(0, 200)}`)
       }
-    } catch (error) {
+    } catch {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians error:`, error)
     }
   }
@@ -1346,7 +1389,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
             const data = await response.json()
             
             // Probeer verschillende data structuren
-            let trades: any[] = []
+            let trades: RawTradeData[] = []
             
             if (Array.isArray(data)) {
               trades = data
@@ -1362,7 +1405,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
             
             if (trades.length > 0) {
               const transformedTrades = trades
-                .filter((trade: any) => {
+                .filter((trade) => {
                   // Filter op politicus naam
                   const repName = (
                     trade.politician || 
@@ -1375,7 +1418,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
                   const searchName = politician.toLowerCase()
                   return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
                 })
-                .map((trade: any) => ({
+                .map((trade) => ({
                   representative: trade.politician || trade.politician_name || trade.representative || trade.name || trade.politicianName || politician,
                   party: trade.party || trade.partyName || "D",
                   state: trade.state || trade.stateName || "CA",
@@ -1400,7 +1443,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
         } else {
           console.warn(`[Congressional Trades] ⚠️ CapitolTrades API returned ${response.status} for ${apiUrl}`)
         }
-      } catch (error) {
+      } catch {
         console.warn(`[Congressional Trades] ⚠️ CapitolTrades API error for ${apiUrl}:`, error)
         continue
       }
@@ -1443,7 +1486,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
               const jsonData = JSON.parse(jsonMatch[1] || jsonMatch[0])
               
               // Navigeer door Next.js data structuur
-              let trades: any[] = []
+              let trades: RawTradeData[] = []
               
               if (jsonData.props?.pageProps?.trades) {
                 trades = jsonData.props.pageProps.trades
@@ -1459,7 +1502,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
               
               if (trades.length > 0) {
                 const transformedTrades = trades
-                  .filter((trade: any) => {
+                  .filter((trade) => {
                     const repName = (
                       trade.politician || 
                       trade.politician_name || 
@@ -1470,7 +1513,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
                     const searchName = politician.toLowerCase()
                     return repName.includes(searchName) || searchName.includes(repName.split(" ")[0])
                   })
-                  .map((trade: any) => ({
+                  .map((trade) => ({
                     representative: trade.politician || trade.politician_name || trade.representative || trade.name || politician,
                     party: trade.party || trade.partyName || "D",
                     state: trade.state || trade.stateName || "CA",
@@ -1491,7 +1534,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
                   return transformedTrades
                 }
               }
-            } catch (parseError) {
+            } catch {
               console.warn(`[Congressional Trades] Failed to parse JSON from ${url}`)
             }
           }
@@ -1561,7 +1604,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
             }
           }
         }
-      } catch (error) {
+      } catch {
         console.warn(`[Congressional Trades] Failed to scrape ${url}:`, error)
         continue
       }
@@ -1606,7 +1649,7 @@ async function scrapePelosiTracker(politician: string): Promise<CongressionalTra
             // Extract trades from JSON structure
             if (jsonData.trades || jsonData.recentTransactions) {
               const trades = jsonData.trades || jsonData.recentTransactions || []
-              return trades.map((trade: any) => ({
+              return (trades as RawTradeData[]).map((trade) => ({
                 representative: politician,
                 party: trade.party || "D",
                 state: trade.state || "CA",
@@ -1620,7 +1663,7 @@ async function scrapePelosiTracker(politician: string): Promise<CongressionalTra
                 assetDescription: trade.description || trade.assetDescription,
               }))
             }
-          } catch (parseError) {
+          } catch {
             console.warn(`[Congressional Trades] Failed to parse JSON from ${url}`)
           }
         }
@@ -1680,7 +1723,7 @@ async function scrapePelosiTracker(politician: string): Promise<CongressionalTra
             }
           }
         }
-      } catch (error) {
+      } catch {
         console.warn(`[Congressional Trades] Failed to scrape ${url}:`, error)
         continue
       }
@@ -1732,7 +1775,7 @@ function getMockTrades(politician: string): CongressionalTrade[] {
   ]
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Functionaliteit uitgeschakeld - retourneer 404
   return NextResponse.json(
     {

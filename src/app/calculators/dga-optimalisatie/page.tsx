@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -40,7 +40,7 @@ export default function DGAOptimizationCalculatorPage() {
               <span className="text-gradient-financial">DGA Salaris Optimalisatie Calculator</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Optimaliseer de verhouding tussen salaris en dividend voor DGA's
+              Optimaliseer de verhouding tussen salaris en dividend voor DGA&apos;s
             </p>
           </div>
 
@@ -132,11 +132,11 @@ export default function DGAOptimizationCalculatorPage() {
                       <h3 className="font-semibold mb-3 text-green-600">Geoptimaliseerde Situatie</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Aanbevolen Salaris:</span>
+                          <span className="text-muted-foreground">Optimaal Salaris:</span>
                           <span className="font-medium">€{Math.round(results.optimized.salary).toLocaleString('nl-NL')}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Aanbevolen Dividend:</span>
+                          <span className="text-muted-foreground">Optimaal Dividend:</span>
                           <span className="font-medium">€{Math.round(results.optimized.dividend).toLocaleString('nl-NL')}</span>
                         </div>
                         <div className="flex justify-between">
@@ -172,7 +172,7 @@ export default function DGAOptimizationCalculatorPage() {
 
                     {results.advice.length > 0 && (
                       <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                        <h3 className="font-semibold mb-2">Advies</h3>
+                        <h3 className="font-semibold mb-2">Inzichten</h3>
                         <ul className="space-y-1 text-sm">
                           {results.advice.map((item, idx) => (
                             <li key={idx} className="text-muted-foreground">• {item}</li>

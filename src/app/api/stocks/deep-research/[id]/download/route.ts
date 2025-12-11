@@ -50,7 +50,7 @@ export async function GET(
       )
     }
 
-    const reportData = report.report as any
+    const reportData = report.report as Record<string, unknown>
 
     // Genereer PDF
     const pdfDoc = DeepResearchPDF({

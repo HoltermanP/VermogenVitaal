@@ -37,7 +37,7 @@ const questions = [
     id: 3,
     title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
     content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers?",
-    author: "Tax & Wealth Hub",
+    author: "aivermogen.nl",
     createdAt: "2024-01-01",
     category: "Fiscaal",
     isAnswered: true,
@@ -102,7 +102,7 @@ export default function CommunityPage() {
               <span className="text-gradient-financial">Community Q&A</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
-              Stel vragen en deel kennis met andere ondernemers
+              Stel vragen en deel kennis met andere ondernemers en investeerders
             </p>
           </div>
 

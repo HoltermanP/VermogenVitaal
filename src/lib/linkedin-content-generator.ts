@@ -17,7 +17,7 @@ export class LinkedInContentGenerator {
       throw new Error("OPENAI_API_KEY is niet geconfigureerd")
     }
     this.openai = new OpenAI({ apiKey })
-    this.appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://taxwealthhub.nl"
+    this.appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aivermogen.nl"
   }
 
   // Genereer gevarieerde onderwerpen op basis van wat al gepost is
@@ -146,7 +146,7 @@ export class LinkedInContentGenerator {
       take: 3
     })
 
-    const prompt = `Je bent een LinkedIn content creator voor Tax & Wealth Hub, een platform voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers.
+    const prompt = `Je bent een LinkedIn content creator voor aivermogen.nl, een platform voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers.
 
 ONDERWERP: ${topic.category}
 INVALSHOEK: ${topic.angle}
@@ -168,7 +168,7 @@ GENEREER EEN LINKEDIN POST MET:
    - Gebruik concrete voorbeelden waar mogelijk
 
 4. EEN NATUURLIJKE CALL-TO-ACTION:
-   - Verwijs naar Tax & Wealth Hub
+   - Verwijs naar aivermogen.nl
    - Noem een specifieke feature (calculator, ondersteuning, etc.)
    - Link naar: ${this.appUrl}
    - Maak het waardevol, niet te salesy

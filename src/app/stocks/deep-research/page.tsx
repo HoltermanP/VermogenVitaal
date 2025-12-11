@@ -572,7 +572,7 @@ export default function DeepResearchPage() {
               <li>Technische analyse</li>
               <li>Risico analyse</li>
               <li>Recent nieuws en ontwikkelingen</li>
-              <li>Conclusie en aanbeveling</li>
+              <li>Conclusie en samenvatting</li>
             </ul>
             <p className="text-muted-foreground mt-4 text-sm">
               <strong>Let op:</strong> Rapporten worden gegenereerd met behulp van AI en zijn uitsluitend bedoeld 

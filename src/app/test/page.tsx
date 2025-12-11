@@ -4,7 +4,7 @@ export default function TestPage() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            Tax & Wealth Hub - Test Page
+            aivermogen.nl - Test Page
           </h1>
           
           <div className="grid md:grid-cols-2 gap-8">

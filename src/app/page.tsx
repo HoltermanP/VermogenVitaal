@@ -34,7 +34,7 @@ export default function HomePage() {
             Nieuwe fiscale regels 2024
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-foreground animate-fade-in">
-            <span className="text-gradient-financial">Tax & Wealth Hub</span>
+            <span className="text-gradient-financial">aivermogen.nl</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl animate-fade-in delay-200">
             De complete oplossing voor belastingondersteuning en vermogensopbouw voor ondernemers. 
@@ -370,7 +370,7 @@ export default function HomePage() {
                   <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-foreground text-sm">Bronvermelding & transparantie</p>
-                    <p className="text-xs text-muted-foreground mt-1">Elk advies bevat duidelijke bronvermelding voor volledige transparantie</p>
+                    <p className="text-xs text-muted-foreground mt-1">Alle informatie bevat duidelijke bronvermelding voor volledige transparantie</p>
                   </div>
                 </div>
               </div>

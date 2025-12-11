@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -147,11 +147,11 @@ export default function DividendTaxCalculatorPage() {
                         <h3 className="font-semibold mb-3 text-green-600">Optimalisatie Mogelijk</h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Aanbevolen Salaris:</span>
+                            <span className="text-muted-foreground">Optimaal Salaris:</span>
                             <span className="font-medium">€{Math.round(results.optimization.recommendedSalary).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Aanbevolen Dividend:</span>
+                            <span className="text-muted-foreground">Optimaal Dividend:</span>
                             <span className="font-medium">€{Math.round(results.optimization.recommendedDividend).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between border-t pt-2">

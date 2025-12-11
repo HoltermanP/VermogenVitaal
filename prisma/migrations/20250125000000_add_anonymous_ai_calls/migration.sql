@@ -21,3 +21,7 @@ ALTER TABLE "ai_calls"
 -- CreateIndex: Voeg index toe voor sessionId queries
 CREATE INDEX "ai_calls_sessionId_createdAt_idx" ON "ai_calls"("sessionId", "createdAt");
 
+
+
+
+

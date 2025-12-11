@@ -294,7 +294,7 @@ async function calculateShortTermScore(
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Analyseer alle populaire stocks
     const scores = await Promise.all(

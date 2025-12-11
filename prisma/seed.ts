@@ -155,7 +155,8 @@ Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voo
 
   console.log('✅ Knowledge articles created')
 
-  // Create example scenarios
+  // Create example scenarios (voor toekomstig gebruik)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exampleScenarios = [
     {
       type: 'BV_VS_EMZ' as const,

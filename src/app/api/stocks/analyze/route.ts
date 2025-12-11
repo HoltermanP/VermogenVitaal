@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
-import { fetchStockNews } from "@/lib/news-service"
+import { fetchStockNews, type NewsArticle } from "@/lib/news-service"
 
 export async function POST(request: NextRequest) {
   // Parse body eerst zodat we het kunnen gebruiken in catch block
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
 
     // Haal nieuws op voor het aandeel (bedrijf, sector, markt)
     let newsData = {
-      companyNews: [] as any[],
-      sectorNews: [] as any[],
-      marketNews: [] as any[]
+      companyNews: [] as NewsArticle[],
+      sectorNews: [] as NewsArticle[],
+      marketNews: [] as NewsArticle[]
     }
     
     try {
@@ -125,7 +125,7 @@ ANALYST VERWACHTINGEN:
 - Aanbeveling: ${fundamentals.recommendationKey || 'N/A'}
 
 INCOME STATEMENT (Laatste 4 jaar):
-${(fundamentals.incomeStatement as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>, idx: number) => `
+${(fundamentals.incomeStatement as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>) => `
 Jaar ${item.year}:
 - Totale Omzet: ${item.totalRevenue ? `$${((item.totalRevenue as number) / 1e6).toFixed(2)}M` : 'N/A'}
 - Bruto Winst: ${item.grossProfit ? `$${((item.grossProfit as number) / 1e6).toFixed(2)}M` : 'N/A'}
@@ -135,7 +135,7 @@ Jaar ${item.year}:
 `).join('') || 'Geen data beschikbaar'}
 
 BALANCE SHEET (Laatste 4 jaar):
-${(fundamentals.balanceSheet as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>, idx: number) => `
+${(fundamentals.balanceSheet as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>) => `
 Jaar ${item.year}:
 - Totale Activa: ${item.totalAssets ? `$${((item.totalAssets as number) / 1e6).toFixed(2)}M` : 'N/A'}
 - Totale Passiva: ${item.totalLiab ? `$${((item.totalLiab as number) / 1e6).toFixed(2)}M` : 'N/A'}
@@ -145,7 +145,7 @@ Jaar ${item.year}:
 `).join('') || 'Geen data beschikbaar'}
 
 CASHFLOW STATEMENT (Laatste 4 jaar):
-${(fundamentals.cashFlow as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>, idx: number) => `
+${(fundamentals.cashFlow as Array<Record<string, unknown>> | undefined)?.map((item: Record<string, unknown>) => `
 Jaar ${item.year}:
 - Operating Cashflow: ${item.totalCashFromOperatingActivities ? `$${((item.totalCashFromOperatingActivities as number) / 1e6).toFixed(2)}M` : 'N/A'}
 - Free Cashflow: ${item.freeCashFlow ? `$${((item.freeCashFlow as number) / 1e6).toFixed(2)}M` : 'N/A'}

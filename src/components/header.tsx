@@ -50,7 +50,7 @@ export function Header() {
               <TrendingUp className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
-              Tax & Wealth Hub
+              aivermogen.nl
             </span>
           </Link>
 

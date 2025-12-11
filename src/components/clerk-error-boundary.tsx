@@ -26,7 +26,7 @@ export class ClerkErrorBoundary extends React.Component<
     throw error
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error) {
     console.warn("Clerk error caught:", error.message)
   }
 

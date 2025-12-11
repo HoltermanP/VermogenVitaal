@@ -132,7 +132,7 @@ export default function OnboardingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 animate-fade-in">
-              <span className="text-gradient-financial">Welkom bij Tax & Wealth Hub</span>
+              <span className="text-gradient-financial">Welkom bij aivermogen.nl</span>
             </h1>
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
               Laten we je profiel opzetten voor gepersonaliseerde adviezen

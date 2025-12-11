@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -133,7 +133,7 @@ export default function FiscalReserveCalculatorPage() {
                             <span className="font-medium">€{Math.round(results.for.maxAmount).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Aanbevolen:</span>
+                            <span className="text-muted-foreground">Optimaal:</span>
                             <span className="font-medium">€{Math.round(results.for.recommendedAmount).toLocaleString('nl-NL')}</span>
                           </div>
                           <div className="flex justify-between border-t pt-2">
@@ -171,7 +171,7 @@ export default function FiscalReserveCalculatorPage() {
 
                     {results.advice.length > 0 && (
                       <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                        <h3 className="font-semibold mb-2">Advies</h3>
+                        <h3 className="font-semibold mb-2">Inzichten</h3>
                         <ul className="space-y-1 text-sm">
                           {results.advice.map((item, idx) => (
                             <li key={idx} className="text-muted-foreground">• {item}</li>

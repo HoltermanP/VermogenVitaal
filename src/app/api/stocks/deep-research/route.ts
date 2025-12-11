@@ -224,9 +224,9 @@ function generateDefaultScores(
   fundamentals: Record<string, unknown> | null,
   quote: { price?: number; changePercent?: number } | null,
   history: Array<{ date: string; close: number }>,
-  aggregatedFinancialData?: any,
-  enhancedNews?: any,
-  socialSentiment?: any
+  aggregatedFinancialData?: Record<string, unknown>,
+  enhancedNews?: Record<string, unknown>,
+  socialSentiment?: Record<string, unknown>
 ): {
   overallScore: number
   shortTerm: { score: number; prediction: string; timeframe: string; keyFactors: string[] }
@@ -1004,7 +1004,7 @@ async function generateReport(
     console.log(`[DeepResearch] Data kwaliteit:`, aggregatedFinancialData.dataQuality)
 
     // Bereken technische indicatoren
-    const calculateSMA = (data: any[], period: number) => {
+    const calculateSMA = (data: Array<{ close: number }>, period: number) => {
       const sma: number[] = []
       for (let i = 0; i < data.length; i++) {
         if (i < period - 1) {
@@ -1043,6 +1043,8 @@ async function generateReport(
       return value.toFixed(2)
     }
 
+    // Format functies voor toekomstig gebruik (momenteel niet gebruikt)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formatIncomeStatement = (statements: Array<Record<string, unknown>>) => {
       if (!statements || statements.length === 0) return 'Geen data beschikbaar'
       return statements.map((item, idx) => {
@@ -1061,6 +1063,7 @@ Jaar ${year}:
       }).join('\n')
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formatBalanceSheet = (sheets: Array<Record<string, unknown>>) => {
       if (!sheets || sheets.length === 0) return 'Geen data beschikbaar'
       return sheets.map((item, idx) => {
@@ -1080,6 +1083,7 @@ Jaar ${year}:
       }).join('\n')
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const formatCashFlow = (flows: Array<Record<string, unknown>>) => {
       if (!flows || flows.length === 0) return 'Geen data beschikbaar'
       return flows.map((item, idx) => {
@@ -1507,10 +1511,10 @@ Maak een uitgebreid onderzoeksrapport met de volgende secties:
    - Social media sentiment en retail investor sentiment (Reddit discussies)
    - SEC filings en regelgevende ontwikkelingen
 
-8. CONCLUSIE EN AANBEVELING
+8. CONCLUSIE EN SAMENVATTING
    - Samenvatting van belangrijkste bevindingen
-   - Investeringsaanbeveling (Kopen/Houden/Verkopen) met onderbouwing
-   - Geschiktheid voor verschillende beleggersprofielen
+   - Algemene informatie over de investeringsmogelijkheid (geen persoonlijk advies)
+   - Geschiktheid voor verschillende beleggersprofielen (informatief)
    - Belangrijkste aandachtspunten
    - Risico-waarschuwingen
 
@@ -1791,7 +1795,7 @@ export async function GET(request: NextRequest) {
             { status: 401 }
           )
         }
-      } catch (fallbackError) {
+      } catch {
         return NextResponse.json(
           { error: "Authenticatie fout" },
           { status: 401 }

@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Svg, Line, Path, Rect, Circle, G, Defs, LinearGradient, Stop, Tspan } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Svg, Line, Path, Rect, Circle, G, Defs, LinearGradient, Stop } from '@react-pdf/renderer'
 import React from 'react'
 
 // Create styles

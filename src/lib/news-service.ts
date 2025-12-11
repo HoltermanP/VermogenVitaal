@@ -1,4 +1,4 @@
-interface NewsArticle {
+export interface NewsArticle {
   title: string
   description: string
   url: string
@@ -30,7 +30,7 @@ export const PAGE_NEWS_KEYWORDS: Record<string, string[]> = {
   "/": ["tax", "taxation", "fiscal", "tax news", "tax policy"],
   "/dashboard": ["business tax", "corporate tax", "entrepreneurs", "small business", "taxation"],
   "/calculators": ["tax calculation", "tax optimization", "tax rates", "fiscal"],
-  "/advies": ["tax advice", "tax consultation", "fiscal advice", "tax planning"],
+  "/advies": ["tax information", "tax consultation", "fiscal information", "tax planning"],
   "/community": ["business news", "entrepreneurs", "small business", "taxation"],
   "/stocks": ["stock market", "stocks", "investing", "financial markets", "shares"],
   "/accounting": ["accounting", "bookkeeping", "accounting software", "finance"],
@@ -320,7 +320,7 @@ export async function fetchNewsForPage(pagePath: string, limit: number = 10): Pr
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'User-Agent': 'TaxWealthHub/1.0'
+        'User-Agent': 'AIVermogen/1.0'
       }
     })
 

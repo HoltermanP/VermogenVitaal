@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, BookOpen, CheckCircle, ArrowRight, Sparkles } from "lucide-react"
+import { ExternalLink, BookOpen, CheckCircle, Sparkles } from "lucide-react"
 import { NewsTicker } from "@/components/news-ticker"
 
 const EASYBOOK_URL = process.env.NEXT_PUBLIC_EASYBOOK_URL || "https://easybook.nl"
@@ -48,7 +48,7 @@ export default function AccountingPage() {
               Start met EasyBook
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground">
-              Tax & Wealth Hub richt zich op informatie en ondersteuning over financiën en belastingen.
+              aivermogen.nl richt zich op informatie en ondersteuning over financiën en belastingen.
               Voor daadwerkelijke boekhouding en belastingaangiftes werken we samen met EasyBook.
             </CardDescription>
           </CardHeader>
@@ -105,7 +105,7 @@ export default function AccountingPage() {
         {/* Info Card */}
         <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
           <CardHeader>
-            <CardTitle className="text-foreground">Over Tax & Wealth Hub</CardTitle>
+            <CardTitle className="text-foreground">Over aivermogen.nl</CardTitle>
             <CardDescription className="text-muted-foreground">
               Wat wij wel doen
             </CardDescription>

@@ -66,10 +66,8 @@ function validateDatabaseUrl(): string | null {
 }
 
 // Valideer DATABASE_URL bij initialisatie
-let databaseUrlValid = false
 try {
   const url = validateDatabaseUrl()
-  databaseUrlValid = url !== null
   if (url) {
     console.log('✅ DATABASE_URL is configured')
   }

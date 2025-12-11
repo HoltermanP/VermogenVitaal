@@ -112,7 +112,7 @@ async function fetchStockQuote(symbol: string): Promise<StockChange | null> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Haal quotes op voor alle populaire aandelen
     const quotePromises = POPULAR_STOCKS.map(symbol => fetchStockQuote(symbol))

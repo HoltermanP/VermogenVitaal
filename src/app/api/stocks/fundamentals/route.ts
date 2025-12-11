@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       recommendationKey: keyStats?.financialData?.recommendationKey || null,
       
       // Income Statement (laatste jaar)
-      incomeStatement: financials?.incomeStatementHistory?.incomeStatementHistory?.slice(0, 4).map((item: any) => ({
+      incomeStatement: financials?.incomeStatementHistory?.incomeStatementHistory?.slice(0, 4).map((item: Record<string, { raw?: number; fmt?: string } | undefined>) => ({
         year: item.endDate?.fmt || "N/A",
         totalRevenue: item.totalRevenue?.raw || null,
         costOfRevenue: item.costOfRevenue?.raw || null,
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       })) || [],
       
       // Balance Sheet (laatste jaar)
-      balanceSheet: financials?.balanceSheetHistory?.balanceSheetStatements?.slice(0, 4).map((item: any) => ({
+      balanceSheet: financials?.balanceSheetHistory?.balanceSheetStatements?.slice(0, 4).map((item: Record<string, { raw?: number; fmt?: string } | undefined>) => ({
         year: item.endDate?.fmt || "N/A",
         totalAssets: item.totalAssets?.raw || null,
         totalLiab: item.totalLiab?.raw || null,
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
       })) || [],
       
       // Cash Flow (laatste jaar)
-      cashFlow: financials?.cashflowStatementHistory?.cashflowStatements?.slice(0, 4).map((item: any) => ({
+      cashFlow: financials?.cashflowStatementHistory?.cashflowStatements?.slice(0, 4).map((item: Record<string, { raw?: number; fmt?: string } | undefined>) => ({
         year: item.endDate?.fmt || "N/A",
         totalCashFromOperatingActivities: item.totalCashFromOperatingActivities?.raw || null,
         capitalExpenditures: item.capitalExpenditures?.raw || null,

@@ -107,7 +107,7 @@ export default function LinkedInAdminPage() {
             LinkedIn Posts Beheer
           </h1>
           <p className="text-muted-foreground mt-2">
-            Genereer en beheer LinkedIn posts voor Tax & Wealth Hub
+            Genereer en beheer LinkedIn posts voor aivermogen.nl
           </p>
         </div>
         <Button

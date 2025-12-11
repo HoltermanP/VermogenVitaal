@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { TrendingUp, TrendingDown, RefreshCw, Activity, Search, Star, StarOff, X, ArrowUp, ArrowDown, Minus, AlertTriangle, CheckCircle, XCircle, FileText, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, RefreshCw, Activity, Search, Star, StarOff, X, ArrowUp, ArrowDown, Minus, FileText, Loader2 } from "lucide-react"
 import {
   Line,
   XAxis,
@@ -34,7 +34,7 @@ import {
   getPatternExplanation,
   getPatternTrend,
   type Pattern, 
-  type PatternType 
+  // type PatternType // Voor toekomstig gebruik 
 } from "@/lib/technical-patterns"
 
 type StockQuote = {
@@ -367,7 +367,7 @@ function StocksPageContent() {
       atr.push(firstATR)
       
       // Rest is EMA van true ranges
-      const multiplier = 1 / period
+      // const multiplier = 1 / period // Voor toekomstig gebruik
       for (let i = period + 1; i < data.length; i++) {
         const prevATR = atr[atr.length - 1]
         const currentTR = trueRanges[i - 1]
@@ -938,9 +938,9 @@ function StocksPageContent() {
     const currentBBUpper = bollinger.upper[bollinger.upper.length - 1]
     const currentBBLower = bollinger.lower[bollinger.lower.length - 1]
     const currentBBMiddle = bollinger.middle[bollinger.middle.length - 1]
-    const currentATR = atr[atr.length - 1]
+    // const currentATR = atr[atr.length - 1] // Voor toekomstig gebruik
     const currentStochK = stochastic.k[stochastic.k.length - 1]
-    const currentStochD = stochastic.d[stochastic.d.length - 1]
+    // const currentStochD = stochastic.d[stochastic.d.length - 1] // Voor toekomstig gebruik
     const currentADX = adx[adx.length - 1]
     
     // Analyseer OBV trend
@@ -965,7 +965,7 @@ function StocksPageContent() {
     const macdHistogramRising = macd.histogram.length >= 2 && macd.histogram[macd.histogram.length - 1] > macd.histogram[macd.histogram.length - 2]
     const rsiOverbought = !isNaN(currentRSI) && currentRSI > 70
     const rsiOversold = !isNaN(currentRSI) && currentRSI < 30
-    const rsiNeutral = !isNaN(currentRSI) && currentRSI >= 40 && currentRSI <= 60
+    // const rsiNeutral = !isNaN(currentRSI) && currentRSI >= 40 && currentRSI <= 60 // Voor toekomstig gebruik
     const stochOverbought = !isNaN(currentStochK) && currentStochK > 80
     const stochOversold = !isNaN(currentStochK) && currentStochK < 20
     const priceNearBBUpper = !isNaN(currentBBUpper) && currentPrice > currentBBUpper * 0.98
@@ -983,7 +983,7 @@ function StocksPageContent() {
       obvTrend === "Stijgend"
     ].filter(Boolean).length
     
-    const bearishSignals = 10 - bullishSignals
+    // const bearishSignals = 10 - bullishSignals // Voor toekomstig gebruik
     const isBullish = bullishSignals >= 6
     const isStrongBullish = bullishSignals >= 8 && strongTrend
     
@@ -1893,7 +1893,7 @@ function StocksPageContent() {
       const currentRSI = rsi[rsi.length - 1]
       const currentSMA20 = sma20[sma20.length - 1]
       const currentSMA50 = sma50[sma50.length - 1]
-      const currentEMA12 = ema12[ema12.length - 1]
+      // const currentEMA12 = ema12[ema12.length - 1] // Voor toekomstig gebruik
       const currentMACD = macd.macd[macd.macd.length - 1]
       const currentSignal = macd.signal[macd.signal.length - 1]
       const currentHistogram = macd.histogram[macd.histogram.length - 1]

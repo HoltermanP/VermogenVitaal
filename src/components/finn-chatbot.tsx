@@ -25,12 +25,12 @@ export function FinnChatbot() {
   // Initialiseer messages met aangepaste welcome message
   const getInitialMessage = () => {
     if (!isLoaded) {
-      return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastingadvies..."
+      return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie..."
     }
     if (!isAuthenticated) {
-      return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastingadvies. Log in om te beginnen met chatten en persoonlijk advies te krijgen over belastingen, financiën, investeringen en meer."
+      return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Log in om te beginnen met chatten en persoonlijke informatie te krijgen over belastingen, financiën, investeringen en meer."
     }
-    return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastingadvies. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
+    return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
   }
   
   const [messages, setMessages] = useState<Message[]>([
@@ -61,8 +61,8 @@ export function FinnChatbot() {
   useEffect(() => {
     if (isLoaded) {
       const newWelcomeMessage = !isAuthenticated
-        ? "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastingadvies. Log in om te beginnen met chatten en persoonlijk advies te krijgen over belastingen, financiën, investeringen en meer."
-        : "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastingadvies. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
+        ? "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Log in om te beginnen met chatten en persoonlijke informatie te krijgen over belastingen, financiën, investeringen en meer."
+        : "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
       
       setMessages(prev => {
         // Alleen updaten als we nog maar 1 bericht hebben (welkomstbericht)

@@ -6,6 +6,20 @@
 
 import { fetchEnhancedFinancialData, FinancialData } from './enhanced-financial-data'
 
+// Type definitions voor financial statements
+interface FinancialStatement {
+  date?: string
+  endDate?: string | { fmt?: string; raw?: number }
+  fiscalDateEnding?: string
+  [key: string]: unknown
+}
+
+interface EarningsData {
+  fiscalDateEnding?: string
+  reportedEPS?: string | number
+  [key: string]: unknown
+}
+
 interface AggregatedFinancialData {
   // Basis info
   symbol: string
@@ -14,7 +28,7 @@ interface AggregatedFinancialData {
   industry?: string
   
   // Yahoo Finance data
-  yahooData?: any
+  yahooData?: Record<string, unknown>
   
   // Enhanced data
   enhancedData?: FinancialData
@@ -34,18 +48,18 @@ interface AggregatedFinancialData {
   operatingMargin?: number
   
   // Financial statements (gecombineerd van alle bronnen)
-  incomeStatements: any[]
-  balanceSheets: any[]
-  cashFlowStatements: any[]
+  incomeStatements: FinancialStatement[]
+  balanceSheets: FinancialStatement[]
+  cashFlowStatements: FinancialStatement[]
   
   // Quarterly data
-  quarterlyIncome: any[]
-  quarterlyBalance: any[]
-  quarterlyCashFlow: any[]
+  quarterlyIncome: FinancialStatement[]
+  quarterlyBalance: FinancialStatement[]
+  quarterlyCashFlow: FinancialStatement[]
   
   // Earnings data
-  earningsHistory: any[]
-  earningsTrend: any[]
+  earningsHistory: EarningsData[]
+  earningsTrend: EarningsData[]
   
   // Data kwaliteit indicator
   dataQuality: {
@@ -62,7 +76,7 @@ interface AggregatedFinancialData {
  * Combineer Yahoo Finance data met Enhanced Financial Data
  */
 export function aggregateFinancialData(
-  yahooFundamentals: any,
+  yahooFundamentals: Record<string, unknown>,
   enhancedData: FinancialData | null
 ): AggregatedFinancialData {
   const result: AggregatedFinancialData = {
@@ -99,12 +113,12 @@ export function aggregateFinancialData(
   
   if (enhancedData?.fmpData?.incomeStatement && enhancedData.fmpData.incomeStatement.length > 0) {
     // Voeg FMP data toe als het niet al bestaat
-    const existingDates = new Set(result.incomeStatements.map((s: any) => {
+    const existingDates = new Set(result.incomeStatements.map((s: FinancialStatement) => {
       const date = s.endDate?.fmt || s.endDate?.raw || s.date
       return date
     }))
     
-    enhancedData.fmpData.incomeStatement.forEach((statement: any) => {
+    enhancedData.fmpData.incomeStatement.forEach((statement: FinancialStatement) => {
       const date = statement.date || statement.calendarYear
       if (!existingDates.has(date)) {
         result.incomeStatements.push(statement)
@@ -129,12 +143,12 @@ export function aggregateFinancialData(
   }
   
   if (enhancedData?.fmpData?.balanceSheet && enhancedData.fmpData.balanceSheet.length > 0) {
-    const existingDates = new Set(result.balanceSheets.map((s: any) => {
+    const existingDates = new Set(result.balanceSheets.map((s: FinancialStatement) => {
       const date = s.endDate?.fmt || s.endDate?.raw || s.date
       return date
     }))
     
-    enhancedData.fmpData.balanceSheet.forEach((sheet: any) => {
+    enhancedData.fmpData.balanceSheet.forEach((sheet: FinancialStatement) => {
       const date = sheet.date || sheet.calendarYear
       if (!existingDates.has(date)) {
         result.balanceSheets.push(sheet)
@@ -159,12 +173,12 @@ export function aggregateFinancialData(
   }
   
   if (enhancedData?.fmpData?.cashFlow && enhancedData.fmpData.cashFlow.length > 0) {
-    const existingDates = new Set(result.cashFlowStatements.map((s: any) => {
+    const existingDates = new Set(result.cashFlowStatements.map((s: FinancialStatement) => {
       const date = s.endDate?.fmt || s.endDate?.raw || s.date
       return date
     }))
     
-    enhancedData.fmpData.cashFlow.forEach((flow: any) => {
+    enhancedData.fmpData.cashFlow.forEach((flow: FinancialStatement) => {
       const date = flow.date || flow.calendarYear
       if (!existingDates.has(date)) {
         result.cashFlowStatements.push(flow)
@@ -200,7 +214,7 @@ export function aggregateFinancialData(
   }
   
   if (enhancedData?.alphaVantageData?.earnings?.annualEarnings) {
-    enhancedData.alphaVantageData.earnings.annualEarnings.forEach((earn: any) => {
+    enhancedData.alphaVantageData.earnings.annualEarnings.forEach((earn: EarningsData) => {
       result.earningsHistory.push({
         fiscalDateEnding: earn.fiscalDateEnding,
         reportedEPS: earn.reportedEPS
@@ -271,19 +285,19 @@ export function aggregateFinancialData(
   }
 
   // Sorteer statements op datum (nieuwste eerst)
-  result.incomeStatements.sort((a: any, b: any) => {
+  result.incomeStatements.sort((a: FinancialStatement, b: FinancialStatement) => {
     const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
     const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
     return dateB.localeCompare(dateA)
   })
 
-  result.balanceSheets.sort((a: any, b: any) => {
+  result.balanceSheets.sort((a: FinancialStatement, b: FinancialStatement) => {
     const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
     const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
     return dateB.localeCompare(dateA)
   })
 
-  result.cashFlowStatements.sort((a: any, b: any) => {
+  result.cashFlowStatements.sort((a: FinancialStatement, b: FinancialStatement) => {
     const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
     const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
     return dateB.localeCompare(dateA)
@@ -361,7 +375,7 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   // Income statements - GEDETAILLEERD
   if (data.incomeStatements.length > 0) {
     formatted += `\n=== INCOME STATEMENTS (${data.incomeStatements.length} jaar beschikbaar) ===\n`
-    data.incomeStatements.slice(0, 10).forEach((stmt: any, idx: number) => {
+    data.incomeStatements.slice(0, 10).forEach((stmt: FinancialStatement, idx: number) => {
       const date = stmt.endDate?.fmt || stmt.endDate?.raw || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`
       formatted += `\nJaar ${date}:\n`
       formatted += `- Totale Omzet (Revenue): ${formatFinancialValue(stmt.totalRevenue?.raw || stmt.revenue || stmt.totalRevenue, false, true)}\n`
@@ -393,7 +407,7 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   // Balance sheets - GEDETAILLEERD
   if (data.balanceSheets.length > 0) {
     formatted += `\n=== BALANCE SHEETS (${data.balanceSheets.length} jaar beschikbaar) ===\n`
-    data.balanceSheets.slice(0, 10).forEach((sheet: any, idx: number) => {
+    data.balanceSheets.slice(0, 10).forEach((sheet: FinancialStatement, idx: number) => {
       const date = sheet.endDate?.fmt || sheet.endDate?.raw || sheet.date || sheet.calendarYear || `Jaar ${idx + 1}`
       formatted += `\nJaar ${date}:\n`
       formatted += `ACTIVA:\n`
@@ -433,7 +447,7 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   // Cash flow statements - GEDETAILLEERD
   if (data.cashFlowStatements.length > 0) {
     formatted += `\n=== CASH FLOW STATEMENTS (${data.cashFlowStatements.length} jaar beschikbaar) ===\n`
-    data.cashFlowStatements.slice(0, 10).forEach((flow: any, idx: number) => {
+    data.cashFlowStatements.slice(0, 10).forEach((flow: FinancialStatement, idx: number) => {
       const date = flow.endDate?.fmt || flow.endDate?.raw || flow.date || flow.calendarYear || `Jaar ${idx + 1}`
       formatted += `\nJaar ${date}:\n`
       
@@ -469,7 +483,7 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   // Quarterly data - GEDETAILLEERD
   if (data.quarterlyIncome.length > 0) {
     formatted += `\n=== QUARTERLY INCOME STATEMENTS (${data.quarterlyIncome.length} kwartalen) ===\n`
-    data.quarterlyIncome.slice(0, 8).forEach((q: any, idx: number) => {
+    data.quarterlyIncome.slice(0, 8).forEach((q: FinancialStatement, idx: number) => {
       const date = q.endDate?.fmt || q.endDate?.raw || q.date || `Q${idx + 1}`
       formatted += `\nKwartaal ${date}:\n`
       formatted += `- Totale Omzet: ${formatFinancialValue(q.totalRevenue?.raw || q.revenue || q.totalRevenue, false, true)}\n`
@@ -483,7 +497,7 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   // Earnings history
   if (data.earningsHistory.length > 0) {
     formatted += `\nEARNINGS GESCHIEDENIS:\n`
-    data.earningsHistory.slice(0, 8).forEach((earn: any) => {
+    data.earningsHistory.slice(0, 8).forEach((earn: EarningsData) => {
       const date = earn.fiscalDateEnding || earn.quarter || earn.date || 'N/A'
       const eps = earn.reportedEPS || earn.actual?.raw || earn.actual || 'N/A'
       const estimate = earn.estimatedEPS || earn.estimate?.raw || earn.estimate || 'N/A'

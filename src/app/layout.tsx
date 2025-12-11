@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tax & Wealth Hub - Fiscale Optimalisatie voor Ondernemers",
+  title: "aivermogen.nl - Fiscale Optimalisatie voor Ondernemers",
   description: "De complete oplossing voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers",
 };
 

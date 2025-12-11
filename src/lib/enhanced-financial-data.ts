@@ -7,6 +7,80 @@
  * - Yahoo Finance (backup)
  */
 
+// Type definitions voor Financial Modeling Prep data
+interface FMPProfile {
+  companyName?: string
+  sector?: string
+  industry?: string
+  website?: string
+  description?: string
+  fullTimeEmployees?: number
+  mktCap?: number
+  [key: string]: unknown
+}
+
+interface FMPKeyMetrics {
+  peRatio?: number
+  pbRatio?: number
+  evToRevenue?: number
+  evToEbitda?: number
+  roe?: number
+  roa?: number
+  debtToEquity?: number
+  [key: string]: unknown
+}
+
+interface FMPFinancialRatios {
+  currentRatio?: number
+  quickRatio?: number
+  grossProfitMargin?: number
+  operatingProfitMargin?: number
+  netProfitMargin?: number
+  [key: string]: unknown
+}
+
+interface FMPAnalystEstimate {
+  date?: string
+  revenueEstimated?: number
+  epsEstimated?: number
+  [key: string]: unknown
+}
+
+interface SECFiling {
+  form: string
+  date: string
+  description?: string
+}
+
+interface AlphaVantageOverview {
+  Description?: string
+  Sector?: string
+  Industry?: string
+  MarketCapitalization?: string
+  PERatio?: string
+  PEGRatio?: string
+  DividendYield?: string
+  '52WeekHigh'?: string
+  '52WeekLow'?: string
+  Name?: string
+  [key: string]: unknown
+}
+
+interface AlphaVantageEarnings {
+  annualEarnings?: Array<{
+    fiscalDateEnding: string
+    reportedEPS: string
+    [key: string]: unknown
+  }>
+  [key: string]: unknown
+}
+
+interface SECCompanyTicker {
+  ticker: string
+  cik_str: number
+  [key: string]: unknown
+}
+
 export interface FinancialData {
   // Basis info
   symbol: string
@@ -16,29 +90,29 @@ export interface FinancialData {
   
   // Financial Modeling Prep data
   fmpData?: {
-    profile?: any
-    keyMetrics?: any // TTM data is een object, niet array
-    financialRatios?: any // TTM data is een object, niet array
-    incomeStatement?: any[]
-    balanceSheet?: any[]
-    cashFlow?: any[]
-    analystEstimates?: any[]
+    profile?: FMPProfile
+    keyMetrics?: FMPKeyMetrics // TTM data is een object, niet array
+    financialRatios?: FMPFinancialRatios // TTM data is een object, niet array
+    incomeStatement?: Array<Record<string, unknown>>
+    balanceSheet?: Array<Record<string, unknown>>
+    cashFlow?: Array<Record<string, unknown>>
+    analystEstimates?: FMPAnalystEstimate[]
     companyPeers?: string[]
   }
   
   // SEC EDGAR data
   secData?: {
-    recentFilings?: any[]
-    companyFacts?: any
+    recentFilings?: SECFiling[]
+    companyFacts?: Record<string, unknown>
   }
   
   // Alpha Vantage data
   alphaVantageData?: {
-    overview?: any
-    earnings?: any
-    incomeStatement?: any
-    balanceSheet?: any
-    cashFlow?: any
+    overview?: AlphaVantageOverview
+    earnings?: AlphaVantageEarnings
+    incomeStatement?: Record<string, unknown>
+    balanceSheet?: Record<string, unknown>
+    cashFlow?: Record<string, unknown>
   }
 }
 
@@ -109,7 +183,7 @@ async function fetchFinancialModelingPrepData(symbol: string) {
       balanceSheet: Array.isArray(balance) ? balance : undefined,
       cashFlow: Array.isArray(cashFlow) ? cashFlow : undefined,
       analystEstimates: Array.isArray(estimates) ? estimates : undefined,
-      companyPeers: Array.isArray(peers) ? peers.map((p: any) => p.symbol || p) : undefined
+      companyPeers: Array.isArray(peers) ? peers.map((p: { symbol?: string } | string) => typeof p === 'string' ? p : (p.symbol || String(p))) : undefined
     }
     
     return result
@@ -132,16 +206,16 @@ async function fetchSECData(symbol: string, companyName?: string) {
     try {
       const tickersRes = await fetch('https://www.sec.gov/files/company_tickers.json', {
         headers: {
-          'User-Agent': 'TaxWealthHub/1.0 (contact@taxwealthhub.com)',
+          'User-Agent': 'AIVermogen/1.0 (contact@aivermogen.nl)',
           'Accept': 'application/json'
         }
       })
       
       if (tickersRes.ok) {
         const tickersData = await tickersRes.json()
-        const entry = Object.values(tickersData).find((item: any) => 
-          item.ticker === symbol.toUpperCase()
-        ) as any
+        const entry = Object.values(tickersData).find((item): item is SECCompanyTicker => 
+          typeof item === 'object' && item !== null && 'ticker' in item && item.ticker === symbol.toUpperCase()
+        )
         
         if (entry) {
           cik = String(entry.cik_str).padStart(10, '0')
@@ -163,7 +237,7 @@ async function fetchSECData(symbol: string, companyName?: string) {
         `https://data.sec.gov/submissions/CIK${cik}.json`,
         {
           headers: {
-            'User-Agent': 'TaxWealthHub/1.0 (contact@taxwealthhub.com)',
+            'User-Agent': 'AIVermogen/1.0 (contact@aivermogen.nl)',
             'Accept': 'application/json'
           }
         }
@@ -184,7 +258,7 @@ async function fetchSECData(symbol: string, companyName?: string) {
             date: dates[idx],
             description: descriptions[idx] || ''
           }))
-          .filter((f: any) => ['10-K', '10-Q', '8-K'].includes(f.form))
+          .filter((f: SECFiling) => ['10-K', '10-Q', '8-K'].includes(f.form))
           .slice(0, 10) // Laatste 10 belangrijke filings
 
         return {
@@ -353,7 +427,7 @@ export function formatEnhancedFinancialData(data: FinancialData): string {
 
     if (data.fmpData.analystEstimates && data.fmpData.analystEstimates.length > 0) {
       formatted += `\nAnalyst Estimates:\n`
-      data.fmpData.analystEstimates.slice(0, 5).forEach((est: any, idx: number) => {
+      data.fmpData.analystEstimates.slice(0, 5).forEach((est: FMPAnalystEstimate, idx: number) => {
         formatted += `Q${idx + 1} ${est.date || 'N/A'}: Revenue ${est.revenueEstimated || 'N/A'}, EPS ${est.epsEstimated || 'N/A'}\n`
       })
     }
@@ -363,7 +437,7 @@ export function formatEnhancedFinancialData(data: FinancialData): string {
   if (data.secData && data.secData.recentFilings) {
     formatted += `\n--- SEC EDGAR Filings ---\n`
     formatted += `Recente belangrijke filings:\n`
-    data.secData.recentFilings.forEach((filing: any) => {
+    data.secData.recentFilings.forEach((filing: SECFiling) => {
       formatted += `- ${filing.form} (${filing.date}): ${filing.description || 'Geen beschrijving'}\n`
     })
   }
@@ -390,7 +464,7 @@ export function formatEnhancedFinancialData(data: FinancialData): string {
       formatted += `\nEarnings Data:\n`
       if (data.alphaVantageData.earnings.annualEarnings) {
         formatted += `Jaarlijkse Earnings:\n`
-        data.alphaVantageData.earnings.annualEarnings.slice(0, 5).forEach((earn: any) => {
+        data.alphaVantageData.earnings.annualEarnings.slice(0, 5).forEach((earn: { fiscalDateEnding: string; reportedEPS: string; [key: string]: unknown }) => {
           formatted += `- ${earn.fiscalDateEnding}: EPS ${earn.reportedEPS}\n`
         })
       }

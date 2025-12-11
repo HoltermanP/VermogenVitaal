@@ -1,4 +1,4 @@
-# Tax & Wealth Hub
+# aivermogen.nl
 
 Een complete MVP voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers.
 
@@ -313,13 +313,13 @@ npm run format
 
 ## 📄 Licentie
 
-Dit project is eigendom van Tax & Wealth Hub. Alle rechten voorbehouden.
+Dit project is eigendom van aivermogen.nl. Alle rechten voorbehouden.
 
 ## 📞 Support
 
-- **Email**: support@taxwealthhub.nl
-- **Documentatie**: [docs.taxwealthhub.nl](https://docs.taxwealthhub.nl)
-- **Status**: [status.taxwealthhub.nl](https://status.taxwealthhub.nl)
+- **Email**: support@aivermogen.nl
+- **Documentatie**: [docs.aivermogen.nl](https://docs.aivermogen.nl)
+- **Status**: [status.aivermogen.nl](https://status.aivermogen.nl)
 
 ---
 

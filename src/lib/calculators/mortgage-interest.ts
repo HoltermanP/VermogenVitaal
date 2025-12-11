@@ -24,9 +24,9 @@ export function calculateMortgageInterest(input: MortgageInterestInput): Mortgag
     interestRate,
     mortgageType,
     mortgageYear,
-    hasPartner = false,
     income
   } = input
+  // hasPartner is voor toekomstig gebruik maar wordt nu nog niet gebruikt
 
   // Jaarlijkse rente
   const annualInterest = mortgageAmount * (interestRate / 100)

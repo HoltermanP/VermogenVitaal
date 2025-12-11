@@ -22,9 +22,9 @@ export function calculateOwnHomeForfait(input: OwnHomeForfaitInput): OwnHomeForf
     wozValue,
     mortgageAmount,
     interestRate,
-    hasPartner = false,
     income
   } = input
+  // hasPartner is voor toekomstig gebruik maar wordt nu nog niet gebruikt
 
   // Eigenwoningforfait 2025: 0.35% van WOZ-waarde
   const ownHomeForfaitRate = 0.0035

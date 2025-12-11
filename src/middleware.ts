@@ -51,7 +51,7 @@ export default isClerkConfigured
       
       return response
     }, { debug: process.env.NODE_ENV === 'development' })
-  : async function middleware(_request: NextRequest) {
+  : async function middleware() {
       // Fallback middleware wanneer Clerk niet is geconfigureerd (voor build)
       return NextResponse.next()
     }

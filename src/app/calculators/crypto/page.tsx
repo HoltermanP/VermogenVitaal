@@ -238,9 +238,9 @@ export default function CryptoAllocationCalculatorPage() {
             {/* Results */}
             <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500">
               <CardHeader>
-                <CardTitle className="text-foreground">Aanbevolen Allocatie</CardTitle>
+                <CardTitle className="text-foreground">Voorbeeld Allocatie</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Optimale verdeling voor jouw profiel
+                  Voorbeeldverdeling voor jouw profiel (geen advies)
                 </CardDescription>
               </CardHeader>
               <CardContent>

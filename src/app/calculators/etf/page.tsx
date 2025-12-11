@@ -362,7 +362,7 @@ export default function ETFGrowthCalculatorPage() {
           {/* ETF Recommendations */}
           <div className="mt-16">
             <h2 className="text-3xl font-bold text-foreground mb-8 animate-fade-in delay-500">
-              <span className="text-gradient-financial">Aanbevolen ETF&apos;s</span>
+              <span className="text-gradient-financial">Populaire ETF&apos;s</span>
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 hover:scale-105 animate-fade-in delay-600">

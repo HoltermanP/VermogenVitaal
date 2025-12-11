@@ -64,7 +64,7 @@ async function searchRedditPosts(
         
         const response = await fetch(searchUrl, {
           headers: {
-            'User-Agent': 'TaxWealthHub/1.0 (contact@taxwealthhub.com)',
+            'User-Agent': 'AIVermogen/1.0 (contact@aivermogen.nl)',
             'Accept': 'application/json'
           },
           cache: 'no-store'
@@ -77,7 +77,7 @@ async function searchRedditPosts(
         const data = await response.json()
         const children = data.data?.children || []
 
-        return children.map((child: any) => {
+        return children.map((child: { data: Record<string, unknown> }) => {
           const post = child.data
           return {
             title: post.title || '',
@@ -274,7 +274,7 @@ export async function fetchSectorDiscussions(
     
     const response = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'TaxWealthHub/1.0 (contact@taxwealthhub.com)',
+        'User-Agent': 'AIVermogen/1.0 (contact@aivermogen.nl)',
         'Accept': 'application/json'
       },
       cache: 'no-store'
@@ -284,7 +284,7 @@ export async function fetchSectorDiscussions(
       const data = await response.json()
       const children = data.data?.children || []
 
-      children.forEach((child: any) => {
+      children.forEach((child: { data: Record<string, unknown> }) => {
         const post = child.data
         posts.push({
           title: post.title || '',

@@ -36,9 +36,9 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
   const {
     corporateProfit,
     currentSalary,
-    currentDividend,
-    hasPartner = false
+    currentDividend
   } = input
+  // hasPartner is voor toekomstig gebruik maar wordt nu nog niet gebruikt
 
   // Minimum DGA-salaris 2025
   const minSalary = corporateProfit <= 200000 ? 51000 : 75000
@@ -84,7 +84,7 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
   }
 
   if (optimizedDividend > 0) {
-    advice.push(`Aanbevolen dividend: €${Math.round(optimizedDividend).toLocaleString('nl-NL')}`)
+    advice.push(`Optimaal dividend: €${Math.round(optimizedDividend).toLocaleString('nl-NL')}`)
   }
 
   return {

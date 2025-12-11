@@ -28,7 +28,7 @@ export default function DisclaimerPage() {
               <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Algemene bepalingen</h2>
               <p className="text-muted-foreground mb-4">
                 De informatie op deze website is uitsluitend bedoeld voor educatieve doeleinden en vormt 
-                geen persoonlijke financiële, fiscale of juridische ondersteuning. Tax & Wealth Hub is geen 
+                geen persoonlijke financiële, fiscale of juridische ondersteuning. aivermogen.nl is geen 
                 geregistreerde financiële dienstverlener en biedt geen geautoriseerde financiële ondersteuning.
               </p>
             </section>
@@ -75,7 +75,7 @@ export default function DisclaimerPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Aansprakelijkheid</h2>
               <p className="text-muted-foreground mb-4">
-                Tax & Wealth Hub, haar medewerkers, partners en affiliates zijn niet aansprakelijk voor 
+                aivermogen.nl, haar medewerkers, partners en affiliates zijn niet aansprakelijk voor 
                 enige directe, indirecte, incidentele, speciale of gevolgschade die voortvloeit uit het 
                 gebruik van deze website of de informatie daarop.
               </p>
@@ -100,7 +100,7 @@ export default function DisclaimerPage() {
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Affiliate programma&apos;s</h2>
               <p className="text-muted-foreground mb-4">
-                Tax & Wealth Hub kan deelnemen aan affiliate programma&apos;s. Dit betekent dat wij een 
+                aivermogen.nl kan deelnemen aan affiliate programma&apos;s. Dit betekent dat wij een 
                 commissie kunnen ontvangen wanneer u via onze links producten of diensten aanschaft.
               </p>
               <p className="text-muted-foreground mb-4">
@@ -132,7 +132,7 @@ export default function DisclaimerPage() {
                 Voor vragen over deze disclaimer kunt u contact met ons opnemen via:
               </p>
               <ul className="list-disc list-inside text-muted-foreground ml-4 space-y-1">
-                <li>E-mail: legal@taxwealthhub.nl</li>
+                <li>E-mail: legal@aivermogen.nl</li>
                 <li>Telefoon: +31 (0)20 123 4567</li>
                 <li>Adres: Keizersgracht 123, 1015 CJ Amsterdam</li>
               </ul>

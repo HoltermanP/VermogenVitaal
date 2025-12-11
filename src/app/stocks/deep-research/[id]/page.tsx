@@ -114,7 +114,7 @@ export default function DeepResearchDetailPage() {
     if (isLoaded && user && reportId) {
       fetchReport()
     }
-  }, [isLoaded, user, reportId])
+  }, [isLoaded, user, reportId, fetchReport])
 
   useEffect(() => {
     if (!report || (report.status !== "GENERATING" && report.status !== "CANCELLED")) return
@@ -521,6 +521,7 @@ export default function DeepResearchDetailPage() {
                       console.error("Download error:", error)
                       const errorMessage = error instanceof Error ? error.message : "Fout bij downloaden PDF"
                       toast.error(errorMessage)
+                      // error wordt gebruikt in errorMessage
                     }
                   }}
                 >
@@ -644,7 +645,7 @@ export default function DeepResearchDetailPage() {
                             <div className="text-lg font-medium text-muted-foreground mb-4">
                               {reportData.scores.overallScore >= 80 && "Uitstekende investeringsmogelijkheid"}
                               {reportData.scores.overallScore >= 60 && reportData.scores.overallScore < 80 && "Solide investeringsmogelijkheid"}
-                              {reportData.scores.overallScore >= 40 && reportData.scores.overallScore < 60 && "Voorzichtige benadering aanbevolen"}
+                              {reportData.scores.overallScore >= 40 && reportData.scores.overallScore < 60 && "Voorzichtige benadering gewenst"}
                               {reportData.scores.overallScore < 40 && "Hoge risico's - extra voorzichtigheid vereist"}
                             </div>
                             
@@ -1503,34 +1504,34 @@ export default function DeepResearchDetailPage() {
                     prose-hr:border-border prose-hr:my-8">
                     <ReactMarkdown
                       components={{
-                        h1: ({node, ...props}) => (
+                        h1: ({...props}) => (
                           <h1 className="text-4xl font-bold mb-6 mt-8 pb-3 border-b border-border text-foreground" {...props} />
                         ),
-                        h2: ({node, ...props}) => (
+                        h2: ({...props}) => (
                           <h2 className="text-3xl font-bold mb-4 mt-8 text-primary" {...props} />
                         ),
-                        h3: ({node, ...props}) => (
+                        h3: ({...props}) => (
                           <h3 className="text-2xl font-semibold mb-3 mt-6 text-foreground" {...props} />
                         ),
-                        h4: ({node, ...props}) => (
+                        h4: ({...props}) => (
                           <h4 className="text-xl font-semibold mb-2 mt-4 text-foreground" {...props} />
                         ),
-                        p: ({node, ...props}) => (
+                        p: ({...props}) => (
                           <p className="text-base leading-relaxed mb-4 text-foreground/90" {...props} />
                         ),
-                        ul: ({node, ...props}) => (
+                        ul: ({...props}) => (
                           <ul className="my-4 space-y-2 list-disc pl-6" {...props} />
                         ),
-                        ol: ({node, ...props}) => (
+                        ol: ({...props}) => (
                           <ol className="my-4 space-y-2 list-decimal pl-6" {...props} />
                         ),
-                        li: ({node, ...props}) => (
+                        li: ({...props}) => (
                           <li className="text-foreground/90 leading-relaxed" {...props} />
                         ),
-                        blockquote: ({node, ...props}) => (
+                        blockquote: ({...props}) => (
                           <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4" {...props} />
                         ),
-                        code: ({node, ...props}: any) => {
+                        code: ({...props}: { [key: string]: unknown }) => {
                           const isInline = !props.className || !props.className.includes('language-');
                           return isInline ? (
                             <code className="text-sm bg-muted px-1.5 py-0.5 rounded font-mono" {...props} />
@@ -1538,21 +1539,21 @@ export default function DeepResearchDetailPage() {
                             <code className="block text-sm bg-muted p-4 rounded-lg overflow-x-auto" {...props} />
                           );
                         },
-                        table: ({node, ...props}) => (
+                        table: ({...props}) => (
                           <div className="overflow-x-auto my-6">
                             <table className="w-full border-collapse" {...props} />
                           </div>
                         ),
-                        th: ({node, ...props}) => (
+                        th: ({...props}) => (
                           <th className="border border-border bg-muted p-3 text-left font-semibold" {...props} />
                         ),
-                        td: ({node, ...props}) => (
+                        td: ({...props}) => (
                           <td className="border border-border p-3" {...props} />
                         ),
-                        a: ({node, ...props}) => (
+                        a: ({...props}) => (
                           <a className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors" {...props} />
                         ),
-                        hr: ({node, ...props}) => (
+                        hr: ({...props}) => (
                           <hr className="border-border my-8" {...props} />
                         ),
                       }}

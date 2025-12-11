@@ -199,9 +199,9 @@ export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
                   <h3 className="font-semibold text-foreground mb-2">Belangrijke opmerking</h3>
                   <p className="text-sm text-muted-foreground">
                     De informatie op deze pagina is bedoeld als algemene richtlijn en kan niet worden beschouwd als 
-                    persoonlijke belastingondersteuning. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
+                    persoonlijke belastingondersteuning of investeringsadvies. Belastingregels kunnen complex zijn en zijn afhankelijk van je 
                     individuele situatie. Voor persoonlijke begeleiding raden we aan om een gecertificeerd belastingadviseur 
-                    te raadplegen.
+                    te raadplegen. Wij geven geen investeringsadvies zoals bedoeld in de Wet op het financieel toezicht.
                   </p>
                 </div>
               </div>

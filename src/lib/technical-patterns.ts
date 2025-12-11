@@ -48,7 +48,6 @@ function findLocalExtrema(data: StockHistory[], lookback: number = 2): {
   for (let i = lookback; i < data.length - lookback; i++) {
     const high = data[i].high
     const low = data[i].low
-    const close = data[i].close
 
     // Check voor peak (high)
     let isPeak = true
@@ -103,11 +102,9 @@ export function detectDoubleTop(data: StockHistory[]): Pattern[] {
 
       // Vind het laagste punt tussen de twee pieken (neckline)
       let minLow = Infinity
-      let minIndex = peak1.index
       for (let k = peak1.index; k <= peak2.index; k++) {
         if (data[k].low < minLow) {
           minLow = data[k].low
-          minIndex = k
         }
       }
 
@@ -159,11 +156,9 @@ export function detectDoubleBottom(data: StockHistory[]): Pattern[] {
 
       // Vind het hoogste punt tussen de twee dieptepunten (neckline)
       let maxHigh = -Infinity
-      let maxIndex = trough1.index
       for (let k = trough1.index; k <= trough2.index; k++) {
         if (data[k].high > maxHigh) {
           maxHigh = data[k].high
-          maxIndex = k
         }
       }
 
