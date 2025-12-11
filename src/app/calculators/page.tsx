@@ -123,10 +123,10 @@ export default function CalculatorsPage() {
       ]
     },
     {
-      id: "pensioen",
-      name: "Pensioen & Sparen",
+      id: "pensioen-planning",
+      name: "Pensioen Planning",
       icon: Wallet,
-      description: "Tools voor pensioenplanning en vermogensopbouw",
+      description: "Uitgebreide tools voor pensioenplanning en AOW-berekeningen",
       calculators: [
         {
           id: "pensioen",
@@ -134,6 +134,106 @@ export default function CalculatorsPage() {
           description: "Bereken je jaarruimte en reserveringsruimte voor pensioenopbouw",
           icon: FileText,
           href: "/calculators/pensioen"
+        },
+        {
+          id: "pensioenbehoefte",
+          title: "Pensioenbehoefte Calculator",
+          description: "Bepaal hoeveel pensioen je nodig hebt om je levensstijl te behouden",
+          icon: Calculator,
+          href: "/calculators/pensioenbehoefte"
+        },
+        {
+          id: "aow-simulator",
+          title: "AOW Simulator",
+          description: "Bereken je AOW-uitkering gebaseerd op geboortedatum en werkhistorie",
+          icon: Users,
+          href: "/calculators/aow-simulator"
+        },
+        {
+          id: "pensioen-optimalisatie",
+          title: "Pensioenoptimalisatie Calculator",
+          description: "Vergelijk lijfrente vs pensioenfonds en fiscale voordelen",
+          icon: TrendingUp,
+          href: "/calculators/pensioen-optimalisatie"
+        },
+        {
+          id: "vroegpensioen",
+          title: "Vroegpensioen Calculator",
+          description: "Bereken kosten en mogelijkheden van vervroegd pensioen",
+          icon: Target,
+          href: "/calculators/vroegpensioen"
+        }
+      ]
+    },
+    {
+      id: "sparen-buffer",
+      name: "Sparen & Buffer",
+      icon: PiggyBank,
+      description: "Calculators voor spaardoelen, financiële buffers en vermogensopbouw",
+      calculators: [
+        {
+          id: "spaarplan",
+          title: "Spaarplan Calculator",
+          description: "Plan je spaardoelen met realistische rentepercentages",
+          icon: PiggyBank,
+          href: "/calculators/spaarplan"
+        },
+        {
+          id: "buffer-calculator",
+          title: "Buffer/Kapitaal Calculator",
+          description: "Bepaal de juiste financiële buffer voor noodgevallen",
+          icon: Shield,
+          href: "/calculators/buffer-calculator"
+        },
+        {
+          id: "sparen-kinderen",
+          title: "Sparen voor Kinderen",
+          description: "Plan spaargeld voor studiekosten of starterskapitaal",
+          icon: Users,
+          href: "/calculators/sparen-kinderen"
+        },
+        {
+          id: "huisdroom-sparen",
+          title: "Huisdroom Sparen Calculator",
+          description: "Bereken spaarplan voor koopsom, verbouwing of aflossing",
+          icon: Home,
+          href: "/calculators/huisdroom-sparen"
+        }
+      ]
+    },
+    {
+      id: "vermogensopbouw",
+      name: "Vermogensopbouw",
+      icon: Target,
+      description: "Langetermijn planning voor financiële onafhankelijkheid en successie",
+      calculators: [
+        {
+          id: "fire-calculator",
+          title: "FIRE Calculator",
+          description: "Bereken wanneer je financieel onafhankelijk kunt zijn",
+          icon: Target,
+          href: "/calculators/fire-calculator"
+        },
+        {
+          id: "vermogensmix",
+          title: "Vermogensmix Optimalisatie",
+          description: "Vind optimale verdeling tussen sparen en beleggen",
+          icon: TrendingUp,
+          href: "/calculators/vermogensmix"
+        },
+        {
+          id: "successieplanning",
+          title: "Successieplanning Calculator",
+          description: "Plan overdracht vermogen aan volgende generatie",
+          icon: Users,
+          href: "/calculators/successieplanning"
+        },
+        {
+          id: "inflatie-impact",
+          title: "Inflatie Impact Calculator",
+          description: "Toon erosie van koopkracht door inflatie",
+          icon: TrendingUp,
+          href: "/calculators/inflatie-impact"
         }
       ]
     },

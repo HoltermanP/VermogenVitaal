@@ -264,7 +264,7 @@ async function fetchSECData(symbol: string, companyName?: string) {
         return {
           recentFilings: importantFilings,
           cik,
-          companyFacts: null // Company facts vereist aparte call, kan later toegevoegd worden
+          companyFacts: undefined // Company facts vereist aparte call, kan later toegevoegd worden
         }
       } else {
         console.warn(`[SEC] Filings fetch failed: ${filingsRes.status}`)
@@ -392,7 +392,7 @@ export function formatEnhancedFinancialData(data: FinancialData): string {
       formatted += `- Website: ${p.website || 'N/A'}\n`
       formatted += `- Beschrijving: ${p.description || 'N/A'}\n`
       formatted += `- Aantal werknemers: ${p.fullTimeEmployees?.toLocaleString() || 'N/A'}\n`
-      formatted += `- Marktkapitalisatie: $${(p.mktCap / 1e9).toFixed(2)}B\n`
+      formatted += `- Marktkapitalisatie: $${p.mktCap ? (p.mktCap / 1e9).toFixed(2) : 'N/A'}B\n`
     }
 
     if (data.fmpData.keyMetrics) {

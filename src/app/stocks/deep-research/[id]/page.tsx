@@ -110,11 +110,32 @@ export default function DeepResearchDetailPage() {
   const [polling, setPolling] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState("1Y")
 
+  const fetchReport = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`, {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setReport(data)
+      } else {
+        toast.error("Rapport niet gevonden")
+        router.push("/stocks/deep-research")
+      }
+    } catch (error) {
+      console.error("Error fetching report:", error)
+      toast.error("Fout bij ophalen rapport")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (isLoaded && user && reportId) {
       fetchReport()
     }
-  }, [isLoaded, user, reportId, fetchReport])
+  }, [isLoaded, user, reportId])
 
   useEffect(() => {
     if (!report || (report.status !== "GENERATING" && report.status !== "CANCELLED")) return
@@ -171,27 +192,6 @@ export default function DeepResearchDetailPage() {
     } catch (error) {
       console.error("Error cancelling report:", error)
       toast.error("Fout bij annuleren rapport")
-    }
-  }
-
-  const fetchReport = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/stocks/deep-research?reportId=${reportId}`, {
-        credentials: "include", // Zorg dat cookies worden meegestuurd
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setReport(data)
-      } else {
-        toast.error("Rapport niet gevonden")
-        router.push("/stocks/deep-research")
-      }
-    } catch (error) {
-      console.error("Error fetching report:", error)
-      toast.error("Fout bij ophalen rapport")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -1531,7 +1531,7 @@ export default function DeepResearchDetailPage() {
                         blockquote: ({...props}) => (
                           <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4" {...props} />
                         ),
-                        code: ({...props}: { [key: string]: unknown }) => {
+                        code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
                           const isInline = !props.className || !props.className.includes('language-');
                           return isInline ? (
                             <code className="text-sm bg-muted px-1.5 py-0.5 rounded font-mono" {...props} />

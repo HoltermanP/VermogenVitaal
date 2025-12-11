@@ -319,7 +319,7 @@ function generateDefaultScores(
   
   // Analyseer social sentiment (vooral relevant voor short term)
   if (socialSentiment) {
-    const sentimentScore = socialSentiment.sentimentScore || 0
+    const sentimentScore = Number(socialSentiment.sentimentScore) || 0
     if (sentimentScore > 0.2) {
       baseScore += 2
       keyFactors.short.push(`Positief social media sentiment`)
@@ -331,23 +331,24 @@ function generateDefaultScores(
   
   // Analyseer nieuws (relevant voor alle termijnen)
   if (enhancedNews) {
-    const totalNews = (enhancedNews.companyNews?.length || 0) + (enhancedNews.analystNews?.length || 0)
+    const totalNews = (Array.isArray(enhancedNews.companyNews) ? enhancedNews.companyNews.length : 0) + (Array.isArray(enhancedNews.analystNews) ? enhancedNews.analystNews.length : 0)
     if (totalNews > 15) {
       keyFactors.short.push(`Actieve nieuwsstroom (${totalNews} artikelen)`)
     }
-    if (enhancedNews.analystNews && enhancedNews.analystNews.length > 5) {
+    if (Array.isArray(enhancedNews.analystNews) && enhancedNews.analystNews.length > 5) {
       keyFactors.medium.push(`Sterke analyst coverage`)
     }
   }
   
   // Analyseer financiële data kwaliteit
   if (aggregatedFinancialData) {
-    const dataQuality = aggregatedFinancialData.dataQuality
-    if (dataQuality.hasIncomeStatements && dataQuality.hasBalanceSheets && dataQuality.hasCashFlow) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dataQuality = aggregatedFinancialData.dataQuality as any
+    if (dataQuality?.hasIncomeStatements && dataQuality?.hasBalanceSheets && dataQuality?.hasCashFlow) {
       baseScore += 3
       keyFactors.long.push(`Complete financiële data beschikbaar`)
     }
-    if (dataQuality.hasQuarterlyData) {
+    if (dataQuality?.hasQuarterlyData) {
       keyFactors.short.push(`Quarterly data beschikbaar voor trend analyse`)
     }
   }
@@ -363,7 +364,7 @@ function generateDefaultScores(
     shortScore += quote.changePercent > 0 ? 8 : -8 // Grotere impact voor short term
   }
   if (socialSentiment) {
-    shortScore += (socialSentiment.sentimentScore || 0) * 10 // Grotere impact sentiment
+    shortScore += (Number(socialSentiment.sentimentScore) || 0) * 10 // Grotere impact sentiment
   }
   // Technische momentum analyse
   if (history.length > 0 && quote) {
@@ -394,7 +395,7 @@ function generateDefaultScores(
   }
   // News impact voor medium term
   if (enhancedNews) {
-    const analystNews = enhancedNews.analystNews?.length || 0
+    const analystNews = Array.isArray(enhancedNews.analystNews) ? enhancedNews.analystNews.length : 0
     if (analystNews > 5) mediumScore += 3
   }
   mediumScore = Math.max(0, Math.min(100, mediumScore))
@@ -416,8 +417,9 @@ function generateDefaultScores(
   }
   // Financiële data kwaliteit telt meer voor long term
   if (aggregatedFinancialData) {
-    const dataQuality = aggregatedFinancialData.dataQuality
-    if (dataQuality.hasIncomeStatements && dataQuality.hasBalanceSheets && dataQuality.hasCashFlow) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dataQuality = aggregatedFinancialData.dataQuality as any
+    if (dataQuality?.hasIncomeStatements && dataQuality?.hasBalanceSheets && dataQuality?.hasCashFlow) {
       longScore += 5
     }
   }
@@ -1661,12 +1663,14 @@ Je schrijft uitgebreide, professionele onderzoeksrapporten die geschikt zijn voo
     } catch (parseError) {
       console.error("Error parsing scores from report:", parseError)
       // Als parsing faalt, genereer default scores op basis van fundamentals
-      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData, enhancedNews, socialSentiment)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData as unknown as Record<string, unknown>, enhancedNews, socialSentiment as any)
     }
 
     // Als er geen scores zijn, genereer default scores
     if (!scores) {
-      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData, enhancedNews, socialSentiment)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      scores = generateDefaultScores(fundamentals, quote, history, aggregatedFinancialData as unknown as Record<string, unknown>, enhancedNews, socialSentiment as any)
     }
 
     // Check of gecanceld voordat we opslaan
