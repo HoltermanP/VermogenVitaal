@@ -60,8 +60,9 @@ export async function GET(
       content: typeof reportData.content === 'string' ? reportData.content : "",
       quote: (reportData.quote && typeof reportData.quote === 'object' && !Array.isArray(reportData.quote)) ? reportData.quote as Record<string, unknown> : null,
       fundamentals: (reportData.fundamentals && typeof reportData.fundamentals === 'object' && !Array.isArray(reportData.fundamentals)) ? reportData.fundamentals as Record<string, unknown> : null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       scores: (reportData.scores && typeof reportData.scores === 'object' && !Array.isArray(reportData.scores)) ? reportData.scores as any : null,
-      history: reportData.history || [],
+      history: (Array.isArray(reportData.history) ? reportData.history : []),
       generatedAt: new Date(report.createdAt),
     })
 

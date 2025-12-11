@@ -22,7 +22,7 @@ let cachedDataSource: string | null = null
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minuten
 
 // Functie om cache te legen (voor testing)
-export function clearCache() {
+function clearCache() {
   cachedData = null
   cacheTimestamp = 0
   cachedDataSource = null

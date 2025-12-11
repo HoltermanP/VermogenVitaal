@@ -8,15 +8,17 @@ import { MessageCircle, User, Clock, ThumbsUp, Reply } from "lucide-react"
 import Link from "next/link"
 
 interface CommunityPostPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function CommunityPostPage({ params }: CommunityPostPageProps) {
+export default async function CommunityPostPage({ params }: CommunityPostPageProps) {
+  const { id } = await params
+
   // Mock data voor de post
   const post = {
-    id: params.id,
+    id,
     title: "BV vs EMZ bij omzet van €150.000",
     author: "Jan de Vries",
     date: "2024-01-15",
