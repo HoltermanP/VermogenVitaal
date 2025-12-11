@@ -14,11 +14,11 @@ import { calculateIncomeTax, type IncomeTaxResult } from "@/lib/calculators/inco
 export default function IncomeTaxCalculatorPage() {
   const [formData, setFormData] = useState({
     income: 50000,
-    partnerIncome: 0,
-    mortgageInterest: 0,
-    studyCosts: 0,
-    donations: 0,
-    pensionPremiums: 0,
+    partnerIncome: undefined as number | undefined,
+    mortgageInterest: undefined as number | undefined,
+    studyCosts: undefined as number | undefined,
+    donations: undefined as number | undefined,
+    pensionPremiums: undefined as number | undefined,
     age: 35,
     hasPartner: false,
     bothWorking: false
@@ -92,8 +92,9 @@ export default function IncomeTaxCalculatorPage() {
                       <Input
                         id="partnerIncome"
                         type="number"
-                        value={formData.partnerIncome}
-                        onChange={(e) => setFormData({ ...formData, partnerIncome: parseFloat(e.target.value) || 0 })}
+                        value={formData.partnerIncome ?? ''}
+                        onChange={(e) => setFormData({ ...formData, partnerIncome: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                        placeholder=""
                         className="mt-1"
                       />
                     </div>
@@ -124,8 +125,9 @@ export default function IncomeTaxCalculatorPage() {
                   <Input
                     id="mortgageInterest"
                     type="number"
-                    value={formData.mortgageInterest}
-                    onChange={(e) => setFormData({ ...formData, mortgageInterest: parseFloat(e.target.value) || 0 })}
+                    value={formData.mortgageInterest ?? ''}
+                    onChange={(e) => setFormData({ ...formData, mortgageInterest: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>
@@ -135,8 +137,9 @@ export default function IncomeTaxCalculatorPage() {
                   <Input
                     id="studyCosts"
                     type="number"
-                    value={formData.studyCosts}
-                    onChange={(e) => setFormData({ ...formData, studyCosts: parseFloat(e.target.value) || 0 })}
+                    value={formData.studyCosts ?? ''}
+                    onChange={(e) => setFormData({ ...formData, studyCosts: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>
@@ -146,8 +149,9 @@ export default function IncomeTaxCalculatorPage() {
                   <Input
                     id="donations"
                     type="number"
-                    value={formData.donations}
-                    onChange={(e) => setFormData({ ...formData, donations: parseFloat(e.target.value) || 0 })}
+                    value={formData.donations ?? ''}
+                    onChange={(e) => setFormData({ ...formData, donations: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>
@@ -157,8 +161,9 @@ export default function IncomeTaxCalculatorPage() {
                   <Input
                     id="pensionPremiums"
                     type="number"
-                    value={formData.pensionPremiums}
-                    onChange={(e) => setFormData({ ...formData, pensionPremiums: parseFloat(e.target.value) || 0 })}
+                    value={formData.pensionPremiums ?? ''}
+                    onChange={(e) => setFormData({ ...formData, pensionPremiums: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>

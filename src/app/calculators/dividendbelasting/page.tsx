@@ -15,8 +15,8 @@ export default function DividendTaxCalculatorPage() {
   const [formData, setFormData] = useState({
     dividend: 30000,
     isDGA: false,
-    salary: 0,
-    corporateProfit: 0
+    salary: undefined as number | undefined,
+    corporateProfit: undefined as number | undefined
   })
 
   const [results, setResults] = useState<DividendTaxResult | null>(null)
@@ -87,8 +87,9 @@ export default function DividendTaxCalculatorPage() {
                       <Input
                         id="salary"
                         type="number"
-                        value={formData.salary}
-                        onChange={(e) => setFormData({ ...formData, salary: parseFloat(e.target.value) || 0 })}
+                        value={formData.salary ?? ''}
+                        onChange={(e) => setFormData({ ...formData, salary: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                        placeholder=""
                         className="mt-1"
                       />
                     </div>
@@ -98,8 +99,9 @@ export default function DividendTaxCalculatorPage() {
                       <Input
                         id="corporateProfit"
                         type="number"
-                        value={formData.corporateProfit}
-                        onChange={(e) => setFormData({ ...formData, corporateProfit: parseFloat(e.target.value) || 0 })}
+                        value={formData.corporateProfit ?? ''}
+                        onChange={(e) => setFormData({ ...formData, corporateProfit: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                        placeholder=""
                         className="mt-1"
                       />
                     </div>

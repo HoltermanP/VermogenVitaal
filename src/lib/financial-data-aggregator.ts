@@ -6,6 +6,24 @@
 
 import { fetchEnhancedFinancialData, FinancialData } from './enhanced-financial-data'
 
+// Helper functie om veilig values te extraheren
+function extractValue(value: unknown): number | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value)
+    return isNaN(parsed) ? undefined : parsed
+  }
+  if (typeof value === 'object' && value !== null) {
+    const obj = value as { fmt?: string; raw?: number }
+    if (obj.raw !== undefined) return obj.raw
+    if (obj.fmt) {
+      const parsed = parseFloat(obj.fmt)
+      return isNaN(parsed) ? undefined : parsed
+    }
+  }
+  return undefined
+}
+
 // Type definitions voor financial statements
 interface FinancialStatement {
   date?: string
@@ -120,7 +138,7 @@ export function aggregateFinancialData(
     
     enhancedData.fmpData.incomeStatement.forEach((statement: FinancialStatement) => {
       const date = statement.date || statement.calendarYear
-      if (!existingDates.has(date)) {
+      if (date !== undefined && date !== null && !existingDates.has(String(date))) {
         result.incomeStatements.push(statement)
       }
     })
@@ -144,13 +162,15 @@ export function aggregateFinancialData(
   
   if (enhancedData?.fmpData?.balanceSheet && enhancedData.fmpData.balanceSheet.length > 0) {
     const existingDates = new Set(result.balanceSheets.map((s: FinancialStatement) => {
-      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      const date = (typeof s.endDate === 'object' && s.endDate?.fmt) ? s.endDate.fmt :
+                   (typeof s.endDate === 'object' && s.endDate?.raw) ? s.endDate.raw :
+                   s.endDate || s.date
       return date
     }))
     
     enhancedData.fmpData.balanceSheet.forEach((sheet: FinancialStatement) => {
       const date = sheet.date || sheet.calendarYear
-      if (!existingDates.has(date)) {
+      if (date !== undefined && date !== null && !existingDates.has(String(date))) {
         result.balanceSheets.push(sheet)
       }
     })
@@ -174,13 +194,15 @@ export function aggregateFinancialData(
   
   if (enhancedData?.fmpData?.cashFlow && enhancedData.fmpData.cashFlow.length > 0) {
     const existingDates = new Set(result.cashFlowStatements.map((s: FinancialStatement) => {
-      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      const date = (typeof s.endDate === 'object' && s.endDate?.fmt) ? s.endDate.fmt :
+                   (typeof s.endDate === 'object' && s.endDate?.raw) ? s.endDate.raw :
+                   s.endDate || s.date
       return date
     }))
     
     enhancedData.fmpData.cashFlow.forEach((flow: FinancialStatement) => {
       const date = flow.date || flow.calendarYear
-      if (!existingDates.has(date)) {
+      if (date !== undefined && date !== null && !existingDates.has(String(date))) {
         result.cashFlowStatements.push(flow)
       }
     })
@@ -233,74 +255,104 @@ export function aggregateFinancialData(
   }
 
   // Aggregeer key metrics (gebruik beste beschikbare waarde)
-  result.marketCap = yahooFundamentals?.marketCap || 
-                     enhancedData?.fmpData?.profile?.mktCap ||
-                     (enhancedData?.alphaVantageData?.overview?.MarketCapitalization ? 
-                     parseFloat(enhancedData.alphaVantageData.overview.MarketCapitalization) : undefined)
+  result.marketCap = (typeof yahooFundamentals?.marketCap === 'number' ? yahooFundamentals.marketCap : undefined) ||
+                     extractValue(enhancedData?.fmpData?.profile?.mktCap) ||
+                     extractValue(enhancedData?.alphaVantageData?.overview?.MarketCapitalization) ||
+                     undefined
 
-  result.earningsPerShare = yahooFundamentals?.earningsPerShare ||
-                            enhancedData?.fmpData?.keyMetrics?.peRatio || undefined
+  result.earningsPerShare = (typeof yahooFundamentals?.earningsPerShare === 'number' ? yahooFundamentals.earningsPerShare : undefined) ||
+                            extractValue(enhancedData?.fmpData?.keyMetrics?.peRatio) ||
+                            undefined
 
-  result.priceToEarnings = yahooFundamentals?.trailingPE ||
-                           enhancedData?.fmpData?.keyMetrics?.peRatio ||
-                           (enhancedData?.alphaVantageData?.overview?.PERatio ?
-                           parseFloat(enhancedData.alphaVantageData.overview.PERatio) : undefined)
+  result.priceToEarnings = (typeof yahooFundamentals?.trailingPE === 'number' ? yahooFundamentals.trailingPE : undefined) ||
+                           extractValue(enhancedData?.fmpData?.keyMetrics?.peRatio) ||
+                           extractValue(enhancedData?.alphaVantageData?.overview?.PERatio) ||
+                           undefined
 
-  result.priceToBook = yahooFundamentals?.priceToBook ||
-                       enhancedData?.fmpData?.keyMetrics?.pbRatio ||
-                       (enhancedData?.alphaVantageData?.overview?.PriceToBookRatio ?
-                       parseFloat(enhancedData.alphaVantageData.overview.PriceToBookRatio) : undefined)
+  result.priceToBook = (typeof yahooFundamentals?.priceToBook === 'number' ? yahooFundamentals.priceToBook : undefined) ||
+                       extractValue(enhancedData?.fmpData?.keyMetrics?.pbRatio) ||
+                       extractValue(enhancedData?.alphaVantageData?.overview?.PriceToBookRatio) ||
+                       undefined
 
-  result.returnOnEquity = yahooFundamentals?.returnOnEquity ||
-                          enhancedData?.fmpData?.keyMetrics?.roe ||
-                          (enhancedData?.alphaVantageData?.overview?.ReturnOnEquityTTM ?
-                          parseFloat(enhancedData.alphaVantageData.overview.ReturnOnEquityTTM) : undefined)
+  result.returnOnEquity = (typeof yahooFundamentals?.returnOnEquity === 'number' ? yahooFundamentals.returnOnEquity : undefined) ||
+                          extractValue(enhancedData?.fmpData?.keyMetrics?.roe) ||
+                          extractValue(enhancedData?.alphaVantageData?.overview?.ReturnOnEquityTTM) ||
+                          undefined
 
-  result.returnOnAssets = yahooFundamentals?.returnOnAssets ||
-                           enhancedData?.fmpData?.keyMetrics?.roa ||
-                           (enhancedData?.alphaVantageData?.overview?.ReturnOnAssetsTTM ?
-                           parseFloat(enhancedData.alphaVantageData.overview.ReturnOnAssetsTTM) : undefined)
+  result.returnOnAssets = (typeof yahooFundamentals?.returnOnAssets === 'number' ? yahooFundamentals.returnOnAssets : undefined) ||
+                           extractValue(enhancedData?.fmpData?.keyMetrics?.roa) ||
+                           extractValue(enhancedData?.alphaVantageData?.overview?.ReturnOnAssetsTTM) ||
+                           undefined
 
-  result.debtToEquity = yahooFundamentals?.debtToEquity ||
-                        enhancedData?.fmpData?.keyMetrics?.debtToEquity ||
-                        (enhancedData?.alphaVantageData?.overview?.DebtToEquity ?
-                        parseFloat(enhancedData.alphaVantageData.overview.DebtToEquity) : undefined)
+  result.debtToEquity = (typeof yahooFundamentals?.debtToEquity === 'number' ? yahooFundamentals.debtToEquity : undefined) ||
+                        extractValue(enhancedData?.fmpData?.keyMetrics?.debtToEquity) ||
+                        extractValue(enhancedData?.alphaVantageData?.overview?.DebtToEquity) ||
+                        undefined
 
-  result.currentRatio = yahooFundamentals?.currentRatio ||
-                        enhancedData?.fmpData?.financialRatios?.currentRatio || undefined
+  result.currentRatio = (typeof yahooFundamentals?.currentRatio === 'number' ? yahooFundamentals.currentRatio : undefined) ||
+                        extractValue(enhancedData?.fmpData?.financialRatios?.currentRatio) ||
+                        undefined
 
-  result.profitMargin = yahooFundamentals?.profitMargins ||
-                        enhancedData?.fmpData?.financialRatios?.netProfitMargin ||
-                        (enhancedData?.alphaVantageData?.overview?.ProfitMargin ?
-                        parseFloat(enhancedData.alphaVantageData.overview.ProfitMargin) : undefined)
+  result.profitMargin = (typeof yahooFundamentals?.profitMargins === 'number' ? yahooFundamentals.profitMargins : undefined) ||
+                        extractValue(enhancedData?.fmpData?.financialRatios?.netProfitMargin) ||
+                        extractValue(enhancedData?.alphaVantageData?.overview?.ProfitMargin) ||
+                        undefined
 
-  result.operatingMargin = yahooFundamentals?.operatingMargins ||
-                           enhancedData?.fmpData?.financialRatios?.operatingProfitMargin || undefined
+  result.operatingMargin = (typeof yahooFundamentals?.operatingMargins === 'number' ? yahooFundamentals.operatingMargins : undefined) ||
+                           (typeof enhancedData?.fmpData?.financialRatios?.operatingProfitMargin === 'number' ? enhancedData.fmpData.financialRatios.operatingProfitMargin : undefined) ||
+                           undefined
 
   // Haal revenue en net income uit meest recente income statement
   if (result.incomeStatements.length > 0) {
     const latestIncome = result.incomeStatements[0]
-    result.revenue = latestIncome.totalRevenue?.raw || latestIncome.revenue || latestIncome.totalRevenue
-    result.netIncome = latestIncome.netIncome?.raw || latestIncome.netIncome
+    result.revenue = extractValue(latestIncome.totalRevenue) || extractValue(latestIncome.revenue) || extractValue(latestIncome.totalRevenue)
+    result.netIncome = extractValue(latestIncome.netIncome) || extractValue(latestIncome.netIncome)
   }
 
   // Sorteer statements op datum (nieuwste eerst)
   result.incomeStatements.sort((a: FinancialStatement, b: FinancialStatement) => {
-    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
-    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
-    return dateB.localeCompare(dateA)
+    const getDateString = (stmt: FinancialStatement): string => {
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+        return String(stmt.endDate.fmt || '')
+      }
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+        return String(stmt.endDate.raw || '')
+      }
+      return String(stmt.endDate || stmt.date || '')
+    }
+    const dateA = getDateString(a)
+    const dateB = getDateString(b)
+    return String(dateB).localeCompare(String(dateA))
   })
 
   result.balanceSheets.sort((a: FinancialStatement, b: FinancialStatement) => {
-    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
-    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
-    return dateB.localeCompare(dateA)
+    const getDateString = (stmt: FinancialStatement): string => {
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+        return String(stmt.endDate.fmt || '')
+      }
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+        return String(stmt.endDate.raw || '')
+      }
+      return String(stmt.endDate || stmt.date || '')
+    }
+    const dateA = getDateString(a)
+    const dateB = getDateString(b)
+    return String(dateB).localeCompare(String(dateA))
   })
 
   result.cashFlowStatements.sort((a: FinancialStatement, b: FinancialStatement) => {
-    const dateA = a.endDate?.fmt || a.endDate?.raw || a.date || ''
-    const dateB = b.endDate?.fmt || b.endDate?.raw || b.date || ''
-    return dateB.localeCompare(dateA)
+    const getDateString = (stmt: FinancialStatement): string => {
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+        return String(stmt.endDate.fmt || '')
+      }
+      if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+        return String(stmt.endDate.raw || '')
+      }
+      return String(stmt.endDate || stmt.date || '')
+    }
+    const dateA = getDateString(a)
+    const dateB = getDateString(b)
+    return String(dateB).localeCompare(String(dateA))
   })
 
   return result
@@ -376,26 +428,35 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   if (data.incomeStatements.length > 0) {
     formatted += `\n=== INCOME STATEMENTS (${data.incomeStatements.length} jaar beschikbaar) ===\n`
     data.incomeStatements.slice(0, 10).forEach((stmt: FinancialStatement, idx: number) => {
-      const date = stmt.endDate?.fmt || stmt.endDate?.raw || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`
+      const getDateString = (stmt: FinancialStatement): string => {
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+          return String(stmt.endDate.fmt || '')
+        }
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+          return String(stmt.endDate.raw || '')
+        }
+        return String(stmt.endDate || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`)
+      }
+      const date = getDateString(stmt)
       formatted += `\nJaar ${date}:\n`
-      formatted += `- Totale Omzet (Revenue): ${formatFinancialValue(stmt.totalRevenue?.raw || stmt.revenue || stmt.totalRevenue, false, true)}\n`
-      formatted += `- Kosten van Omzet (COGS): ${formatFinancialValue(stmt.costOfRevenue?.raw || stmt.costOfRevenue || stmt.costOfGoodsSold, false, true)}\n`
-      formatted += `- Bruto Winst (Gross Profit): ${formatFinancialValue(stmt.grossProfit?.raw || stmt.grossProfit, false, true)}\n`
-      formatted += `- Research & Development: ${formatFinancialValue(stmt.researchDevelopment?.raw || stmt.researchAndDevelopment || stmt.researchDevelopment, false, true)}\n`
-      formatted += `- Verkoop, Algemeen & Administratief (SG&A): ${formatFinancialValue(stmt.sellingGeneralAdministrative?.raw || stmt.sellingGeneralAndAdministrative || stmt.sellingGeneralAdministrative, false, true)}\n`
-      formatted += `- Operationeel Inkomen (Operating Income): ${formatFinancialValue(stmt.operatingIncome?.raw || stmt.operatingIncome, false, true)}\n`
-      formatted += `- EBITDA: ${formatFinancialValue(stmt.ebitda?.raw || stmt.ebitda, false, true)}\n`
-      formatted += `- Rente Kosten: ${formatFinancialValue(stmt.interestExpense?.raw || stmt.interestExpense, false, true)}\n`
-      formatted += `- Belastingen: ${formatFinancialValue(stmt.incomeTaxExpense?.raw || stmt.incomeTaxExpense || stmt.taxProvision, false, true)}\n`
-      formatted += `- Netto Inkomen (Net Income): ${formatFinancialValue(stmt.netIncome?.raw || stmt.netIncome, false, true)}\n`
-      formatted += `- Netto Inkomen per Aandeel (EPS): ${formatFinancialValue(stmt.netIncomeCommonStockholders?.raw || stmt.netIncomeCommonStockholders, false, true)}\n`
+      formatted += `- Totale Omzet (Revenue): ${formatFinancialValue(extractValue(stmt.totalRevenue) || extractValue(stmt.revenue) || extractValue(stmt.totalRevenue), false, true)}\n`
+      formatted += `- Kosten van Omzet (COGS): ${formatFinancialValue(extractValue(stmt.costOfRevenue) || extractValue(stmt.costOfRevenue) || extractValue(stmt.costOfGoodsSold), false, true)}\n`
+      formatted += `- Bruto Winst (Gross Profit): ${formatFinancialValue(extractValue(stmt.grossProfit) || extractValue(stmt.grossProfit), false, true)}\n`
+      formatted += `- Research & Development: ${formatFinancialValue(extractValue(stmt.researchDevelopment) || extractValue(stmt.researchAndDevelopment) || extractValue(stmt.researchDevelopment), false, true)}\n`
+      formatted += `- Verkoop, Algemeen & Administratief (SG&A): ${formatFinancialValue(extractValue(stmt.sellingGeneralAdministrative) || extractValue(stmt.sellingGeneralAndAdministrative) || extractValue(stmt.sellingGeneralAdministrative), false, true)}\n`
+      formatted += `- Operationeel Inkomen (Operating Income): ${formatFinancialValue(extractValue(stmt.operatingIncome) || extractValue(stmt.operatingIncome), false, true)}\n`
+      formatted += `- EBITDA: ${formatFinancialValue(extractValue(stmt.ebitda) || extractValue(stmt.ebitda), false, true)}\n`
+      formatted += `- Rente Kosten: ${formatFinancialValue(extractValue(stmt.interestExpense) || extractValue(stmt.interestExpense), false, true)}\n`
+      formatted += `- Belastingen: ${formatFinancialValue(extractValue(stmt.incomeTaxExpense) || extractValue(stmt.incomeTaxExpense) || extractValue(stmt.taxProvision), false, true)}\n`
+      formatted += `- Netto Inkomen (Net Income): ${formatFinancialValue(extractValue(stmt.netIncome) || extractValue(stmt.netIncome), false, true)}\n`
+      formatted += `- Netto Inkomen per Aandeel (EPS): ${formatFinancialValue(extractValue(stmt.netIncomeCommonStockholders) || extractValue(stmt.netIncomeCommonStockholders), false, true)}\n`
       
       // Bereken marges als data beschikbaar is
-      const revenue = stmt.totalRevenue?.raw || stmt.revenue || stmt.totalRevenue
+      const revenue = extractValue(stmt.totalRevenue) || extractValue(stmt.revenue) || extractValue(stmt.totalRevenue)
       if (revenue && revenue > 0) {
-        const grossProfit = stmt.grossProfit?.raw || stmt.grossProfit
-        const operatingIncome = stmt.operatingIncome?.raw || stmt.operatingIncome
-        const netIncome = stmt.netIncome?.raw || stmt.netIncome
+        const grossProfit = extractValue(stmt.grossProfit) || extractValue(stmt.grossProfit)
+        const operatingIncome = extractValue(stmt.operatingIncome) || extractValue(stmt.operatingIncome)
+        const netIncome = extractValue(stmt.netIncome) || extractValue(stmt.netIncome)
         
         if (grossProfit) formatted += `- Bruto Winstmarge: ${formatFinancialValue(grossProfit / revenue, true)}\n`
         if (operatingIncome) formatted += `- Operationele Marge: ${formatFinancialValue(operatingIncome / revenue, true)}\n`
@@ -408,32 +469,41 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   if (data.balanceSheets.length > 0) {
     formatted += `\n=== BALANCE SHEETS (${data.balanceSheets.length} jaar beschikbaar) ===\n`
     data.balanceSheets.slice(0, 10).forEach((sheet: FinancialStatement, idx: number) => {
-      const date = sheet.endDate?.fmt || sheet.endDate?.raw || sheet.date || sheet.calendarYear || `Jaar ${idx + 1}`
+      const getDateString = (stmt: FinancialStatement): string => {
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+          return String(stmt.endDate.fmt || '')
+        }
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+          return String(stmt.endDate.raw || '')
+        }
+        return String(stmt.endDate || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`)
+      }
+      const date = getDateString(sheet)
       formatted += `\nJaar ${date}:\n`
       formatted += `ACTIVA:\n`
-      formatted += `- Cash en Equivalenten: ${formatFinancialValue(sheet.cash?.raw || sheet.cashAndCashEquivalents || sheet.cash, false, true)}\n`
-      formatted += `- Kortlopende Investeringen: ${formatFinancialValue(sheet.shortTermInvestments?.raw || sheet.shortTermInvestments, false, true)}\n`
-      formatted += `- Vorderingen (Accounts Receivable): ${formatFinancialValue(sheet.netReceivables?.raw || sheet.accountsReceivable || sheet.netReceivables, false, true)}\n`
-      formatted += `- Voorraden (Inventory): ${formatFinancialValue(sheet.inventory?.raw || sheet.inventory, false, true)}\n`
-      formatted += `- Vlottende Activa (Current Assets): ${formatFinancialValue(sheet.totalCurrentAssets?.raw || sheet.totalCurrentAssets, false, true)}\n`
-      formatted += `- Vaste Activa (Property, Plant & Equipment): ${formatFinancialValue(sheet.propertyPlantEquipment?.raw || sheet.propertyPlantEquipmentNet || sheet.propertyPlantEquipment, false, true)}\n`
-      formatted += `- Goodwill: ${formatFinancialValue(sheet.goodWill?.raw || sheet.goodwill || sheet.goodWill, false, true)}\n`
-      formatted += `- Immateriële Activa (Intangible Assets): ${formatFinancialValue(sheet.intangibleAssets?.raw || sheet.intangibleAssets, false, true)}\n`
-      formatted += `- Totale Activa: ${formatFinancialValue(sheet.totalAssets?.raw || sheet.totalAssets, false, true)}\n`
+      formatted += `- Cash en Equivalenten: ${formatFinancialValue(extractValue(sheet.cash) || extractValue(sheet.cashAndCashEquivalents), false, true)}\n`
+      formatted += `- Kortlopende Investeringen: ${formatFinancialValue(extractValue(sheet.shortTermInvestments), false, true)}\n`
+      formatted += `- Vorderingen (Accounts Receivable): ${formatFinancialValue(extractValue(sheet.netReceivables) || extractValue(sheet.accountsReceivable), false, true)}\n`
+      formatted += `- Voorraden (Inventory): ${formatFinancialValue(extractValue(sheet.inventory), false, true)}\n`
+      formatted += `- Vlottende Activa (Current Assets): ${formatFinancialValue(extractValue(sheet.totalCurrentAssets), false, true)}\n`
+      formatted += `- Vaste Activa (Property, Plant & Equipment): ${formatFinancialValue(extractValue(sheet.propertyPlantEquipment) || extractValue(sheet.propertyPlantEquipmentNet), false, true)}\n`
+      formatted += `- Goodwill: ${formatFinancialValue(extractValue(sheet.goodWill) || extractValue(sheet.goodwill), false, true)}\n`
+      formatted += `- Immateriële Activa (Intangible Assets): ${formatFinancialValue(extractValue(sheet.intangibleAssets), false, true)}\n`
+      formatted += `- Totale Activa: ${formatFinancialValue(extractValue(sheet.totalAssets), false, true)}\n`
       
       formatted += `PASSIVA:\n`
-      formatted += `- Kortlopende Schulden (Current Liabilities): ${formatFinancialValue(sheet.totalCurrentLiabilities?.raw || sheet.totalCurrentLiabilities, false, true)}\n`
-      formatted += `- Langlopende Schuld (Long Term Debt): ${formatFinancialValue(sheet.longTermDebt?.raw || sheet.longTermDebt, false, true)}\n`
-      formatted += `- Totale Schulden (Total Liabilities): ${formatFinancialValue(sheet.totalLiab?.raw || sheet.totalLiabilities || sheet.totalLiab, false, true)}\n`
-      formatted += `- Eigen Vermogen (Stockholders Equity): ${formatFinancialValue(sheet.totalStockholderEquity?.raw || sheet.totalStockholderEquity || sheet.commonStock, false, true)}\n`
-      formatted += `- Retained Earnings: ${formatFinancialValue(sheet.retainedEarnings?.raw || sheet.retainedEarnings, false, true)}\n`
+      formatted += `- Kortlopende Schulden (Current Liabilities): ${formatFinancialValue(extractValue(sheet.totalCurrentLiabilities), false, true)}\n`
+      formatted += `- Langlopende Schuld (Long Term Debt): ${formatFinancialValue(extractValue(sheet.longTermDebt), false, true)}\n`
+      formatted += `- Totale Schulden (Total Liabilities): ${formatFinancialValue(extractValue(sheet.totalLiab) || extractValue(sheet.totalLiabilities), false, true)}\n`
+      formatted += `- Eigen Vermogen (Stockholders Equity): ${formatFinancialValue(extractValue(sheet.totalStockholderEquity) || extractValue(sheet.commonStock), false, true)}\n`
+      formatted += `- Retained Earnings: ${formatFinancialValue(extractValue(sheet.retainedEarnings), false, true)}\n`
       
       // Bereken ratios als data beschikbaar is
-      const totalAssets = sheet.totalAssets?.raw || sheet.totalAssets
-      const totalLiabilities = sheet.totalLiab?.raw || sheet.totalLiabilities || sheet.totalLiab
-      const equity = sheet.totalStockholderEquity?.raw || sheet.totalStockholderEquity
-      const currentAssets = sheet.totalCurrentAssets?.raw || sheet.totalCurrentAssets
-      const currentLiabilities = sheet.totalCurrentLiabilities?.raw || sheet.totalCurrentLiabilities
+      const totalAssets = extractValue(sheet.totalAssets)
+      const totalLiabilities = extractValue(sheet.totalLiab) || extractValue(sheet.totalLiabilities)
+      const equity = extractValue(sheet.totalStockholderEquity)
+      const currentAssets = extractValue(sheet.totalCurrentAssets)
+      const currentLiabilities = extractValue(sheet.totalCurrentLiabilities)
       
       if (equity && equity > 0 && totalLiabilities) {
         formatted += `- Debt to Equity Ratio: ${formatFinancialValue(totalLiabilities / equity)}\n`
@@ -448,22 +518,31 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   if (data.cashFlowStatements.length > 0) {
     formatted += `\n=== CASH FLOW STATEMENTS (${data.cashFlowStatements.length} jaar beschikbaar) ===\n`
     data.cashFlowStatements.slice(0, 10).forEach((flow: FinancialStatement, idx: number) => {
-      const date = flow.endDate?.fmt || flow.endDate?.raw || flow.date || flow.calendarYear || `Jaar ${idx + 1}`
+      const getDateString = (stmt: FinancialStatement): string => {
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+          return String(stmt.endDate.fmt || '')
+        }
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+          return String(stmt.endDate.raw || '')
+        }
+        return String(stmt.endDate || stmt.date || stmt.calendarYear || `Jaar ${idx + 1}`)
+      }
+      const date = getDateString(flow)
       formatted += `\nJaar ${date}:\n`
       
-      const operating = flow.totalCashFromOperatingActivities?.raw || flow.operatingCashFlow || flow.netCashProvidedByOperatingActivities
-      const capex = flow.capitalExpenditures?.raw || flow.capitalExpenditures || flow.capitalExpenditure
-      const investing = flow.totalCashflowsFromInvestingActivities?.raw || flow.investingCashFlow || flow.netCashUsedForInvestingActivites
-      const financing = flow.totalCashFromFinancingActivities?.raw || flow.financingCashFlow || flow.netCashUsedProvidedByFinancingActivities
-      const dividends = flow.dividendsPaid?.raw || flow.dividendsPaid
-      const netBorrowings = flow.netBorrowings?.raw || flow.netBorrowings
-      const freeCashFlow = operating && capex ? operating - Math.abs(capex) : null
+      const operating = extractValue(flow.totalCashFromOperatingActivities) || extractValue(flow.operatingCashFlow) || extractValue(flow.netCashProvidedByOperatingActivities)
+      const capex = extractValue(flow.capitalExpenditures) || extractValue(flow.capitalExpenditure)
+      const investing = extractValue(flow.totalCashflowsFromInvestingActivities) || extractValue(flow.investingCashFlow) || extractValue(flow.netCashUsedForInvestingActivites)
+      const financing = extractValue(flow.totalCashFromFinancingActivities) || extractValue(flow.financingCashFlow) || extractValue(flow.netCashUsedProvidedByFinancingActivities)
+      const dividends = extractValue(flow.dividendsPaid)
+      const netBorrowings = extractValue(flow.netBorrowings)
+      const freeCashFlow = operating !== undefined && capex !== undefined ? operating - Math.abs(capex) : null
       
       formatted += `OPERATING ACTIVITIES:\n`
       formatted += `- Netto Cash van Operationele Activiteiten: ${formatFinancialValue(operating, false, true)}\n`
-      formatted += `- Netto Inkomen: ${formatFinancialValue(flow.netIncome?.raw || flow.netIncome, false, true)}\n`
-      formatted += `- Depreciatie & Amortisatie: ${formatFinancialValue(flow.depreciation?.raw || flow.depreciationAndAmortization || flow.depreciation, false, true)}\n`
-      formatted += `- Verandering in Working Capital: ${formatFinancialValue(flow.changeInWorkingCapital?.raw || flow.changeInWorkingCapital, false, true)}\n`
+      formatted += `- Netto Inkomen: ${formatFinancialValue(extractValue(flow.netIncome), false, true)}\n`
+      formatted += `- Depreciatie & Amortisatie: ${formatFinancialValue(extractValue(flow.depreciation) || extractValue(flow.depreciationAndAmortization), false, true)}\n`
+      formatted += `- Verandering in Working Capital: ${formatFinancialValue(extractValue(flow.changeInWorkingCapital), false, true)}\n`
       
       formatted += `INVESTING ACTIVITIES:\n`
       formatted += `- Capital Expenditures (CapEx): ${formatFinancialValue(capex, false, true)}\n`
@@ -475,8 +554,9 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
       formatted += `- Netto Cash van Financiering: ${formatFinancialValue(financing, false, true)}\n`
       
       formatted += `TOTAAL:\n`
+      const changeInCash = extractValue(flow.changeInCash) || (operating !== undefined && investing !== undefined && financing !== undefined ? operating + investing + financing : null)
       formatted += `- Free Cash Flow: ${formatFinancialValue(freeCashFlow, false, true)}\n`
-      formatted += `- Netto Verandering in Cash: ${formatFinancialValue(flow.changeInCash?.raw || flow.changeInCash || (operating && investing && financing ? operating + investing + financing : null), false, true)}\n`
+      formatted += `- Netto Verandering in Cash: ${formatFinancialValue(changeInCash, false, true)}\n`
     })
   }
 
@@ -484,13 +564,22 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   if (data.quarterlyIncome.length > 0) {
     formatted += `\n=== QUARTERLY INCOME STATEMENTS (${data.quarterlyIncome.length} kwartalen) ===\n`
     data.quarterlyIncome.slice(0, 8).forEach((q: FinancialStatement, idx: number) => {
-      const date = q.endDate?.fmt || q.endDate?.raw || q.date || `Q${idx + 1}`
+      const getDateString = (stmt: FinancialStatement): string => {
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'fmt' in stmt.endDate) {
+          return String(stmt.endDate.fmt || '')
+        }
+        if (typeof stmt.endDate === 'object' && stmt.endDate !== null && 'raw' in stmt.endDate) {
+          return String(stmt.endDate.raw || '')
+        }
+        return String(stmt.endDate || stmt.date || `Q${idx + 1}`)
+      }
+      const date = getDateString(q)
       formatted += `\nKwartaal ${date}:\n`
-      formatted += `- Totale Omzet: ${formatFinancialValue(q.totalRevenue?.raw || q.revenue || q.totalRevenue, false, true)}\n`
-      formatted += `- Bruto Winst: ${formatFinancialValue(q.grossProfit?.raw || q.grossProfit, false, true)}\n`
-      formatted += `- Operationeel Inkomen: ${formatFinancialValue(q.operatingIncome?.raw || q.operatingIncome, false, true)}\n`
-      formatted += `- Netto Inkomen: ${formatFinancialValue(q.netIncome?.raw || q.netIncome, false, true)}\n`
-      formatted += `- Earnings per Share: ${formatFinancialValue(q.netIncomeCommonStockholders?.raw || q.netIncomeCommonStockholders, false, true)}\n`
+      formatted += `- Totale Omzet: ${formatFinancialValue(extractValue(q.totalRevenue) || extractValue(q.revenue), false, true)}\n`
+      formatted += `- Bruto Winst: ${formatFinancialValue(extractValue(q.grossProfit), false, true)}\n`
+      formatted += `- Operationeel Inkomen: ${formatFinancialValue(extractValue(q.operatingIncome), false, true)}\n`
+      formatted += `- Netto Inkomen: ${formatFinancialValue(extractValue(q.netIncome), false, true)}\n`
+      formatted += `- Earnings per Share: ${formatFinancialValue(extractValue(q.netIncomeCommonStockholders), false, true)}\n`
     })
   }
 
@@ -498,9 +587,13 @@ export function formatAggregatedFinancialData(data: AggregatedFinancialData): st
   if (data.earningsHistory.length > 0) {
     formatted += `\nEARNINGS GESCHIEDENIS:\n`
     data.earningsHistory.slice(0, 8).forEach((earn: EarningsData) => {
-      const date = earn.fiscalDateEnding || earn.quarter || earn.date || 'N/A'
-      const eps = earn.reportedEPS || earn.actual?.raw || earn.actual || 'N/A'
-      const estimate = earn.estimatedEPS || earn.estimate?.raw || earn.estimate || 'N/A'
+      const date = earn.fiscalDateEnding || (earn as Record<string, unknown>).quarter || (earn as Record<string, unknown>).date || 'N/A'
+      const eps = typeof earn.reportedEPS === 'number' || typeof earn.reportedEPS === 'string' 
+        ? earn.reportedEPS 
+        : extractValue((earn as Record<string, unknown>).actual) || 'N/A'
+      const estimate = typeof (earn as Record<string, unknown>).estimatedEPS === 'number' || typeof (earn as Record<string, unknown>).estimatedEPS === 'string'
+        ? (earn as Record<string, unknown>).estimatedEPS
+        : extractValue((earn as Record<string, unknown>).estimate) || 'N/A'
       formatted += `${date}: Actual EPS ${eps}, Estimate ${estimate}\n`
     })
   }

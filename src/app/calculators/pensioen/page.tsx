@@ -76,8 +76,9 @@ export default function PensionCalculatorPage() {
                   <Input
                     id="pensionRights"
                     type="number"
-                    value={formData.pensionRights}
-                    onChange={(e) => setFormData({ ...formData, pensionRights: parseFloat(e.target.value) || 0 })}
+                    value={formData.pensionRights || ''}
+                    onChange={(e) => setFormData({ ...formData, pensionRights: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>

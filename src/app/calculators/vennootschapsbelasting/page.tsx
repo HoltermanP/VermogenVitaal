@@ -16,7 +16,7 @@ export default function CorporateTaxCalculatorPage() {
     profit: 150000,
     useMKBExemption: true,
     useInnovationBox: false,
-    innovationProfit: 0
+    innovationProfit: undefined as number | undefined
   })
 
   const [results, setResults] = useState<CorporateTaxResult | null>(null)
@@ -95,8 +95,9 @@ export default function CorporateTaxCalculatorPage() {
                     <Input
                       id="innovationProfit"
                       type="number"
-                      value={formData.innovationProfit}
-                      onChange={(e) => setFormData({ ...formData, innovationProfit: parseFloat(e.target.value) || 0 })}
+                      value={formData.innovationProfit ?? ''}
+                      onChange={(e) => setFormData({ ...formData, innovationProfit: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>

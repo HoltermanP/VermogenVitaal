@@ -15,8 +15,8 @@ export default function Box3CalculatorPage() {
   const [formData, setFormData] = useState({
     bankSavings: 50000,
     investments: 30000,
-    otherAssets: 0,
-    debts: 0,
+    otherAssets: undefined as number | undefined,
+    debts: undefined as number | undefined,
     hasPartner: false
   })
 
@@ -88,8 +88,9 @@ export default function Box3CalculatorPage() {
                   <Input
                     id="otherAssets"
                     type="number"
-                    value={formData.otherAssets}
-                    onChange={(e) => setFormData({ ...formData, otherAssets: parseFloat(e.target.value) || 0 })}
+                    value={formData.otherAssets ?? ''}
+                    onChange={(e) => setFormData({ ...formData, otherAssets: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>
@@ -99,8 +100,9 @@ export default function Box3CalculatorPage() {
                   <Input
                     id="debts"
                     type="number"
-                    value={formData.debts}
-                    onChange={(e) => setFormData({ ...formData, debts: parseFloat(e.target.value) || 0 })}
+                    value={formData.debts ?? ''}
+                    onChange={(e) => setFormData({ ...formData, debts: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>

@@ -15,9 +15,9 @@ export default function SelfEmployedCalculatorPage() {
   const [formData, setFormData] = useState({
     profit: 50000,
     hoursWorked: 1300,
-    partnerHours: 0,
+    partnerHours: undefined as number | undefined,
     isStarter: false,
-    yearsActive: 0
+    yearsActive: undefined as number | undefined
   })
 
   const [results, setResults] = useState<SelfEmployedResult | null>(null)
@@ -89,8 +89,9 @@ export default function SelfEmployedCalculatorPage() {
                   <Input
                     id="partnerHours"
                     type="number"
-                    value={formData.partnerHours}
-                    onChange={(e) => setFormData({ ...formData, partnerHours: parseInt(e.target.value) || 0 })}
+                    value={formData.partnerHours ?? ''}
+                    onChange={(e) => setFormData({ ...formData, partnerHours: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                    placeholder=""
                     className="mt-1"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Minimum: 800 uur</p>
@@ -111,8 +112,9 @@ export default function SelfEmployedCalculatorPage() {
                     <Input
                       id="yearsActive"
                       type="number"
-                      value={formData.yearsActive}
-                      onChange={(e) => setFormData({ ...formData, yearsActive: parseInt(e.target.value) || 0 })}
+                      value={formData.yearsActive ?? ''}
+                      onChange={(e) => setFormData({ ...formData, yearsActive: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                       max={5}
                     />

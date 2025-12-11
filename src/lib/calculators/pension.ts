@@ -1,6 +1,6 @@
 export interface PensionInput {
   income: number
-  pensionRights: number
+  pensionRights?: number
   age: number
   yearsBack?: number
   hasPartner?: boolean

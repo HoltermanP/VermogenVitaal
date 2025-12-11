@@ -15,7 +15,7 @@ export default function LaborCreditCalculatorPage() {
   const [formData, setFormData] = useState({
     income: 50000,
     hasPartner: false,
-    partnerIncome: 0
+    partnerIncome: undefined as number | undefined
   })
 
   const [results, setResults] = useState<LaborCreditResult | null>(null)
@@ -80,16 +80,17 @@ export default function LaborCreditCalculatorPage() {
                 </div>
 
                 {formData.hasPartner && (
-                  <div>
-                    <Label htmlFor="partnerIncome">Partner Inkomen</Label>
-                    <Input
-                      id="partnerIncome"
-                      type="number"
-                      value={formData.partnerIncome}
-                      onChange={(e) => setFormData({ ...formData, partnerIncome: parseFloat(e.target.value) || 0 })}
-                      className="mt-1"
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="partnerIncome">Partner Inkomen</Label>
+                      <Input
+                        id="partnerIncome"
+                        type="number"
+                        value={formData.partnerIncome ?? ''}
+                        onChange={(e) => setFormData({ ...formData, partnerIncome: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                        placeholder=""
+                        className="mt-1"
+                      />
+                    </div>
                 )}
 
                 <Button className="w-full gradient-financial text-white" size="lg" onClick={handleCalculate}>

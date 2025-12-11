@@ -18,7 +18,7 @@ export default function BTWCalculatorPage() {
     rate: 'high' as 'high' | 'low' | 'zero',
     calculation: 'incl' as 'incl' | 'excl' | 'refund',
     isSmallBusiness: false,
-    annualTurnover: 0
+    annualTurnover: undefined as number | undefined
   })
 
   const [results, setResults] = useState<BTWResult | null>(null)
@@ -116,8 +116,9 @@ export default function BTWCalculatorPage() {
                     <Input
                       id="annualTurnover"
                       type="number"
-                      value={formData.annualTurnover}
-                      onChange={(e) => setFormData({ ...formData, annualTurnover: parseFloat(e.target.value) || 0 })}
+                      value={formData.annualTurnover ?? ''}
+                      onChange={(e) => setFormData({ ...formData, annualTurnover: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>

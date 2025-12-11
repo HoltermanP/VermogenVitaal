@@ -16,7 +16,7 @@ export default function FiscalReserveCalculatorPage() {
     profit: 100000,
     age: 40,
     reserveType: 'for' as 'for' | 'investment' | 'both',
-    investmentReserveAmount: 0,
+    investmentReserveAmount: undefined as number | undefined,
     yearsUntilRetirement: 25
   })
 
@@ -103,8 +103,9 @@ export default function FiscalReserveCalculatorPage() {
                     <Input
                       id="investmentReserveAmount"
                       type="number"
-                      value={formData.investmentReserveAmount}
-                      onChange={(e) => setFormData({ ...formData, investmentReserveAmount: parseFloat(e.target.value) || 0 })}
+                      value={formData.investmentReserveAmount ?? ''}
+                      onChange={(e) => setFormData({ ...formData, investmentReserveAmount: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>

@@ -15,15 +15,15 @@ export default function DeductionsCheckerPage() {
   const [formData, setFormData] = useState({
     income: 50000,
     hasMortgage: false,
-    mortgageInterest: 0,
+    mortgageInterest: undefined as number | undefined,
     isStudent: false,
-    studyCosts: 0,
+    studyCosts: undefined as number | undefined,
     donates: false,
-    donations: 0,
+    donations: undefined as number | undefined,
     hasPension: false,
-    pensionPremiums: 0,
+    pensionPremiums: undefined as number | undefined,
     isEntrepreneur: false,
-    hoursWorked: 0,
+    hoursWorked: undefined as number | undefined,
     isStarter: false,
     hasPartner: false,
     bothWorking: false
@@ -95,8 +95,9 @@ export default function DeductionsCheckerPage() {
                     <Input
                       id="mortgageInterest"
                       type="number"
-                      value={formData.mortgageInterest}
-                      onChange={(e) => setFormData({ ...formData, mortgageInterest: parseFloat(e.target.value) || 0 })}
+                      value={formData.mortgageInterest ?? ''}
+                      onChange={(e) => setFormData({ ...formData, mortgageInterest: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>
@@ -116,8 +117,9 @@ export default function DeductionsCheckerPage() {
                     <Input
                       id="studyCosts"
                       type="number"
-                      value={formData.studyCosts}
-                      onChange={(e) => setFormData({ ...formData, studyCosts: parseFloat(e.target.value) || 0 })}
+                      value={formData.studyCosts ?? ''}
+                      onChange={(e) => setFormData({ ...formData, studyCosts: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>
@@ -137,8 +139,9 @@ export default function DeductionsCheckerPage() {
                     <Input
                       id="donations"
                       type="number"
-                      value={formData.donations}
-                      onChange={(e) => setFormData({ ...formData, donations: parseFloat(e.target.value) || 0 })}
+                      value={formData.donations ?? ''}
+                      onChange={(e) => setFormData({ ...formData, donations: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>
@@ -158,8 +161,9 @@ export default function DeductionsCheckerPage() {
                     <Input
                       id="pensionPremiums"
                       type="number"
-                      value={formData.pensionPremiums}
-                      onChange={(e) => setFormData({ ...formData, pensionPremiums: parseFloat(e.target.value) || 0 })}
+                      value={formData.pensionPremiums ?? ''}
+                      onChange={(e) => setFormData({ ...formData, pensionPremiums: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                      placeholder=""
                       className="mt-1"
                     />
                   </div>
@@ -180,8 +184,9 @@ export default function DeductionsCheckerPage() {
                       <Input
                         id="hoursWorked"
                         type="number"
-                        value={formData.hoursWorked}
-                        onChange={(e) => setFormData({ ...formData, hoursWorked: parseInt(e.target.value) || 0 })}
+                        value={formData.hoursWorked ?? ''}
+                        onChange={(e) => setFormData({ ...formData, hoursWorked: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                        placeholder=""
                         className="mt-1"
                       />
                     </div>

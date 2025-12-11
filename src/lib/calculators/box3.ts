@@ -1,8 +1,8 @@
 export interface Box3Input {
   bankSavings: number
   investments: number
-  otherAssets: number
-  debts: number
+  otherAssets?: number
+  debts?: number
   hasPartner?: boolean
 }
 
@@ -34,7 +34,11 @@ export function calculateBox3(input: Box3Input): Box3Result {
     otherAssets = 0,
     debts = 0,
     hasPartner = false
-  } = input
+  } = {
+    ...input,
+    otherAssets: input.otherAssets ?? 0,
+    debts: input.debts ?? 0
+  }
 
   // Bezittingen
   const assets = {

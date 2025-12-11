@@ -21,6 +21,7 @@ type CompoundResults = {
     interest: number
     contributions: number
   }>
+  monthlyContribution: number
 }
 
 export default function CompoundInterestCalculatorPage() {
@@ -29,13 +30,16 @@ export default function CompoundInterestCalculatorPage() {
     annualInterestRate: 7,
     years: 10,
     compoundingFrequency: "12", // monthly
-    monthlyContribution: 0
+    monthlyContribution: undefined as number | undefined
   })
 
   const [results, setResults] = useState<CompoundResults | null>(null)
 
   const calculateCompoundInterest = () => {
-    const { principal, annualInterestRate, years, monthlyContribution } = formData
+    const { principal, annualInterestRate, years, monthlyContribution, compoundingFrequency } = formData
+
+    const frequency = parseInt(compoundingFrequency) // aantal compounding periodes per jaar
+    const periodicRate = annualInterestRate / 100 / frequency // rente per periode
 
     let balance = principal
     let totalContributions = principal
@@ -43,32 +47,55 @@ export default function CompoundInterestCalculatorPage() {
 
     const yearlyBreakdown = []
 
-    // Calculate year by year breakdown
-    for (let year = 0; year <= years; year++) {
-      if (year > 0) {
-        // Calculate growth for this year
-        const yearInterest = balance * (annualInterestRate / 100)
-        const yearContributions = monthlyContribution * 12
+    // Startwaarde voor jaar 0
+    yearlyBreakdown.push({
+      year: 0,
+      balance: Math.round(balance),
+      interest: 0,
+      contributions: Math.round(totalContributions)
+    })
 
-        balance = balance * Math.pow(1 + (annualInterestRate / 100), 1) + yearContributions
-        totalContributions += yearContributions
-        totalInterest += yearInterest
+    // Calculate period by period, maar toon jaarlijks
+    for (let year = 1; year <= years; year++) {
+      let yearStartBalance = balance
+      let yearInterest = 0
+      let yearContributions = 0
+
+      // Voor elke maand in dit jaar (om maandelijkse bijdragen correct te verwerken)
+      for (let month = 1; month <= 12; month++) {
+        // Maandelijkse bijdrage toevoegen aan begin van maand
+        if (monthlyContribution && monthlyContribution > 0) {
+          balance += monthlyContribution
+          yearContributions += monthlyContribution
+          totalContributions += monthlyContribution
+        }
+
+        // Interest toepassen volgens compounding frequency
+        const monthsPerPeriod = 12 / frequency
+        if (month % monthsPerPeriod === 0) {
+          const periodInterest = balance * periodicRate
+          balance += periodInterest
+          yearInterest += periodInterest
+        }
       }
+
+      totalInterest += yearInterest
 
       yearlyBreakdown.push({
         year,
         balance: Math.round(balance),
-        interest: year === 0 ? 0 : Math.round(balance - totalContributions),
+        interest: Math.round(totalInterest),
         contributions: Math.round(totalContributions)
       })
     }
 
     setResults({
       principal,
-      totalContributions,
+      totalContributions: Math.round(totalContributions),
       totalInterest: Math.round(totalInterest),
       finalAmount: Math.round(balance),
-      yearlyBreakdown
+      yearlyBreakdown,
+      monthlyContribution: monthlyContribution || 0
     })
   }
 
@@ -136,7 +163,7 @@ export default function CompoundInterestCalculatorPage() {
                       type="number"
                       value={formData.principal}
                       onChange={(e) => setFormData({...formData, principal: Number(e.target.value)})}
-                      placeholder="10000"
+                      placeholder=""
                     />
                   </div>
                   <div className="space-y-2">
@@ -147,7 +174,7 @@ export default function CompoundInterestCalculatorPage() {
                       step="0.1"
                       value={formData.annualInterestRate}
                       onChange={(e) => setFormData({...formData, annualInterestRate: Number(e.target.value)})}
-                      placeholder="7"
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -160,7 +187,7 @@ export default function CompoundInterestCalculatorPage() {
                       type="number"
                       value={formData.years}
                       onChange={(e) => setFormData({...formData, years: Number(e.target.value)})}
-                      placeholder="10"
+                      placeholder=""
                     />
                   </div>
                   <div className="space-y-2">
@@ -168,9 +195,9 @@ export default function CompoundInterestCalculatorPage() {
                     <Input
                       id="monthlyContribution"
                       type="number"
-                      value={formData.monthlyContribution}
-                      onChange={(e) => setFormData({...formData, monthlyContribution: Number(e.target.value)})}
-                      placeholder="0"
+                      value={formData.monthlyContribution ?? ''}
+                      onChange={(e) => setFormData({...formData, monthlyContribution: e.target.value === '' ? undefined : Number(e.target.value)})}
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -234,13 +261,49 @@ export default function CompoundInterestCalculatorPage() {
                   </div>
 
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-sm text-muted-foreground mb-1">Rendement</p>
-                    <p className="text-3xl font-bold text-green-700">
-                      {((results.finalAmount / results.principal - 1) * 100).toFixed(1)}%
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {((results.finalAmount / results.principal) ** (1 / formData.years) - 1).toFixed(2)}% gemiddeld per jaar
-                    </p>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Totaal geïnvesteerd</p>
+                        <p className="text-xl font-bold text-gray-700">{formatCurrency(results.totalContributions)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Eindwaarde</p>
+                        <p className="text-xl font-bold text-green-700">{formatCurrency(results.finalAmount)}</p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-green-300 pt-3">
+                      <div className="mb-3">
+                        <p className="text-sm text-muted-foreground mb-1">Winst door rente-op-rente</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          {formatCurrency(results.totalInterest)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Dit is wat je extra verdient door rente-op-rente effect
+                        </p>
+                      </div>
+
+                      {results.monthlyContribution && results.monthlyContribution > 0 ? (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                          <p className="text-sm text-blue-800 mb-2">
+                            💡 <strong>Met maandelijkse bijdragen:</strong> Het rendement is verspreid over alle bijdragen die op verschillende tijdstippen zijn gedaan.
+                          </p>
+                          <p className="text-sm text-blue-700">
+                            De rente-op-rente werkt harder naarmate je eerder begint met bijdragen.
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Rendement op oorspronkelijke investering</p>
+                          <p className="text-lg font-semibold text-blue-600">
+                            {(((results.finalAmount - results.totalContributions) / results.principal) * 100).toFixed(1)}%
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Gemiddeld {(((results.finalAmount - results.totalContributions + results.principal) / results.principal) ** (1 / formData.years) - 1).toFixed(2)}% per jaar
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -251,9 +314,9 @@ export default function CompoundInterestCalculatorPage() {
           {results && (
             <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl mb-8">
               <CardHeader>
-                <CardTitle>Groeicurve</CardTitle>
+                <CardTitle>Groeicurve & Rente-op-rente Effect</CardTitle>
                 <CardDescription>
-                  Ontwikkeling van je investering over de tijd
+                  Ontwikkeling van je investering met duidelijke weergave van bijdragen vs. rente-op-rente
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -270,19 +333,51 @@ export default function CompoundInterestCalculatorPage() {
                         label={{ value: 'Bedrag (€)', angle: -90, position: 'insideLeft' }}
                       />
                       <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), 'Bedrag']}
+                        formatter={(value: number, name: string) => [
+                          formatCurrency(value),
+                          name === 'contributions' ? 'Jouw Bijdragen' :
+                          name === 'interest' ? 'Rente-op-rente' :
+                          'Totaal saldo'
+                        ]}
                         labelFormatter={(label) => `Jaar ${label}`}
                       />
                       <Area
                         type="monotone"
-                        dataKey="balance"
+                        dataKey="contributions"
+                        stackId="1"
                         stroke="#3b82f6"
                         fill="#3b82f6"
-                        fillOpacity={0.3}
+                        fillOpacity={0.6}
                         strokeWidth={2}
+                        name="Jouw Bijdragen"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="interest"
+                        stackId="1"
+                        stroke="#10b981"
+                        fill="#10b981"
+                        fillOpacity={0.6}
+                        strokeWidth={2}
+                        name="Rente-op-rente"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center text-sm text-blue-800">
+                    <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
+                    <span className="font-medium">Blauw:</span>
+                    <span className="ml-1">Jouw ingelegde geld (startkapitaal + maandelijkse bijdragen)</span>
+                  </div>
+                  <div className="flex items-center text-sm text-green-800 mt-1">
+                    <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                    <span className="font-medium">Groen:</span>
+                    <span className="ml-1">Rente-op-rente effect (wat compound interest voor je doet)</span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-2">
+                    💡 Hoe hoger de groene laag wordt, hoe meer rente-op-rente voor je werkt!
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -79,15 +79,16 @@ async function searchRedditPosts(
 
         return children.map((child: { data: Record<string, unknown> }) => {
           const post = child.data
+          const createdUtc = typeof post.created_utc === 'number' ? post.created_utc : 0
           return {
-            title: post.title || '',
-            content: post.selftext || '',
-            url: `https://reddit.com${post.permalink}`,
-            author: post.author || 'unknown',
-            publishedAt: new Date(post.created_utc * 1000).toISOString(),
-            score: post.score || 0,
-            comments: post.num_comments || 0,
-            subreddit: post.subreddit || subreddit
+            title: typeof post.title === 'string' ? post.title : '',
+            content: typeof post.selftext === 'string' ? post.selftext : '',
+            url: `https://reddit.com${typeof post.permalink === 'string' ? post.permalink : ''}`,
+            author: typeof post.author === 'string' ? post.author : 'unknown',
+            publishedAt: new Date(createdUtc * 1000).toISOString(),
+            score: typeof post.score === 'number' ? post.score : 0,
+            comments: typeof post.num_comments === 'number' ? post.num_comments : 0,
+            subreddit: typeof post.subreddit === 'string' ? post.subreddit : subreddit
           }
         })
       } catch (error) {
@@ -286,16 +287,19 @@ export async function fetchSectorDiscussions(
 
       children.forEach((child: { data: Record<string, unknown> }) => {
         const post = child.data
+        const createdUtc = typeof post.created_utc === 'number' ? post.created_utc : 0
+        const title = typeof post.title === 'string' ? post.title : ''
+        const selftext = typeof post.selftext === 'string' ? post.selftext : ''
         posts.push({
-          title: post.title || '',
-          content: post.selftext || '',
-          url: `https://reddit.com${post.permalink}`,
-          author: post.author || 'unknown',
-          publishedAt: new Date(post.created_utc * 1000).toISOString(),
-          score: post.score || 0,
-          comments: post.num_comments || 0,
-          subreddit: post.subreddit || 'investing',
-          sentiment: analyzeSentiment(`${post.title} ${post.selftext}`)
+          title,
+          content: selftext,
+          url: `https://reddit.com${typeof post.permalink === 'string' ? post.permalink : ''}`,
+          author: typeof post.author === 'string' ? post.author : 'unknown',
+          publishedAt: new Date(createdUtc * 1000).toISOString(),
+          score: typeof post.score === 'number' ? post.score : 0,
+          comments: typeof post.num_comments === 'number' ? post.num_comments : 0,
+          subreddit: typeof post.subreddit === 'string' ? post.subreddit : 'investing',
+          sentiment: analyzeSentiment(`${title} ${selftext}`)
         })
       })
     }
