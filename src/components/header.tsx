@@ -70,46 +70,16 @@ export function Header() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Calculators</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px]">
-                    <NavigationMenuLink asChild>
-                      <Link href="/calculators" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calculator className="h-4 w-4" />
-                          <div className="text-sm font-medium leading-none">Alle Calculators</div>
-                        </div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-2">
-                          Bekijk alle beschikbare fiscale calculators
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="/calculators/bv-vs-emz" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="text-sm font-medium leading-none">BV vs EMZ</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
-                          Bereken of een BV of EMZ voordeliger is
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="/calculators/etf" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="text-sm font-medium leading-none">ETF Groei</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
-                          Bereken de potentiële groei van je ETF beleggingen
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="/calculators/real-estate" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <div className="text-sm font-medium leading-none">Vastgoed Cashflow</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
-                          Analyseer de cashflow van je vastgoed investeringen
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/calculators"
+                    className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
+                      isActive("/calculators") ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    Calculators
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>

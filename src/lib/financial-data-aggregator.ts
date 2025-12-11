@@ -80,7 +80,7 @@ export function aggregateFinancialData(
   enhancedData: FinancialData | null
 ): AggregatedFinancialData {
   const result: AggregatedFinancialData = {
-    symbol: yahooFundamentals?.symbol || enhancedData?.symbol || '',
+    symbol: String(yahooFundamentals?.symbol || enhancedData?.symbol || ''),
     companyName: yahooFundamentals?.companyName || enhancedData?.companyName || '',
     sector: yahooFundamentals?.sector || enhancedData?.sector,
     industry: yahooFundamentals?.industry || enhancedData?.industry,
