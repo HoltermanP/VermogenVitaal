@@ -41,7 +41,10 @@ interface RawTradeData {
   name?: string
   Representative?: string
   politician_name?: string
+  politicianName?: string
   party?: string
+  partyName?: string
+  stateName?: string
   Party?: string
   state?: string
   State?: string
@@ -52,29 +55,54 @@ interface RawTradeData {
   Ticker?: string
   Symbol?: string
   stock_symbol?: string
+  stockSymbol?: string
+  issuer_ticker?: string
+  issuer_name?: string
   company?: string
   stockName?: string
   Company?: string
   StockName?: string
   stock_name?: string
+  company_name?: string
+  companyName?: string
   transaction_type?: string
   transactionType?: string
   TransactionType?: string
   type?: string
+  Transaction?: string
+  Type?: string
+  action?: string
   amount?: string
   Amount?: string
+  value?: string
+  Value?: string
+  amountRange?: string
+  amount_range?: string
+  transaction_amount?: string
+  transactionAmount?: string
   transaction_date?: string
   transactionDate?: string
   TransactionDate?: string
+  tradedDate?: string
+  traded_date?: string
   date?: string
+  Date?: string
   disclosure_date?: string
   disclosureDate?: string
   DisclosureDate?: string
+  filedDate?: string
+  FiledDate?: string
+  filed_date?: string
+  publicationDate?: string
+  publication_date?: string
   owner?: string
   Owner?: string
+  owner_type?: string
   asset_description?: string
   assetDescription?: string
   AssetDescription?: string
+  description?: string
+  Description?: string
 }
 
 async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<FetchResult> {
@@ -217,7 +245,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       } else {
         console.warn(`[Congressional Trades] ⚠️ No trades found for ${politician} in ${githubEndpoint.name} (filtered from ${data.length} total trades)`)
       }
-    } catch {
+    } catch (error) {
       console.error(`[Congressional Trades] ❌ GitHub ${githubEndpoint.name} error:`, error)
       continue // Probeer volgende GitHub repository
     }
@@ -296,7 +324,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ House Stock Watcher ${endpoint} error:`, error)
       continue
     }
@@ -371,7 +399,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Unusual Whales API ${endpoint} error:`, error)
       continue
     }
@@ -443,7 +471,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Quiver Quantitative API ${endpoint} error:`, error)
       continue
     }
@@ -515,7 +543,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Pelosi Tracker API ${endpoint} error:`, error)
       continue
     }
@@ -562,19 +590,19 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           const data = await response.json()
           
           // Transform RapidAPI profile data naar trades formaat
-          let trades: CongressionalTrade[] = []
+          let trades: RawTradeData[] = []
           
           // Probeer verschillende data structuren
           if (data.trades && Array.isArray(data.trades)) {
-            trades = data.trades
+            trades = data.trades as RawTradeData[]
           } else if (data.transactions && Array.isArray(data.transactions)) {
-            trades = data.transactions
+            trades = data.transactions as RawTradeData[]
           } else if (data.recentTrades && Array.isArray(data.recentTrades)) {
-            trades = data.recentTrades
+            trades = data.recentTrades as RawTradeData[]
           } else if (Array.isArray(data)) {
-            trades = data
+            trades = data as RawTradeData[]
           } else if (data.data && Array.isArray(data.data)) {
-            trades = data.data
+            trades = data.data as RawTradeData[]
           }
           
           if (trades.length > 0) {
@@ -612,7 +640,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         const errorText = await response.text().catch(() => "")
         console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_profile returned ${response.status}: ${errorText.substring(0, 200)}`)
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_profile error:`, error)
     }
 
@@ -681,7 +709,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_latest_trades error:`, error)
     }
 
@@ -745,7 +773,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians error:`, error)
     }
   }
@@ -821,7 +849,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Congressional Trading Data API ${ctdUrl} error:`, error)
       continue
     }
@@ -892,7 +920,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ OpenSecrets API ${endpoint} error:`, error)
       continue
     }
@@ -967,7 +995,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           }
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ GovTrack API ${endpoint} error:`, error)
       continue
     }
@@ -1006,7 +1034,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
           // HTML parsing zou hier kunnen worden toegevoegd voor PDF links
         }
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Clerk of the House ${endpoint} error:`, error)
       continue
     }
@@ -1035,7 +1063,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         // Senate website gebruikt HTML, zou scraping vereisen
         // Dit is een placeholder voor toekomstige implementatie
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ Senate Financial Disclosures ${endpoint} error:`, error)
       continue
     }
@@ -1154,7 +1182,23 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
       url: "https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json",
       name: "House Stock Watcher S3",
       requiresAuth: false,
-      transform: (data: unknown) => Array.isArray(data) ? (data as RawTradeData[]) : [],
+      transform: (data: unknown) => {
+        if (!Array.isArray(data)) return []
+        return (data as RawTradeData[]).map((trade): CongressionalTrade => ({
+          representative: trade.representative || trade.politician || trade.name || trade.Representative || trade.politician_name || "",
+          party: trade.party || trade.Party || "D",
+          state: trade.state || trade.State || "CA",
+          district: trade.district || trade.District,
+          ticker: trade.ticker || trade.symbol || trade.Ticker || trade.Symbol || trade.stock_symbol || "",
+          company: trade.company || trade.stockName || trade.Company || trade.StockName || trade.stock_name || trade.company_name || "",
+          transactionType: trade.transactionType || trade.type || trade.action || trade.Transaction || trade.Type || trade.transaction_type || "Unknown",
+          amount: trade.amount || trade.value || trade.amountRange || trade.Amount || trade.Value || trade.amount_range || trade.transaction_amount || "Unknown",
+          transactionDate: trade.transactionDate || trade.tradedDate || trade.date || trade.TransactionDate || trade.Date || trade.transaction_date || "",
+          disclosureDate: trade.disclosureDate || trade.filedDate || trade.publicationDate || trade.DisclosureDate || trade.FiledDate || trade.disclosure_date || trade.filed_date || trade.publication_date || "",
+          owner: trade.owner || trade.Owner,
+          assetDescription: trade.description || trade.assetDescription || trade.Description || trade.AssetDescription,
+        }))
+      },
     },
   ]
 
@@ -1251,7 +1295,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         dataSource: dataSourceName,
         dataTimestamp: now,
       }
-    } catch {
+    } catch (error) {
       const endpoint = typeof endpointConfig === "string" ? endpointConfig : endpointConfig.url
       console.error(`[Congressional Trades] ❌ Error fetching from ${endpoint}:`, error)
       continue // Probeer volgende endpoint
@@ -1325,7 +1369,7 @@ async function fetchAllTrades(politician: string = "Nancy Pelosi"): Promise<Fetc
         const errorText = await response.text().catch(() => "")
         console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians returned ${response.status}: ${errorText.substring(0, 200)}`)
       }
-    } catch {
+    } catch (error) {
       console.warn(`[Congressional Trades] ⚠️ RapidAPI /get_politicians error:`, error)
     }
   }
@@ -1443,7 +1487,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
         } else {
           console.warn(`[Congressional Trades] ⚠️ CapitolTrades API returned ${response.status} for ${apiUrl}`)
         }
-      } catch {
+      } catch (error) {
         console.warn(`[Congressional Trades] ⚠️ CapitolTrades API error for ${apiUrl}:`, error)
         continue
       }
@@ -1604,7 +1648,7 @@ async function scrapeCapitolTrades(politician: string): Promise<CongressionalTra
             }
           }
         }
-      } catch {
+      } catch (error) {
         console.warn(`[Congressional Trades] Failed to scrape ${url}:`, error)
         continue
       }
@@ -1723,7 +1767,7 @@ async function scrapePelosiTracker(politician: string): Promise<CongressionalTra
             }
           }
         }
-      } catch {
+      } catch (error) {
         console.warn(`[Congressional Trades] Failed to scrape ${url}:`, error)
         continue
       }
