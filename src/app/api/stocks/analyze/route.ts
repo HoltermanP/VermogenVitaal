@@ -154,12 +154,12 @@ Jaar ${item.year}:
 ` : 'Geen fundamentele data beschikbaar'
 
     // Format nieuws voor prompt
-    const formatNews = (articles: Array<Record<string, unknown>>, category: string) => {
+    const formatNews = (articles: NewsArticle[], category: string) => {
       if (!articles || articles.length === 0) {
         return `Geen ${category} nieuws beschikbaar`
       }
       return articles.slice(0, 10).map((article, idx) => 
-        `${idx + 1}. ${article.title as string}${article.description ? ` - ${article.description as string}` : ''} (${article.source as string}, ${new Date(article.publishedAt as string | number | Date).toLocaleDateString('nl-NL')})`
+        `${idx + 1}. ${article.title}${article.description ? ` - ${article.description}` : ''} (${article.source}, ${new Date(article.publishedAt).toLocaleDateString('nl-NL')})`
       ).join('\n')
     }
 
