@@ -57,16 +57,13 @@ export default function CompoundInterestCalculatorPage() {
 
     // Calculate period by period, maar toon jaarlijks
     for (let year = 1; year <= years; year++) {
-      let yearStartBalance = balance
       let yearInterest = 0
-      let yearContributions = 0
 
       // Voor elke maand in dit jaar (om maandelijkse bijdragen correct te verwerken)
       for (let month = 1; month <= 12; month++) {
         // Maandelijkse bijdrage toevoegen aan begin van maand
         if (monthlyContribution && monthlyContribution > 0) {
           balance += monthlyContribution
-          yearContributions += monthlyContribution
           totalContributions += monthlyContribution
         }
 
