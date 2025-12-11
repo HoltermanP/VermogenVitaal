@@ -67,7 +67,8 @@ export function calculateBox3(input: Box3Input): Box3Result {
   assumedReturns.total = assumedReturns.bankSavings + assumedReturns.investments - assumedReturns.debts
 
   // Box 3 belasting (36% over forfaitair rendement)
-  const box3Tax = Math.max(0, assumedReturns.total * 0.36)
+  // Alleen belasting berekenen als er belastbaar vermogen is
+  const box3Tax = taxableAssets > 0 ? Math.max(0, assumedReturns.total * 0.36) : 0
 
   // Effectief tarief
   const effectiveRate = netAssets > 0 ? (box3Tax / netAssets) * 100 : 0
