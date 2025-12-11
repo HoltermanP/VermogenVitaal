@@ -81,9 +81,9 @@ export function aggregateFinancialData(
 ): AggregatedFinancialData {
   const result: AggregatedFinancialData = {
     symbol: String(yahooFundamentals?.symbol || enhancedData?.symbol || ''),
-    companyName: yahooFundamentals?.companyName || enhancedData?.companyName || '',
-    sector: yahooFundamentals?.sector || enhancedData?.sector,
-    industry: yahooFundamentals?.industry || enhancedData?.industry,
+    companyName: String(yahooFundamentals?.companyName || enhancedData?.companyName || ''),
+    sector: yahooFundamentals?.sector ? String(yahooFundamentals.sector) : enhancedData?.sector,
+    industry: yahooFundamentals?.industry ? String(yahooFundamentals.industry) : enhancedData?.industry,
     yahooData: yahooFundamentals,
     enhancedData: enhancedData || undefined,
     incomeStatements: [],
@@ -105,7 +105,7 @@ export function aggregateFinancialData(
   }
 
   // Combineer income statements
-  if (yahooFundamentals?.incomeStatement && yahooFundamentals.incomeStatement.length > 0) {
+  if (yahooFundamentals?.incomeStatement && Array.isArray(yahooFundamentals.incomeStatement) && yahooFundamentals.incomeStatement.length > 0) {
     result.incomeStatements.push(...yahooFundamentals.incomeStatement)
     result.dataQuality.hasIncomeStatements = true
     result.dataQuality.sources.push('Yahoo Finance')
@@ -114,7 +114,7 @@ export function aggregateFinancialData(
   if (enhancedData?.fmpData?.incomeStatement && enhancedData.fmpData.incomeStatement.length > 0) {
     // Voeg FMP data toe als het niet al bestaat
     const existingDates = new Set(result.incomeStatements.map((s: FinancialStatement) => {
-      const date = s.endDate?.fmt || s.endDate?.raw || s.date
+      const date = (typeof s.endDate === 'object' && s.endDate?.fmt) || (typeof s.endDate === 'object' && s.endDate?.raw) || s.date
       return date
     }))
     
@@ -134,7 +134,7 @@ export function aggregateFinancialData(
   }
 
   // Combineer balance sheets
-  if (yahooFundamentals?.balanceSheet && yahooFundamentals.balanceSheet.length > 0) {
+  if (yahooFundamentals?.balanceSheet && Array.isArray(yahooFundamentals.balanceSheet) && yahooFundamentals.balanceSheet.length > 0) {
     result.balanceSheets.push(...yahooFundamentals.balanceSheet)
     result.dataQuality.hasBalanceSheets = true
     if (!result.dataQuality.sources.includes('Yahoo Finance')) {
@@ -164,7 +164,7 @@ export function aggregateFinancialData(
   }
 
   // Combineer cash flow statements
-  if (yahooFundamentals?.cashFlow && yahooFundamentals.cashFlow.length > 0) {
+  if (yahooFundamentals?.cashFlow && Array.isArray(yahooFundamentals.cashFlow) && yahooFundamentals.cashFlow.length > 0) {
     result.cashFlowStatements.push(...yahooFundamentals.cashFlow)
     result.dataQuality.hasCashFlow = true
     if (!result.dataQuality.sources.includes('Yahoo Finance')) {
@@ -194,21 +194,21 @@ export function aggregateFinancialData(
   }
 
   // Quarterly data
-  if (yahooFundamentals?.quarterlyIncome && yahooFundamentals.quarterlyIncome.length > 0) {
+  if (yahooFundamentals?.quarterlyIncome && Array.isArray(yahooFundamentals.quarterlyIncome) && yahooFundamentals.quarterlyIncome.length > 0) {
     result.quarterlyIncome.push(...yahooFundamentals.quarterlyIncome)
     result.dataQuality.hasQuarterlyData = true
   }
   
-  if (yahooFundamentals?.quarterlyBalance && yahooFundamentals.quarterlyBalance.length > 0) {
+  if (yahooFundamentals?.quarterlyBalance && Array.isArray(yahooFundamentals.quarterlyBalance) && yahooFundamentals.quarterlyBalance.length > 0) {
     result.quarterlyBalance.push(...yahooFundamentals.quarterlyBalance)
   }
   
-  if (yahooFundamentals?.quarterlyCashFlow && yahooFundamentals.quarterlyCashFlow.length > 0) {
+  if (yahooFundamentals?.quarterlyCashFlow && Array.isArray(yahooFundamentals.quarterlyCashFlow) && yahooFundamentals.quarterlyCashFlow.length > 0) {
     result.quarterlyCashFlow.push(...yahooFundamentals.quarterlyCashFlow)
   }
 
   // Earnings data
-  if (yahooFundamentals?.earningsHistory && yahooFundamentals.earningsHistory.length > 0) {
+  if (yahooFundamentals?.earningsHistory && Array.isArray(yahooFundamentals.earningsHistory) && yahooFundamentals.earningsHistory.length > 0) {
     result.earningsHistory.push(...yahooFundamentals.earningsHistory)
     result.dataQuality.hasEarningsData = true
   }
@@ -228,7 +228,7 @@ export function aggregateFinancialData(
     }
   }
   
-  if (yahooFundamentals?.earningsTrend && yahooFundamentals.earningsTrend.length > 0) {
+  if (yahooFundamentals?.earningsTrend && Array.isArray(yahooFundamentals.earningsTrend) && yahooFundamentals.earningsTrend.length > 0) {
     result.earningsTrend.push(...yahooFundamentals.earningsTrend)
   }
 

@@ -318,20 +318,29 @@ export default function CalculatorsPage() {
           </div>
 
           <Tabs defaultValue="belasting" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 h-auto p-1 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl mb-8">
+            <TabsList className="flex w-full h-auto p-1.5 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl mb-8 overflow-x-auto">
               {categories.map((category) => {
                 const IconComponent = category.icon
+                // Korte namen voor compacte weergave
+                const shortNames: Record<string, string> = {
+                  "Belasting Calculators": "Belasting",
+                  "Ondernemen & ZZP": "Ondernemen",
+                  "Wonen & Hypotheek": "Wonen",
+                  "Pensioen Planning": "Pensioen",
+                  "Sparen & Buffer": "Sparen",
+                  "Vermogensopbouw": "Vermogen",
+                  "Beleggen & Investeren": "Beleggen",
+                  "Hulpmiddelen": "Tools"
+                }
+                const displayName = shortNames[category.name] || category.name
                 return (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
+                    className="flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 h-auto min-w-[80px] flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                   >
-                    <IconComponent className="h-5 w-5" />
-                    <span className="text-sm font-medium text-center leading-tight">{category.name.split(' ')[0]}</span>
-                    {category.name.includes(' ') && (
-                      <span className="text-xs text-center leading-tight opacity-80">{category.name.split(' ').slice(1).join(' ')}</span>
-                    )}
+                    <IconComponent className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs font-medium text-center leading-tight whitespace-nowrap">{displayName}</span>
                   </TabsTrigger>
                 )
               })}

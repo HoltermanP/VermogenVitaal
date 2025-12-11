@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck, Linkedin } from "lucide-react"
+import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck, Linkedin, BarChart3, PieChart, MessageSquare, Receipt } from "lucide-react"
 import Link from "next/link"
 import { NewsTicker } from "@/components/news-ticker"
 import { DailyTop3 } from "@/components/daily-top-3"
@@ -56,7 +56,7 @@ export default function DashboardPage() {
         <DailyTop3 />
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 lg:gap-8 mb-16">
           <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in">
             <CardHeader className="pb-4">
               <div className="w-14 h-14 gradient-financial rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-financial">
@@ -182,6 +182,100 @@ export default function DashboardPage() {
                 <Link href="/admin/linkedin" className="flex items-center justify-center gap-1.5">
                   <span>Beheer posts</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Stocks Analysis */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in delay-600">
+            <CardHeader className="pb-4">
+              <div className="w-14 h-14 gradient-financial rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-financial">
+                <BarChart3 className="h-7 w-7 text-white" />
+              </div>
+              <CardTitle className="text-foreground text-lg sm:text-xl group-hover:text-primary transition-colors">Stocks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4 sm:mb-6 group-hover:text-foreground transition-colors text-sm sm:text-base">
+                Analyseer aandelen en volg de markt
+              </p>
+              <Button size="sm" className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300 text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2" asChild>
+                <Link href="/stocks" className="flex items-center justify-center gap-1.5">
+                  <span>Start analyse</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Portfolio Management */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in delay-700">
+            <CardHeader className="pb-4">
+              <div className="w-14 h-14 gradient-financial rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-financial">
+                <PieChart className="h-7 w-7 text-white" />
+              </div>
+              <CardTitle className="text-foreground text-lg sm:text-xl group-hover:text-primary transition-colors">Portfolio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4 sm:mb-6 group-hover:text-foreground transition-colors text-sm sm:text-base">
+                Beheer je beleggingsportefeuille
+              </p>
+              <Button size="sm" className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300 text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2" asChild>
+                <Link href="/portfolio" className="flex items-center justify-center gap-1.5">
+                  <span>Bekijk portfolio</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Personal Advice */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in delay-800">
+            <CardHeader className="pb-4">
+              <div className="w-14 h-14 gradient-financial rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-financial">
+                <MessageSquare className="h-7 w-7 text-white" />
+              </div>
+              <CardTitle className="text-foreground text-lg sm:text-xl group-hover:text-primary transition-colors">Advies</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4 sm:mb-6 group-hover:text-foreground transition-colors text-sm sm:text-base">
+                {tier === 'FREE' ? 'Persoonlijk advies (Pro+)' : 'Krijg persoonlijk fiscaal advies'}
+              </p>
+              <Button
+                size="sm"
+                variant={tier === 'FREE' ? 'outline' : 'default'}
+                className={tier === 'FREE' ? 'w-full border-primary/50 hover:bg-primary/10 hover:border-primary text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2' : 'w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300 text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2'}
+                asChild
+                disabled={tier === 'FREE'}
+              >
+                <Link href={tier === 'FREE' ? '/pricing' : '/advies'} className="flex items-center justify-center">
+                  <span>{tier === 'FREE' ? 'Upgrade nodig' : 'Start gesprek'}</span>
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Accounting Integration */}
+          <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 group hover:scale-105 animate-fade-in delay-900">
+            <CardHeader className="pb-4">
+              <div className="w-14 h-14 gradient-financial rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-financial">
+                <Receipt className="h-7 w-7 text-white" />
+              </div>
+              <CardTitle className="text-foreground text-lg sm:text-xl group-hover:text-primary transition-colors">Boekhouding</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4 sm:mb-6 group-hover:text-foreground transition-colors text-sm sm:text-base">
+                {tier === 'FREE' ? 'Boekhouding integratie (Pro+)' : 'Koppel je boekhoudsoftware'}
+              </p>
+              <Button
+                size="sm"
+                variant={tier === 'FREE' ? 'outline' : 'default'}
+                className={tier === 'FREE' ? 'w-full border-primary/50 hover:bg-primary/10 hover:border-primary text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2' : 'w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300 text-xs sm:text-sm whitespace-normal break-words min-h-[2rem] py-2'}
+                asChild
+                disabled={tier === 'FREE'}
+              >
+                <Link href={tier === 'FREE' ? '/pricing' : '/accounting'} className="flex items-center justify-center">
+                  <span>{tier === 'FREE' ? 'Upgrade nodig' : 'Beheer integratie'}</span>
                 </Link>
               </Button>
             </CardContent>
