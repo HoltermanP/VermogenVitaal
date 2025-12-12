@@ -1,100 +1,113 @@
-// Test script for BV vs Private Investment Calculator
-import { calculateBvVsPrivateInvestment } from '../src/lib/calculators/bv-vs-private-investment'
+// Test script for BV vs EMZ calculator
+// Run with: npx ts-node test-bv-calculator.ts
 
-console.log('🧪 Testing BV vs Private Investment Calculator...')
+// Copy the calculation functions from the calculator
+const calculateIncomeTax = (income: number) => {
+  // Dutch income tax calculation 2025
+  if (income <= 75518) {
+    return income * 0.3697
+  } else {
+    return 75518 * 0.3697 + (income - 75518) * 0.495
+  }
+}
 
-console.log('🧪 Testing BV vs Private Investment Calculator...')
+const calculateCorporateTax = (profit: number) => {
+  // Dutch corporate tax calculation 2025
+  if (profit <= 200000) {
+    return profit * 0.19
+  } else {
+    return 200000 * 0.19 + (profit - 200000) * 0.258
+  }
+}
 
-// Test case 1: Standard scenario
-const test1 = calculateBvVsPrivateInvestment({
-  annualIncome: 100000,
-  expectedReturn: 7,
-  holdingPeriod: 10,
-  hasPartner: false
-})
+const testScenario = (revenue: number, costs: number, salary: number, dividend: number) => {
+  const profit = revenue - costs
 
-console.log('\n📊 Test 1: €100.000 jaarlijks inkomen, 7% rendement, 10 jaar')
-console.log('Private scenario (Eenmanszaak):')
-console.log(`  Eindwaarde portfolio: €${test1.private.finalValue.toLocaleString()}`)
-console.log(`  Totaal belegd: €${(test1.private.finalValue - test1.private.totalReturn).toLocaleString()}`)
-console.log(`  Beleggingsrendement: €${test1.private.totalReturn.toLocaleString()}`)
-console.log(`  Box 3 belasting: €${test1.private.box3TaxPaid.toLocaleString()}`)
-console.log(`  Netto rendement: €${test1.private.netReturn.toLocaleString()}`)
+  // EMZ calculation
+  const emzTax = calculateIncomeTax(profit)
+  const emzNetResult = profit - emzTax
 
-console.log('BV scenario:')
-console.log(`  Eindwaarde portfolio: €${test1.bv.finalValue.toLocaleString()}`)
-console.log(`  Totaal belegd: €${(test1.bv.finalValue - test1.bv.totalReturn).toLocaleString()}`)
-console.log(`  Beleggingsrendement: €${test1.bv.totalReturn.toLocaleString()}`)
-console.log(`  Vennootschapsbelasting: €${test1.bv.corpTaxPaid.toLocaleString()}`)
-console.log(`  Dividendbelasting: €${test1.bv.dividendTaxPaid.toLocaleString()}`)
-console.log(`  Netto rendement: €${test1.bv.netReturn.toLocaleString()}`)
+  // BV calculation
+  const bvCorpTax = calculateCorporateTax(profit)
+  const bvAfterTax = profit - bvCorpTax
+  const salaryTax = calculateIncomeTax(salary)
+  const dividendTax = dividend * 0.265
+  const bvNetResult = (salary - salaryTax) + (dividend - dividendTax)
 
-console.log(`Aanbeveling: ${test1.comparison.recommendation === 'bv' ? 'BV' : 'Eenmanszaak'} beleggen`)
-console.log(`Verschil: €${test1.comparison.difference.toLocaleString()}`)
+  // Validation
+  const totalDistributed = salary + dividend
+  const validationError = Math.abs(totalDistributed - bvAfterTax) > 1
+    ? `Salary + Dividend (${totalDistributed}) != BV After Tax (${bvAfterTax})`
+    : null
 
-// Test case 2: Higher income
-const test2 = calculateBvVsPrivateInvestment({
-  annualIncome: 200000,
-  expectedReturn: 7,
-  holdingPeriod: 10,
-  hasPartner: false
-})
+  const recommendation = bvNetResult > emzNetResult ? "BV" : "EMZ"
+  const difference = Math.abs(bvNetResult - emzNetResult)
 
-console.log('\n📊 Test 2: €200.000 jaarlijks inkomen, 7% rendement, 10 jaar')
-console.log(`BV netto rendement: €${test2.bv.netReturn.toLocaleString()}`)
-console.log(`Eenmanszaak netto rendement: €${test2.private.netReturn.toLocaleString()}`)
-console.log(`Aanbeveling: ${test2.comparison.recommendation === 'bv' ? 'BV' : 'Eenmanszaak'} beleggen`)
-console.log(`Verschil: €${test2.comparison.difference.toLocaleString()}`)
+  return {
+    input: { revenue, costs, salary, dividend },
+    emz: {
+      profit: Math.round(profit),
+      tax: Math.round(emzTax),
+      netResult: Math.round(emzNetResult)
+    },
+    bv: {
+      profit: Math.round(profit),
+      corpTax: Math.round(bvCorpTax),
+      afterTax: Math.round(bvAfterTax),
+      salaryTax: Math.round(salaryTax),
+      dividendTax: Math.round(dividendTax),
+      netResult: Math.round(bvNetResult)
+    },
+    recommendation,
+    difference: Math.round(difference),
+    validationError
+  }
+}
 
-// Test case 3: Lower income
-const test3 = calculateBvVsPrivateInvestment({
-  annualIncome: 50000,
-  expectedReturn: 7,
-  holdingPeriod: 10,
-  hasPartner: false
-})
+console.log("=== BV vs EMZ Calculator Tests ===\n")
 
-console.log('\n📊 Test 3: €50.000 jaarlijks inkomen, 7% rendement, 10 jaar')
-console.log(`BV netto rendement: €${test3.bv.netReturn.toLocaleString()}`)
-console.log(`Eenmanszaak netto rendement: €${test3.private.netReturn.toLocaleString()}`)
-console.log(`Aanbeveling: ${test3.comparison.recommendation === 'bv' ? 'BV' : 'Eenmanszaak'} beleggen`)
-console.log(`Verschil: €${test3.comparison.difference.toLocaleString()}`)
+// Test 1: Small business
+console.log("Test 1: Small business (€125,000 revenue, €25,000 costs, €40,000 salary, €60,000 dividend)")
+const test1 = testScenario(125000, 25000, 40000, 60000)
+console.log("EMZ Net:", test1.emz.netResult)
+console.log("BV Net:", test1.bv.netResult)
+console.log("Recommendation:", test1.recommendation, "(€" + test1.difference + " difference)")
+console.log("Validation:", test1.validationError || "OK")
+console.log()
 
-// Test case 4: Very high income (should clearly favor BV)
-const test4 = calculateBvVsPrivateInvestment({
-  annualIncome: 500000,
-  expectedReturn: 7,
-  holdingPeriod: 10,
-  hasPartner: false
-})
+// Test 2: Large business
+console.log("Test 2: Large business (€500,000 revenue, €100,000 costs, €80,000 salary, €320,000 dividend)")
+const test2 = testScenario(500000, 100000, 80000, 320000)
+console.log("EMZ Net:", test2.emz.netResult)
+console.log("BV Net:", test2.bv.netResult)
+console.log("Recommendation:", test2.recommendation, "(€" + test2.difference + " difference)")
+console.log("Validation:", test2.validationError || "OK")
+console.log()
 
-console.log('\n📊 Test 4: €500.000 jaarlijks inkomen, 7% rendement, 10 jaar')
-console.log(`BV netto rendement: €${test4.bv.netReturn.toLocaleString()}`)
-console.log(`Eenmanszaak netto rendement: €${test4.private.netReturn.toLocaleString()}`)
-console.log(`Aanbeveling: ${test4.comparison.recommendation === 'bv' ? 'BV' : 'Eenmanszaak'} beleggen`)
-console.log(`Verschil: €${test4.comparison.difference.toLocaleString()}`)
+// Test 3: Invalid distribution (salary + dividend != bvAfterTax)
+console.log("Test 3: Invalid distribution (€150,000 revenue, €25,000 costs, €50,000 salary, €30,000 dividend)")
+const test3 = testScenario(150000, 25000, 50000, 30000)
+console.log("EMZ Net:", test3.emz.netResult)
+console.log("BV Net:", test3.bv.netResult)
+console.log("Recommendation:", test3.recommendation, "(€" + test3.difference + " difference)")
+console.log("Validation:", test3.validationError || "OK")
+console.log()
 
-// Test case: Simple 1-year scenario to verify calculation
-console.log('\n🔍 Test: €100.000 jaarlijks inkomen, 1 jaar, 0% rendement')
-const simpleTest = calculateBvVsPrivateInvestment({
-  annualIncome: 100000,
-  expectedReturn: 0,
-  holdingPeriod: 1,
-  hasPartner: false
-})
+// Test 4: Correct distribution
+console.log("Test 4: Correct distribution (€150,000 revenue, €25,000 costs, €60,000 salary, €41,250 dividend)")
+const test4 = testScenario(150000, 25000, 60000, 41250)
+console.log("EMZ Net:", test4.emz.netResult)
+console.log("BV Net:", test4.bv.netResult)
+console.log("Recommendation:", test4.recommendation, "(€" + test4.difference + " difference)")
+console.log("Validation:", test4.validationError || "OK")
+console.log()
 
-console.log('Eenmanszaak:')
-console.log(`  Eindwaarde: €${simpleTest.private.finalValue}`)
-console.log(`  Totaal belegd: €${simpleTest.private.finalValue - simpleTest.private.totalReturn}`)
-console.log(`  Box 3 belasting: €${simpleTest.private.box3TaxPaid}`)
-console.log(`  Netto rendement: €${simpleTest.private.netReturn}`)
+console.log("=== Tax Calculations Check ===")
 
-console.log('BV:')
-console.log(`  Eindwaarde: €${simpleTest.bv.finalValue}`)
-console.log(`  Totaal belegd: €${simpleTest.bv.finalValue - simpleTest.bv.totalReturn}`)
-console.log(`  Belastingen: €${simpleTest.bv.totalTaxPaid}`)
-console.log(`  Netto rendement: €${simpleTest.bv.netReturn}`)
+// Test income tax calculations
+console.log(`Income tax on €50,000: €${Math.round(calculateIncomeTax(50000))}`)
+console.log(`Income tax on €100,000: €${Math.round(calculateIncomeTax(100000))}`)
 
-console.log(`Verschil: €${simpleTest.comparison.difference}`)
-
-console.log('\n✅ Tests voltooid!')
+// Test corporate tax calculations
+console.log(`Corporate tax on €150,000: €${Math.round(calculateCorporateTax(150000))}`)
+console.log(`Corporate tax on €300,000: €${Math.round(calculateCorporateTax(300000))}`)

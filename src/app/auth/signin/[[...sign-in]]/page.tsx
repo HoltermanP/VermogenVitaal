@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  return publishableKey &&
+  return !!publishableKey &&
          publishableKey !== 'pk_test_...' &&
          !publishableKey.includes('placeholder') &&
          !publishableKey.includes('dummy')

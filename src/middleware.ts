@@ -8,7 +8,7 @@ type ClerkAuth = {
   protect: () => Promise<void>
 }
 
-type ClerkMiddlewareFunction = (handler: (auth: ClerkAuth, request: NextRequest) => Promise<Response> | Response, options?: { debug?: boolean }) => any
+type ClerkMiddlewareFunction = (handler: (auth: ClerkAuth, request: NextRequest) => Promise<Response> | Response, options?: { debug?: boolean }) => (request: NextRequest) => Promise<Response> | Response
 type CreateRouteMatcherFunction = (routes: string[]) => (request: NextRequest) => boolean
 
 // Check of Clerk is geconfigureerd en heeft een geldige key
@@ -58,7 +58,7 @@ export default isClerkConfigured && clerkMiddleware
       // Debug: log de request URL en of het een public route is
       if (process.env.NODE_ENV === 'development') {
         const cookieHeader = request.headers.get('cookie')
-        console.log(`[Middleware] ${request.method} ${request.url} - Public: ${isPublicRoute(request)} - Cookies: ${!!cookieHeader}`)
+        console.log(`[Middleware] ${request.method} ${request.url} - Public: ${isPublicRoute ? isPublicRoute(request) : false} - Cookies: ${!!cookieHeader}`)
       }
 
       // Laat public routes door zonder protect

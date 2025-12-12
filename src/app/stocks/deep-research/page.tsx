@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 
+// Force dynamic rendering to avoid build-time Clerk issues
+export const dynamic = 'force-dynamic'
+
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  return publishableKey &&
+  return !!publishableKey &&
          publishableKey !== 'pk_test_...' &&
          !publishableKey.includes('placeholder') &&
          !publishableKey.includes('dummy')
