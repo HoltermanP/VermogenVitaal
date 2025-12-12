@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   description: "De complete oplossing voor belastingondersteuning en vermogensopbouw voor Nederlandse ondernemers",
 };
 
+// Force dynamic rendering for all pages to handle Clerk authentication properly
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
