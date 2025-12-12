@@ -21,63 +21,63 @@ const questions = [
     answers: 3,
     isSticky: false
   },
-  {
-    id: 2,
-    title: "ETF allocatie voor beginnende belegger",
-    content: "Ik wil beginnen met ETF beleggen. Welke allocatie raden jullie aan voor een conservatief profiel?",
-    author: "Maria Jansen",
-    createdAt: "2024-01-14",
-    category: "Beleggen",
-    isAnswered: true,
-    upvotes: 8,
-    answers: 2,
-    isSticky: false
-  },
-  {
-    id: 3,
-    title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
-    content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers?",
-    author: "aivermogen.nl",
-    createdAt: "2024-01-01",
-    category: "Fiscaal",
-    isAnswered: true,
-    upvotes: 25,
-    answers: 1,
-    isSticky: true
-  },
-  {
-    id: 4,
-    title: "Vastgoed in Duitsland - fiscale gevolgen",
-    content: "Ik overweeg vastgoed te kopen in Duitsland. Wat zijn de fiscale gevolgen voor Nederlandse belastingplichtigen?",
-    author: "Peter van der Berg",
-    createdAt: "2024-01-13",
-    category: "Vastgoed",
-    isAnswered: false,
-    upvotes: 5,
-    answers: 0,
-    isSticky: false
-  },
-  {
-    id: 5,
-    title: "Crypto belasting - hoe bereken ik mijn winst?",
-    content: "Ik heb crypto gekocht en verkocht. Hoe bereken ik mijn winst voor de belastingaangifte?",
-    author: "Lisa de Wit",
-    createdAt: "2024-01-12",
-    category: "Crypto",
-    isAnswered: true,
-    upvotes: 15,
-    answers: 4,
-    isSticky: false
-  }
+    {
+      id: 2,
+      title: "ETF allocatie voor beginnende belegger",
+      content: "Ik wil beginnen met ETF beleggen. Welke allocatie raden jullie aan voor een conservatief profiel?",
+      author: "Maria Jansen",
+      createdAt: "2024-01-14",
+      category: "Beleggen",
+      isAnswered: true,
+      upvotes: 18,
+      answers: 2,
+      isSticky: false
+    },
+    {
+      id: 3,
+      title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
+      content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers?",
+      author: "aivermogen.nl",
+      createdAt: "2024-01-01",
+      category: "Fiscaal",
+      isAnswered: true,
+      upvotes: 43,
+      answers: 1,
+      isSticky: true
+    },
+    {
+      id: 4,
+      title: "Vastgoed in Duitsland - fiscale gevolgen",
+      content: "Ik overweeg vastgoed te kopen in Duitsland. Wat zijn de fiscale gevolgen voor Nederlandse belastingplichtigen?",
+      author: "Peter van der Berg",
+      createdAt: "2024-01-13",
+      category: "Vastgoed",
+      isAnswered: false,
+      upvotes: 5,
+      answers: 0,
+      isSticky: false
+    },
+    {
+      id: 5,
+      title: "Crypto belasting - hoe bereken ik mijn winst?",
+      content: "Ik heb crypto gekocht en verkocht. Hoe bereken ik mijn winst voor de belastingaangifte?",
+      author: "Lisa de Wit",
+      createdAt: "2024-01-12",
+      category: "Crypto",
+      isAnswered: true,
+      upvotes: 46,
+      answers: 4,
+      isSticky: false
+    }
 ]
 
 const categories = [
   { name: "Alle", count: questions.length },
-  { name: "BV/EMZ", count: 1 },
-  { name: "Beleggen", count: 1 },
-  { name: "Fiscaal", count: 1 },
-  { name: "Vastgoed", count: 1 },
-  { name: "Crypto", count: 1 }
+  { name: "BV/EMZ", count: questions.filter(q => q.category === "BV/EMZ").length },
+  { name: "Beleggen", count: questions.filter(q => q.category === "Beleggen").length },
+  { name: "Fiscaal", count: questions.filter(q => q.category === "Fiscaal").length },
+  { name: "Vastgoed", count: questions.filter(q => q.category === "Vastgoed").length },
+  { name: "Crypto", count: questions.filter(q => q.category === "Crypto").length }
 ]
 
 export default function CommunityPage() {

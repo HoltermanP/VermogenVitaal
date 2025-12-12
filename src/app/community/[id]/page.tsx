@@ -16,15 +16,19 @@ interface CommunityPostPageProps {
 export default async function CommunityPostPage({ params }: CommunityPostPageProps) {
   const { id } = await params
 
-  // Mock data voor de post
-  const post = {
-    id,
-    title: "BV vs EMZ bij omzet van €150.000",
-    author: "Jan de Vries",
-    date: "2024-01-15",
-    category: "BV/EMZ",
-    status: "Beantwoord",
-    content: `Ik heb momenteel een omzet van €150.000 per jaar en overweeg een BV op te richten. Wat zijn de belangrijkste voordelen en nadelen die ik moet overwegen?
+  // Mock data voor verschillende posts gebaseerd op ID
+  const getPostData = (postId: string) => {
+    switch (postId) {
+      case "1":
+        return {
+          post: {
+            id: "1",
+            title: "BV vs EMZ bij omzet van €150.000",
+            author: "Jan de Vries",
+            date: "2024-01-15",
+            category: "BV/EMZ",
+            status: "Beantwoord",
+            content: `Ik heb momenteel een omzet van €150.000 per jaar en overweeg een BV op te richten. Wat zijn de belangrijkste voordelen en nadelen die ik moet overwegen?
 
 Mijn huidige situatie:
 - ZZP'er met omzet van €150.000
@@ -33,36 +37,179 @@ Mijn huidige situatie:
 - Wil graag meer fiscaal voordeel
 
 Ik hoor verschillende verhalen over BV's en ben benieuwd naar jullie ervaringen.`,
-    votes: 12,
-    replies: 3
+            votes: 12,
+            replies: 3
+          },
+          replies: [
+            {
+              id: "1",
+              author: "Maria Jansen",
+              date: "2024-01-16",
+              content: "Bij €150.000 omzet kan een BV zeker interessant zijn. Het belangrijkste voordeel is de lagere vennootschapsbelasting (19%) versus inkomstenbelasting. Wel moet je rekening houden met extra administratie en kosten. Zorg ervoor dat je de DGA-regeling goed begrijpt - je moet jezelf een marktconform salaris uitkeren.",
+              votes: 8,
+              isExpert: true
+            },
+            {
+              id: "2",
+              author: "Peter van der Berg",
+              date: "2024-01-16",
+              content: "Ik heb zelf 2 jaar geleden de overstap gemaakt bij vergelijkbare omzet. De grootste uitdaging was de administratie, maar met een goede boekhouder valt dat mee. Het fiscale voordeel is zeker merkbaar, maar reken uit of het opweegt tegen de extra kosten (minimum €500-800/jaar voor administratie).",
+              votes: 5,
+              isExpert: false
+            },
+            {
+              id: "3",
+              author: "Lisa de Wit",
+              date: "2024-01-17",
+              content: "Let ook op de gebruikelijk loon regeling. Als DGA moet je jezelf minimaal €49.000 salaris uitkeren (2024), wat belast wordt tegen inkomstenbelasting. Het netto voordeel van een BV kan daardoor kleiner zijn dan verwacht, vooral bij lagere winsten.",
+              votes: 3,
+              isExpert: true
+            }
+          ]
+        }
+
+      case "2":
+        return {
+          post: {
+            id: "2",
+            title: "ETF allocatie voor beginnende belegger",
+            author: "Maria Jansen",
+            date: "2024-01-14",
+            category: "Beleggen",
+            status: "Beantwoord",
+            content: "Ik wil beginnen met ETF beleggen. Welke allocatie raden jullie aan voor een conservatief profiel? Ik heb €50.000 beschikbaar om te beleggen en wil niet te veel risico nemen.",
+            votes: 8,
+            replies: 2
+          },
+          replies: [
+            {
+              id: "1",
+              author: "Robert Visser",
+              date: "2024-01-15",
+              content: "Voor een conservatief profiel raad ik aan: 70% obligatie-ETF's (zoals iShares Core Euro Government Bond), 20% wereldwijde aandelen-ETF (zoals Vanguard FTSE All-World), en 10% geldmarkt voor liquiditeit. Begin klein en bouw ervaring op.",
+              votes: 12,
+              isExpert: true
+            },
+            {
+              id: "2",
+              author: "Anna Bakker",
+              date: "2024-01-16",
+              content: "Als beginner zou ik inderdaad conservatief beginnen. Gebruik de '100 min leeftijd' regel voor aandelen allocatie. Als je 30 bent: max 70% in aandelen. ETF's zoals VWRL.AS (wereldwijd) en EBND.AS (obligaties) zijn goed voor beginners.",
+              votes: 6,
+              isExpert: false
+            }
+          ]
+        }
+
+      case "3":
+        return {
+          post: {
+            id: "3",
+            title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
+            author: "aivermogen.nl",
+            date: "2024-01-01",
+            category: "Fiscaal",
+            status: "Beantwoord",
+            content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers? Ik hoor veel over veranderingen in de zelfstandigenaftrek en oudedagsreserve.",
+            votes: 25,
+            replies: 1
+          },
+          replies: [
+            {
+              id: "1",
+              author: "Fiscal Expert Team",
+              date: "2024-01-02",
+              content: "Belangrijkste wijzigingen 2024 voor ondernemers: 1) Zelfstandigenaftrek daalt naar €5.030 (was €5.363), 2) Startersaftrek blijft €2.123, 3) Oudedagsreserve maximum stijgt naar €9.395, 4) MKB-winstvrijstelling blijft 14%, 5) Gebruikelijk loon DGA minimum €49.000.",
+              votes: 18,
+              isExpert: true
+            }
+          ]
+        }
+
+      case "4":
+        return {
+          post: {
+            id: "4",
+            title: "Vastgoed in Duitsland - fiscale gevolgen",
+            author: "Peter van der Berg",
+            date: "2024-01-13",
+            category: "Vastgoed",
+            status: "Onbeantwoord",
+            content: "Ik overweeg vastgoed te kopen in Duitsland. Wat zijn de fiscale gevolgen voor Nederlandse belastingplichtigen? Moet ik belasting betalen over huurinkomsten en verkoopwinsten?",
+            votes: 5,
+            replies: 0
+          },
+          replies: []
+        }
+
+      case "5":
+        return {
+          post: {
+            id: "5",
+            title: "Crypto belasting - hoe bereken ik mijn winst?",
+            author: "Lisa de Wit",
+            date: "2024-01-12",
+            category: "Crypto",
+            status: "Beantwoord",
+            content: "Ik heb crypto gekocht en verkocht. Hoe bereken ik mijn winst voor de belastingaangifte? Welke methode wordt gebruikt - FIFO, LIFO, of gemiddelde aankoopprijs?",
+            votes: 15,
+            replies: 4
+          },
+          replies: [
+            {
+              id: "1",
+              author: "Crypto Belasting Expert",
+              date: "2024-01-13",
+              content: "Voor crypto geldt de FIFO methode (First In, First Out). Dit betekent dat je winsten/verliezen berekent alsof je eerst de oudste munten verkoopt. Houd goede administratie bij van aankoopdata, prijzen en hoeveelheden. Bij verkoop binnen 1 jaar: 49,5% belasting over winst.",
+              votes: 14,
+              isExpert: true
+            },
+            {
+              id: "2",
+              author: "Mark Crypto",
+              date: "2024-01-14",
+              content: "Ik gebruik een Excel sheet om alles bij te houden. Belangrijk: vergeet niet dat mining rewards ook belastbaar inkomen zijn, en staking rewards kunnen ook belast zijn. Gebruik tools als CoinTracking of Accointing voor het bijhouden.",
+              votes: 8,
+              isExpert: false
+            },
+            {
+              id: "3",
+              author: "Fiscal Consultant",
+              date: "2024-01-15",
+              content: "Let op: als je meer dan €30.000 crypto verhandelt per jaar, moet je een aangifte doen. Ook bij verliezen kun je deze verrekenen met andere inkomsten. Bewaar altijd bewijs van transacties voor minimaal 7 jaar.",
+              votes: 9,
+              isExpert: true
+            },
+            {
+              id: "4",
+              author: "Jan Trader",
+              date: "2024-01-16",
+              content: "Voor beginners: gebruik de gemiddelde aankoopprijs methode als je veel kleine transacties hebt gedaan. Maar officieel is het FIFO. Ik raad aan om altijd professioneel advies in te winnen voor crypto belasting - het kan complex zijn.",
+              votes: 5,
+              isExpert: false
+            }
+          ]
+        }
+
+      default:
+        return {
+          post: {
+            id,
+            title: "Vraag niet gevonden",
+            author: "Systeem",
+            date: new Date().toISOString().split('T')[0],
+            category: "Onbekend",
+            status: "Onbeantwoord",
+            content: "Deze vraag kon niet worden gevonden.",
+            votes: 0,
+            replies: 0
+          },
+          replies: []
+        }
+    }
   }
 
-  const replies = [
-    {
-      id: "1",
-      author: "Maria Jansen",
-      date: "2024-01-16",
-      content: "Bij €150.000 omzet kan een BV zeker interessant zijn. Het belangrijkste voordeel is de lagere vennootschapsbelasting (19%) versus inkomstenbelasting. Wel moet je rekening houden met extra administratie en kosten.",
-      votes: 8,
-      isExpert: true
-    },
-    {
-      id: "2", 
-      author: "Peter van der Berg",
-      date: "2024-01-16",
-      content: "Ik heb zelf 2 jaar geleden de overstap gemaakt bij vergelijkbare omzet. De grootste uitdaging was de administratie, maar met een goede boekhouder valt dat mee. Het fiscale voordeel is zeker merkbaar.",
-      votes: 5,
-      isExpert: false
-    },
-    {
-      id: "3",
-      author: "Lisa de Wit",
-      date: "2024-01-17", 
-      content: "Let ook op de DGA-salaris regeling. Je moet jezelf een redelijk salaris uitkeren, wat weer inkomstenbelasting oplevert. Het netto voordeel kan daardoor kleiner zijn dan je verwacht.",
-      votes: 3,
-      isExpert: true
-    }
-  ]
+  const { post, replies } = getPostData(id)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
