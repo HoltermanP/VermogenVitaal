@@ -3,8 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useUser } from "@clerk/nextjs"
 
-// Force dynamic rendering to avoid build-time Clerk issues
-export const dynamic = 'force-dynamic'
+// Dynamic rendering wordt afgehandeld door de layout
 
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
@@ -122,6 +121,21 @@ function StocksPageContent() {
   const effectiveIsLoaded = isClerkEnabled ? isLoaded : true
   const searchParams = useSearchParams()
   const [selectedStock, setSelectedStock] = useState("ASML")
+
+  // Helper functie om aandeel te selecteren en naar chart te scrollen
+  const selectStock = (symbol: string) => {
+    setSelectedStock(symbol)
+    // Scroll naar de grafiek sectie
+    setTimeout(() => {
+      const chartSection = document.getElementById('chart-section')
+      if (chartSection) {
+        chartSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }
+    }, 100)
+  }
   const [selectedPeriod, setSelectedPeriod] = useState("1M")
   const [quote, setQuote] = useState<StockQuote | null>(null)
   const [history, setHistory] = useState<StockHistory[]>([])
@@ -1822,7 +1836,7 @@ function StocksPageContent() {
   useEffect(() => {
     const symbolParam = searchParams.get("symbol")
     if (symbolParam) {
-      setSelectedStock(symbolParam)
+      selectStock(symbolParam)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
@@ -2249,7 +2263,7 @@ function StocksPageContent() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedStock(result.symbol)
+                                  selectStock(result.symbol)
                                   setSearchDialogOpen(false)
                                   setSearchQuery("")
                                 }}
@@ -2362,7 +2376,7 @@ function StocksPageContent() {
                       key={stock.symbol}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        setSelectedStock(stock.symbol)
+                        selectStock(stock.symbol)
                         setSearchDialogOpen(false)
                       }}
                     >
@@ -2426,7 +2440,7 @@ function StocksPageContent() {
                       key={stock.symbol}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        setSelectedStock(stock.symbol)
+                        selectStock(stock.symbol)
                         setSearchDialogOpen(false)
                       }}
                     >
@@ -2598,7 +2612,7 @@ function StocksPageContent() {
                           >
                             <div className="flex items-start justify-between">
                               <button
-                                onClick={() => setSelectedStock(favorite.symbol)}
+                                onClick={() => selectStock(favorite.symbol)}
                                 className="flex-1 text-left"
                               >
                                 <div className="flex items-center gap-2 mb-1">
@@ -2884,7 +2898,7 @@ function StocksPageContent() {
             ) : null}
 
             {/* Grafiek */}
-            <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
+            <Card id="chart-section" className="bg-card/80 backdrop-blur-sm border-border shadow-xl">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-foreground">Koersontwikkeling</CardTitle>

@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 
-// Force dynamic rendering to avoid build-time Clerk issues
-export const dynamic = 'force-dynamic'
+// Dynamic rendering wordt afgehandeld door de layout
 
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
