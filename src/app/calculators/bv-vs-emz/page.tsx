@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calculator, ArrowRight, Download } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Calculator, ArrowRight, Download, TrendingUp, PiggyBank } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { NewsTicker } from "@/components/news-ticker"
 
 type CalculationResults = {
+  // Legacy comparison (kept for backward compatibility)
   emz: {
     profit: number
     tax: number
@@ -25,6 +27,27 @@ type CalculationResults = {
   }
   recommendation: string
   difference: number
+  validationError?: string
+  // New investment scenario results
+  investmentComparison: {
+    bvScenario: {
+      initialInvestment: number
+      box3Tax: number
+      finalValue: number
+      dividendPayout: number
+      dividendTax: number
+      netPayout: number
+      totalNetResult: number
+    }
+    emzScenario: {
+      initialInvestment: number
+      box3Tax: number
+      finalValue: number
+      netResult: number
+    }
+    recommendation: string
+    difference: number
+  }
 }
 
 export default function BVvsEMZCalculatorPage() {
@@ -33,28 +56,43 @@ export default function BVvsEMZCalculatorPage() {
     costs: 25000,
     legalForm: "zzp",
     salary: 50000,
-    dividend: 30000
+    dividend: 30000,
+    // New investment parameters
+    investmentPeriod: 5, // years
+    annualReturn: 7, // percentage
+    otherAssets: 50000 // other assets for Box 3 calculation
   })
 
   const [results, setResults] = useState<CalculationResults | null>(null)
 
   const calculateComparison = () => {
-    const { revenue, costs, salary, dividend } = formData
+    const { revenue, costs, salary, dividend, investmentPeriod, annualReturn, otherAssets } = formData
     const profit = revenue - costs
 
-    // EMZ calculation
+    // EMZ calculation (legacy)
     const emzTax = calculateIncomeTax(profit)
     const emzNetResult = profit - emzTax
 
-    // BV calculation
-    const bvCorpTax = profit * 0.19 // 19% vennootschapsbelasting
+    // BV calculation (legacy)
+    const bvCorpTax = calculateCorporateTax(profit)
     const bvAfterTax = profit - bvCorpTax
     const salaryTax = calculateIncomeTax(salary)
-    const dividendTax = dividend * 0.26 // 26% dividendbelasting
-    const bvNetResult = bvAfterTax - salaryTax - dividendTax
+    const dividendTax = dividend * 0.265 // 26.5% dividendbelasting
+
+    // Validate that salary + dividend equals bvAfterTax
+    let validationError: string | undefined
+    const totalDistributed = salary + dividend
+    if (Math.abs(totalDistributed - bvAfterTax) > 1) { // Allow small rounding differences
+      validationError = `Salaris (€${salary.toLocaleString('nl-NL')}) + Dividend (€${dividend.toLocaleString('nl-NL')}) = €${totalDistributed.toLocaleString('nl-NL')} moet gelijk zijn aan de winst na vennootschapsbelasting (€${Math.round(bvAfterTax).toLocaleString('nl-NL')})`
+    }
+
+    const bvNetResult = (salary - salaryTax) + (dividend - dividendTax)
 
     const recommendation = bvNetResult > emzNetResult ? "BV" : "EMZ"
     const difference = Math.abs(bvNetResult - emzNetResult)
+
+    // New investment scenario calculations
+    const investmentComparison = calculateInvestmentScenarios(profit, bvCorpTax, investmentPeriod, annualReturn, otherAssets)
 
     setResults({
       emz: {
@@ -70,17 +108,107 @@ export default function BVvsEMZCalculatorPage() {
         netResult: bvNetResult
       },
       recommendation,
-      difference
+      difference,
+      validationError,
+      investmentComparison
     })
   }
 
-  const calculateIncomeTax = (income: number) => {
-    // Simplified Dutch income tax calculation
-    if (income <= 73031) {
-      return income * 0.37
-    } else {
-      return 73031 * 0.37 + (income - 73031) * 0.495
+  const calculateInvestmentScenarios = (profit: number, bvCorpTax: number, period: number, annualReturn: number, otherAssets: number) => {
+    // BV Scenario: Profit stays in BV, invested, then dividend payout
+    const bvInitialInvestment = profit - bvCorpTax
+    let bvCurrentValue = bvInitialInvestment
+    let bvTotalBox3Tax = 0
+
+    // Calculate compound growth and Box 3 tax each year
+    for (let year = 1; year <= period; year++) {
+      // Box 3 tax on current value
+      const box3Tax = calculateBox3Tax(bvCurrentValue, otherAssets)
+      bvTotalBox3Tax += box3Tax
+
+      // Growth after tax
+      bvCurrentValue = bvCurrentValue * (1 + annualReturn / 100) - box3Tax
     }
+
+    // Dividend payout at end
+    const bvDividendPayout = bvCurrentValue
+    const bvDividendTax = bvDividendPayout * 0.265
+    const bvNetPayout = bvDividendPayout - bvDividendTax
+    const bvTotalNetResult = bvNetPayout // This is the final amount available for personal use
+
+    // EMZ Scenario: Profit goes to private, invested, stays private
+    const emzInitialInvestment = profit - calculateIncomeTax(profit)
+    let emzCurrentValue = emzInitialInvestment
+    let emzTotalBox3Tax = 0
+
+    // Calculate compound growth and Box 3 tax each year
+    for (let year = 1; year <= period; year++) {
+      // Box 3 tax on current value
+      const box3Tax = calculateBox3Tax(emzCurrentValue, otherAssets)
+      emzTotalBox3Tax += box3Tax
+
+      // Growth after tax
+      emzCurrentValue = emzCurrentValue * (1 + annualReturn / 100) - box3Tax
+    }
+
+    const emzNetResult = emzCurrentValue // Already private, no additional dividend tax
+
+    const investmentRecommendation = bvTotalNetResult > emzNetResult ? "BV" : "EMZ"
+    const investmentDifference = Math.abs(bvTotalNetResult - emzNetResult)
+
+    return {
+      bvScenario: {
+        initialInvestment: bvInitialInvestment,
+        box3Tax: bvTotalBox3Tax,
+        finalValue: bvCurrentValue,
+        dividendPayout: bvDividendPayout,
+        dividendTax: bvDividendTax,
+        netPayout: bvNetPayout,
+        totalNetResult: bvTotalNetResult
+      },
+      emzScenario: {
+        initialInvestment: emzInitialInvestment,
+        box3Tax: emzTotalBox3Tax,
+        finalValue: emzCurrentValue,
+        netResult: emzNetResult
+      },
+      recommendation: investmentRecommendation,
+      difference: investmentDifference
+    }
+  }
+
+  const calculateIncomeTax = (income: number) => {
+    // Dutch income tax calculation 2025
+    if (income <= 75518) {
+      return income * 0.3697
+    } else {
+      return 75518 * 0.3697 + (income - 75518) * 0.495
+    }
+  }
+
+  const calculateCorporateTax = (profit: number) => {
+    // Dutch corporate tax calculation 2025
+    if (profit <= 200000) {
+      return profit * 0.19
+    } else {
+      return 200000 * 0.19 + (profit - 200000) * 0.258
+    }
+  }
+
+  const calculateBox3Tax = (assets: number, otherAssets: number = 0) => {
+    // Dutch Box 3 tax calculation 2025
+    // Heffingsvrije voet: €57.000 per persoon
+    // Forfaitair rendement beleggingen: 6,17%
+    // Belastingtarief: 36%
+
+    const totalAssets = assets + otherAssets
+    const taxableAssets = Math.max(0, totalAssets - 57000)
+
+    // Forfaitair rendement op beleggingen
+    const fictitiousReturn = taxableAssets * 0.0617
+
+    // Belasting over fictief rendement
+    return fictitiousReturn * 0.36
   }
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -105,10 +233,10 @@ export default function BVvsEMZCalculatorPage() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-foreground mb-3 animate-fade-in">
-              <span className="text-gradient-financial">BV vs EMZ Calculator</span>
+              <span className="text-gradient-financial">BV vs EMZ Beleggingscalculator</span>
             </h1>
             <p className="text-lg text-muted-foreground animate-fade-in delay-200">
-              Bereken of een BV of EMZ voordeliger is voor jouw situatie
+              Vergelijk BV vs eenmanszaak voor direct gebruik én voor beleggingsscenario&apos;s met Box 3 belasting
             </p>
           </div>
 
@@ -190,6 +318,47 @@ export default function BVvsEMZCalculatorPage() {
                   />
                 </div>
 
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Beleggingsscenario Parameters</h3>
+
+                  <div>
+                    <Label htmlFor="investment-period" className="text-foreground">Beleggingsperiode (jaren)</Label>
+                    <Input
+                      id="investment-period"
+                      type="number"
+                      value={formData.investmentPeriod}
+                      onChange={(e) => handleInputChange('investmentPeriod', parseInt(e.target.value) || 1)}
+                      className="mt-1"
+                      min="1"
+                      max="30"
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="annual-return" className="text-foreground">Jaarlijks Rendement (%)</Label>
+                    <Input
+                      id="annual-return"
+                      type="number"
+                      step="0.1"
+                      value={formData.annualReturn}
+                      onChange={(e) => handleInputChange('annualReturn', parseFloat(e.target.value) || 0)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <Label htmlFor="other-assets" className="text-foreground">Overige Bezittingen (Box 3)</Label>
+                    <Input
+                      id="other-assets"
+                      type="number"
+                      value={formData.otherAssets}
+                      onChange={(e) => handleInputChange('otherAssets', parseInt(e.target.value) || 0)}
+                      className="mt-1"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">Andere bezittingen voor Box 3 belastingberekening</p>
+                  </div>
+                </div>
+
                 <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" size="lg" onClick={calculateComparison}>
                   <Calculator className="h-4 w-4 mr-2" />
                   Bereken Vergelijking
@@ -202,99 +371,201 @@ export default function BVvsEMZCalculatorPage() {
               <CardHeader>
                 <CardTitle className="text-foreground">Berekeningsresultaten</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Vergelijking tussen BV en EMZ
+                  Vergelijking tussen BV en EMZ scenario&apos;s
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {results ? (
-                    <>
-                      {/* EMZ Results */}
-                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
-                        <h3 className="font-semibold text-foreground mb-2">Eenmanszaak</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Winst:</span>
-                            <span className="font-medium text-foreground">€{results.emz.profit.toLocaleString('nl-NL')}</span>
+                <Tabs defaultValue="legacy" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="legacy" className="flex items-center gap-2">
+                      <Calculator className="h-4 w-4" />
+                      Direct Vergelijking
+                    </TabsTrigger>
+                    <TabsTrigger value="investment" className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Beleggingsscenario
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="legacy" className="space-y-6">
+                    {results ? (
+                      <>
+                        {results.validationError && (
+                          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                            <h3 className="font-semibold text-red-800 mb-2">Validatie Fout</h3>
+                            <p className="text-sm text-red-700">{results.validationError}</p>
+                            <p className="text-sm text-red-600 mt-2">
+                              Pas de salaris- en dividendbedragen aan zodat ze gelijk zijn aan de winst na vennootschapsbelasting.
+                            </p>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Inkomstenbelasting:</span>
-                            <span className="font-medium text-foreground">€{Math.round(results.emz.tax).toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between border-t border-primary/20 pt-2">
-                            <span className="font-semibold text-foreground">Netto Resultaat:</span>
-                            <span className="font-semibold text-gradient-financial">€{Math.round(results.emz.netResult).toLocaleString('nl-NL')}</span>
+                        )}
+
+                        {/* EMZ Results */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2">Eenmanszaak</h3>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Winst:</span>
+                              <span className="font-medium text-foreground">€{results.emz.profit.toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Inkomstenbelasting:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.emz.tax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-primary/20 pt-2">
+                              <span className="font-semibold text-foreground">Netto Resultaat:</span>
+                              <span className="font-semibold text-gradient-financial">€{Math.round(results.emz.netResult).toLocaleString('nl-NL')}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* BV Results */}
-                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
-                        <h3 className="font-semibold text-foreground mb-2">BV</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Winst:</span>
-                            <span className="font-medium text-foreground">€{results.bv.profit.toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Vennootschapsbelasting:</span>
-                            <span className="font-medium text-foreground">€{Math.round(results.bv.corpTax).toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Inkomstenbelasting (salaris):</span>
-                            <span className="font-medium text-foreground">€{Math.round(results.bv.salaryTax).toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Dividendbelasting:</span>
-                            <span className="font-medium text-foreground">€{Math.round(results.bv.dividendTax).toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between border-t border-primary/20 pt-2">
-                            <span className="font-semibold text-foreground">Netto Resultaat:</span>
-                            <span className="font-semibold text-gradient-financial">€{Math.round(results.bv.netResult).toLocaleString('nl-NL')}</span>
+                        {/* BV Results */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2">BV</h3>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Winst:</span>
+                              <span className="font-medium text-foreground">€{results.bv.profit.toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Vennootschapsbelasting:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.bv.corpTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Inkomstenbelasting (salaris):</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.bv.salaryTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Dividendbelasting:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.bv.dividendTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-primary/20 pt-2">
+                              <span className="font-semibold text-foreground">Netto Resultaat:</span>
+                              <span className="font-semibold text-gradient-financial">€{Math.round(results.bv.netResult).toLocaleString('nl-NL')}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Recommendation */}
-                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
-                        <h3 className="font-semibold text-foreground mb-2">Aanbeveling</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Een {results.recommendation} is in jouw situatie <span className="font-semibold text-gradient-financial">€{Math.round(results.difference).toLocaleString('nl-NL')}</span> voordeliger per jaar.
-                          {results.recommendation === "BV" && " Overweeg wel de extra administratie en kosten."}
-                        </p>
+                        {/* Recommendation */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2">Aanbeveling</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Een {results.recommendation} is in jouw situatie <span className="font-semibold text-gradient-financial">€{Math.round(results.difference).toLocaleString('nl-NL')}</span> voordeliger per jaar.
+                            {results.recommendation === "BV" && " Overweeg wel de extra administratie en kosten."}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
+                        <p className="text-muted-foreground text-center">Klik op &quot;Bereken Vergelijking&quot; om resultaten te zien</p>
                       </div>
-                    </>
-                  ) : (
-                    <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                      <p className="text-muted-foreground text-center">Klik op &quot;Bereken Vergelijking&quot; om resultaten te zien</p>
-                    </div>
-                  )}
+                    )}
+                  </TabsContent>
 
-                  <div className="flex gap-3">
-                    <Button
-                      className="flex-1 gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch('/api/reports/generate?type=bv-vs-emz')
-                          const data = await response.json()
-                          if (data.downloadUrl) {
-                            window.open(data.downloadUrl, '_blank')
-                          }
-                        } catch (error) {
-                          console.error('Error generating report:', error)
+                  <TabsContent value="investment" className="space-y-6">
+                    {results?.investmentComparison ? (
+                      <>
+                        {/* BV Investment Scenario */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                            <PiggyBank className="h-4 w-4" />
+                            BV-scenario: Beleggen in BV-holding
+                          </h3>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Initiële investering:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.bvScenario.initialInvestment).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Totale Box 3 belasting ({formData.investmentPeriod} jaar):</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.bvScenario.box3Tax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Eindwaarde na {formData.investmentPeriod} jaar:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.bvScenario.finalValue).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Dividenduitkering:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.bvScenario.dividendPayout).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Dividendbelasting (26,5%):</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.bvScenario.dividendTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-primary/20 pt-2">
+                              <span className="font-semibold text-foreground">Netto Eindresultaat:</span>
+                              <span className="font-semibold text-gradient-financial">€{Math.round(results.investmentComparison.bvScenario.totalNetResult).toLocaleString('nl-NL')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* EMZ Investment Scenario */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                            <PiggyBank className="h-4 w-4" />
+                            EMZ-scenario: Beleggen in privé
+                          </h3>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Initiële investering:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.emzScenario.initialInvestment).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Totale Box 3 belasting ({formData.investmentPeriod} jaar):</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.emzScenario.box3Tax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Eindwaarde na {formData.investmentPeriod} jaar:</span>
+                              <span className="font-medium text-foreground">€{Math.round(results.investmentComparison.emzScenario.finalValue).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-primary/20 pt-2">
+                              <span className="font-semibold text-foreground">Netto Eindresultaat:</span>
+                              <span className="font-semibold text-gradient-financial">€{Math.round(results.investmentComparison.emzScenario.netResult).toLocaleString('nl-NL')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Investment Recommendation */}
+                        <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
+                          <h3 className="font-semibold text-foreground mb-2">Beleggingsaanbeveling</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Over {formData.investmentPeriod} jaar beleggen is een {results.investmentComparison.recommendation} in jouw situatie <span className="font-semibold text-gradient-financial">€{Math.round(results.investmentComparison.difference).toLocaleString('nl-NL')}</span> voordeliger.
+                            {results.investmentComparison.recommendation === "BV" && " De BV heeft echter extra dividendbelasting bij uitkering."}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
+                        <p className="text-muted-foreground text-center">Klik op &quot;Bereken Vergelijking&quot; om resultaten te zien</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    className="flex-1 gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/reports/generate?type=bv-vs-emz')
+                        const data = await response.json()
+                        if (data.downloadUrl) {
+                          window.open(data.downloadUrl, '_blank')
                         }
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Rapport
-                    </Button>
-                    <Button variant="outline" className="flex-1 border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
-                      <Link href="/calculators">
-                        <ArrowRight className="h-4 w-4 mr-2" />
-                        Andere Calculator
-                      </Link>
-                    </Button>
-                  </div>
+                      } catch (error) {
+                        console.error('Error generating report:', error)
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Rapport
+                  </Button>
+                  <Button variant="outline" className="flex-1 border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" asChild>
+                    <Link href="/calculators">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Andere Calculator
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

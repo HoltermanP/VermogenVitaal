@@ -78,13 +78,6 @@ export default function CalculatorsPage() {
           href: "/calculators/dga-optimalisatie"
         },
         {
-          id: "bv-vs-emz",
-          title: "BV vs EMZ Calculator",
-          description: "Bereken of een BV of EMZ voordeliger is voor jouw situatie",
-          icon: Calculator,
-          href: "/calculators/bv-vs-emz"
-        },
-        {
           id: "investeringsaftrek",
           title: "Investeringsaftrek Calculator",
           description: "Bereken MIA, EIA, KIA en VAMIL voordelen",
@@ -243,6 +236,13 @@ export default function CalculatorsPage() {
       icon: Target,
       description: "Investeringscalculators voor verschillende asset classes",
       calculators: [
+        {
+          id: "bv-vs-prive",
+          title: "BV vs Privé Beleggen",
+          description: "Vergelijk rendementen tussen beleggen in privé versus via een BV",
+          icon: Calculator,
+          href: "/calculators/bv-vs-prive"
+        },
         {
           id: "etf-growth",
           title: "ETF Groei Calculator",

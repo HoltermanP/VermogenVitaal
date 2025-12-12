@@ -1,8 +1,41 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-const isPublicRoute = createRouteMatcher([
+// Type definitions for dynamic Clerk imports
+type ClerkAuth = {
+  userId: string | null
+  sessionId: string | null
+  protect: () => Promise<void>
+}
+
+type ClerkMiddlewareFunction = (handler: (auth: ClerkAuth, request: NextRequest) => Promise<Response> | Response, options?: { debug?: boolean }) => any
+type CreateRouteMatcherFunction = (routes: string[]) => (request: NextRequest) => boolean
+
+// Check of Clerk is geconfigureerd en heeft een geldige key
+const isClerkConfigured = (() => {
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return key &&
+         key !== 'pk_test_...' &&
+         !key.includes('placeholder') &&
+         !key.includes('dummy')
+})()
+
+// Dynamisch importeren van Clerk alleen als het geconfigureerd is
+let clerkMiddleware: ClerkMiddlewareFunction | null = null
+let createRouteMatcher: CreateRouteMatcherFunction | null = null
+
+if (isClerkConfigured) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const clerkServer = require("@clerk/nextjs/server")
+    clerkMiddleware = clerkServer.clerkMiddleware
+    createRouteMatcher = clerkServer.createRouteMatcher
+  } catch (error) {
+    console.warn("Clerk import failed:", error)
+  }
+}
+
+const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatcher([
   "/",
   "/auth/signin(.*)",
   "/auth/signup(.*)",
@@ -17,29 +50,26 @@ const isPublicRoute = createRouteMatcher([
   "/api/advies/chat(.*)",
   "/api/stocks/deep-research(.*)",
   "/api/audit/(.*)", // Audit endpoints zijn publiek maar handelen authenticatie zelf af
-])
-
-// Check of Clerk is geconfigureerd
-const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+]) : null
 
 // Export middleware - conditioneel Clerk gebruiken
-export default isClerkConfigured
+export default isClerkConfigured && clerkMiddleware
   ? clerkMiddleware(async (auth, request) => {
       // Debug: log de request URL en of het een public route is
       if (process.env.NODE_ENV === 'development') {
         const cookieHeader = request.headers.get('cookie')
         console.log(`[Middleware] ${request.method} ${request.url} - Public: ${isPublicRoute(request)} - Cookies: ${!!cookieHeader}`)
       }
-      
+
       // Laat public routes door zonder protect
       // API routes zoals /api/stocks handelen authenticatie zelf af voor betere controle
-      if (!isPublicRoute(request)) {
+      if (isPublicRoute && !isPublicRoute(request)) {
         await auth.protect()
       }
-      
+
       // Zorg dat cookies worden doorgegeven in de response
       const response = NextResponse.next()
-      
+
       // Zorg dat cookies worden doorgegeven (voor CORS en cookie sharing)
       const origin = request.headers.get('origin')
       if (origin) {
@@ -48,11 +78,12 @@ export default isClerkConfigured
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       }
-      
+
       return response
     }, { debug: process.env.NODE_ENV === 'development' })
   : async function middleware() {
       // Fallback middleware wanneer Clerk niet is geconfigureerd (voor build)
+      console.log(`[Middleware] Clerk not configured, using fallback middleware`)
       return NextResponse.next()
     }
 

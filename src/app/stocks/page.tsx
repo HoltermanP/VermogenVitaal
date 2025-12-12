@@ -2,6 +2,15 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useUser } from "@clerk/nextjs"
+
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy')
+}
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -99,8 +108,15 @@ const EXCHANGES = [
 ]
 
 function StocksPageContent() {
-  // Gebruik Clerk hook - moet altijd worden aangeroepen (React hook regel)
+  // Controleer of Clerk beschikbaar is
+  const isClerkEnabled = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_...' &&
+                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder')
+
+  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
   const { user, isLoaded } = useUser()
+  const effectiveUser = isClerkEnabled ? user : null
+  const effectiveIsLoaded = isClerkEnabled ? isLoaded : true
   const searchParams = useSearchParams()
   const [selectedStock, setSelectedStock] = useState("ASML")
   const [selectedPeriod, setSelectedPeriod] = useState("1M")
@@ -1483,7 +1499,7 @@ function StocksPageContent() {
 
   // Laad favorieten
   const loadFavorites = async () => {
-    if (!isLoaded || !user?.id) return
+    if (!effectiveIsLoaded || !effectiveUser?.id) return
 
     try {
       const response = await fetch("/api/stocks/favorites", {
@@ -1634,7 +1650,7 @@ function StocksPageContent() {
       return
     }
 
-    if (!user || !user.id) {
+    if (!effectiveUser || !effectiveUser.id) {
       toast.error("Log in om favorieten toe te voegen")
       return
     }
@@ -1693,7 +1709,7 @@ function StocksPageContent() {
 
   // Verwijder favoriet
   const removeFavorite = async (symbol: string) => {
-    if (!isLoaded || !user?.id) return
+    if (!effectiveIsLoaded || !effectiveUser?.id) return
 
     try {
       const response = await fetch(`/api/stocks/favorites?symbol=${symbol}`, {
@@ -1813,7 +1829,7 @@ function StocksPageContent() {
     loadStockData(selectedStock, selectedPeriod)
     loadGainersLosers()
     // Probeer favorieten te laden, maar crash niet als het faalt
-    if (isLoaded && user?.emailAddresses?.[0]?.emailAddress) {
+    if (effectiveIsLoaded && effectiveUser?.emailAddresses?.[0]?.emailAddress) {
       loadFavorites().catch((error) => {
         console.warn("Failed to load favorites (non-critical):", error)
         // Zet lege array om crashes te voorkomen
@@ -1821,7 +1837,7 @@ function StocksPageContent() {
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, user])
+  }, [effectiveIsLoaded, effectiveUser])
 
   // Update bij wijziging van aandeel of periode
   useEffect(() => {

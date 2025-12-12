@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
+
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy')
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,7 +56,15 @@ type DeepResearchReport = {
 }
 
 export default function DeepResearchPage() {
+  // Controleer of Clerk beschikbaar is
+  const isClerkEnabled = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_...' &&
+                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder')
+
+  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
   const { user, isLoaded } = useUser()
+  const effectiveUser = isClerkEnabled ? user : null
+  const effectiveIsLoaded = isClerkEnabled ? isLoaded : true
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
   const [searching, setSearching] = useState(false)
@@ -60,10 +77,10 @@ export default function DeepResearchPage() {
 
   // Haal rapporten op bij mount
   useEffect(() => {
-    if (isLoaded && user) {
+    if (effectiveIsLoaded && effectiveUser) {
       fetchReports()
     }
-  }, [isLoaded, user])
+  }, [effectiveIsLoaded, effectiveUser])
 
   // Poll voor rapport status als er een rapport wordt gegenereerd
   useEffect(() => {

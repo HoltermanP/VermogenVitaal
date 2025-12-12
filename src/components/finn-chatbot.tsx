@@ -11,6 +11,15 @@ import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useUser, SignInButton } from "@clerk/nextjs"
 
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy')
+}
+
 interface Message {
   role: "user" | "assistant"
   content: string
@@ -18,13 +27,18 @@ interface Message {
 }
 
 export function FinnChatbot() {
+  // Als Clerk niet beschikbaar is, behandel als niet geauthenticeerd
+  const isAuthenticated = isClerkAvailable()
+
+  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
   const { user, isLoaded } = useUser()
-  const isAuthenticated = !!user
+  const effectiveUser = isAuthenticated ? user : null
+  const effectiveIsLoaded = isAuthenticated ? isLoaded : true
   const [isOpen, setIsOpen] = useState(false)
   
   // Initialiseer messages met aangepaste welcome message
   const getInitialMessage = () => {
-    if (!isLoaded) {
+    if (!effectiveIsLoaded) {
       return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie..."
     }
     if (!isAuthenticated) {
@@ -59,7 +73,7 @@ export function FinnChatbot() {
 
   // Update welcome message wanneer authenticatie status verandert
   useEffect(() => {
-    if (isLoaded) {
+    if (effectiveIsLoaded) {
       const newWelcomeMessage = !isAuthenticated
         ? "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Log in om te beginnen met chatten en persoonlijke informatie te krijgen over belastingen, financiën, investeringen en meer."
         : "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
@@ -76,7 +90,7 @@ export function FinnChatbot() {
         return prev
       })
     }
-  }, [isAuthenticated, isLoaded])
+  }, [isAuthenticated, effectiveIsLoaded])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -361,11 +375,17 @@ export function FinnChatbot() {
                 )}
                 {!isAuthenticated && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    <SignInButton mode="modal">
-                      <button type="button" className="text-primary hover:underline">
+                    {isClerkAvailable() ? (
+                      <SignInButton mode="modal">
+                        <button type="button" className="text-primary hover:underline">
+                          Log in
+                        </button>
+                      </SignInButton>
+                    ) : (
+                      <Link href="/auth/signin" className="text-primary hover:underline">
                         Log in
-                      </button>
-                    </SignInButton>
+                      </Link>
+                    )}
                     {" "}om Finn te gebruiken
                   </p>
                 )}

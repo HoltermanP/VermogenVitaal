@@ -18,19 +18,47 @@ import Link from "next/link"
 import * as React from "react"
 import { ClerkErrorBoundary } from "./clerk-error-boundary"
 
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy')
+}
+
+// Fallback component voor wanneer Clerk niet beschikbaar is
+function FallbackAuthButtons() {
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/auth/signin">Inloggen</Link>
+      </Button>
+      <Button size="sm" asChild>
+        <Link href="/auth/signup">Start gratis</Link>
+      </Button>
+    </div>
+  )
+}
+
 // Separate component voor Clerk user - wordt dynamisch geïmporteerd om build errors te voorkomen
 function ClerkUserContent() {
   const [isMounted, setIsMounted] = React.useState(false)
-  
-  React.useEffect(() => {
-    setIsMounted(true)
-  }, [])
-  
-  // Hook ALTIJD aanroepen (React regel)
+
+  // Hook altijd aanroepen - React vereist dat hooks altijd in dezelfde volgorde worden aangeroepen
   const clerkData = useUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
   const isAuthenticated = !!user
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Als Clerk niet beschikbaar is, toon fallback
+  if (!isClerkAvailable()) {
+    return <FallbackAuthButtons />
+  }
   
   if (!isMounted) {
     return <Skeleton className="h-10 w-20" />

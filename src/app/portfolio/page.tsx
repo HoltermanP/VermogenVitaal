@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
+
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy')
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -70,7 +79,15 @@ type PortfolioReturnData = {
 }
 
 export default function PortfolioPage() {
+  // Controleer of Clerk beschikbaar is
+  const isClerkEnabled = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_...' &&
+                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder')
+
+  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
   const { user, isLoaded } = useUser()
+  const effectiveUser = isClerkEnabled ? user : null
+  const effectiveIsLoaded = isClerkEnabled ? isLoaded : true
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
   const [quotes, setQuotes] = useState<Record<string, StockQuote>>({})
   const [loading, setLoading] = useState(true)
@@ -377,7 +394,7 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
-    if (isLoaded && user) {
+    if (effectiveIsLoaded && effectiveUser) {
       loadPortfolio()
       
       // Check alerts elke 5 minuten
@@ -396,7 +413,7 @@ export default function PortfolioPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, user])
+  }, [effectiveIsLoaded, effectiveUser])
 
   useEffect(() => {
     if (portfolio.length > 0) {
@@ -427,7 +444,7 @@ export default function PortfolioPage() {
     )
   }
 
-  if (!user) {
+  if (!effectiveUser) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
