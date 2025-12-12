@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
+import { useUser, UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { Home, FileText, TrendingUp, Linkedin } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
 import { ClerkErrorBoundary } from "./clerk-error-boundary"
+import { AuthDialog, SignInDialog } from "./auth-dialog"
 
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
@@ -71,16 +72,8 @@ function ClerkUserContent() {
   if (!isAuthenticated) {
     return (
       <div className="flex items-center gap-2">
-        <SignInButton mode="modal">
-          <Button variant="ghost" size="sm">
-            Inloggen
-          </Button>
-        </SignInButton>
-        <SignUpButton mode="modal">
-          <Button size="sm">
-            Start gratis
-          </Button>
-        </SignUpButton>
+        <SignInDialog />
+        <AuthDialog />
       </div>
     )
   }

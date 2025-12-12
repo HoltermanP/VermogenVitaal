@@ -9,7 +9,9 @@ import { Send, Bot, User, Loader2, AlertCircle, MessageCircle, X, LogIn } from "
 import { toast } from "sonner"
 import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useUser, SignInButton } from "@clerk/nextjs"
+import { useUser, SignIn } from "@clerk/nextjs"
+import { SignInDialog } from "./auth-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
@@ -35,6 +37,7 @@ export function FinnChatbot() {
   const effectiveUser = isAuthenticated ? user : null
   const effectiveIsLoaded = isAuthenticated ? isLoaded : true
   const [isOpen, setIsOpen] = useState(false)
+  const [signInDialogOpen, setSignInDialogOpen] = useState(false)
   
   // Initialiseer messages met aangepaste welcome message
   const getInitialMessage = () => {
@@ -260,12 +263,14 @@ export function FinnChatbot() {
                     <AlertTitle>Inloggen vereist</AlertTitle>
                     <AlertDescription className="mt-2">
                       Je moet ingelogd zijn om Finn te gebruiken. Log in om te beginnen met chatten.
-                      <SignInButton mode="modal">
-                        <Button className="mt-3 w-full" size="sm">
-                          <LogIn className="h-4 w-4 mr-2" />
-                          Inloggen
-                        </Button>
-                      </SignInButton>
+                      <Button
+                        className="mt-3 w-full"
+                        size="sm"
+                        onClick={() => setSignInDialogOpen(true)}
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Inloggen
+                      </Button>
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -376,11 +381,13 @@ export function FinnChatbot() {
                 {!isAuthenticated && (
                   <p className="text-xs text-muted-foreground mt-2">
                     {isClerkAvailable() ? (
-                      <SignInButton mode="modal">
-                        <button type="button" className="text-primary hover:underline">
-                          Log in
-                        </button>
-                      </SignInButton>
+                      <button
+                        type="button"
+                        className="text-primary hover:underline"
+                        onClick={() => setSignInDialogOpen(true)}
+                      >
+                        Log in
+                      </button>
                     ) : (
                       <Link href="/auth/signin" className="text-primary hover:underline">
                         Log in
@@ -394,6 +401,50 @@ export function FinnChatbot() {
           </Card>
         </div>
       )}
+
+      {/* Custom Sign In Dialog */}
+      <Dialog open={signInDialogOpen} onOpenChange={setSignInDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inloggen vereist</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <SignIn
+              routing="path"
+              path="/auth/signin"
+              redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
+              appearance={{
+                baseTheme: undefined,
+                variables: {
+                  colorPrimary: "hsl(var(--primary))",
+                  colorBackground: "hsl(var(--background))",
+                  colorInputBackground: "hsl(var(--background))",
+                  colorInputText: "hsl(var(--foreground))",
+                  colorText: "hsl(var(--foreground))",
+                  borderRadius: "0.5rem"
+                },
+                elements: {
+                  formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
+                  card: "shadow-none border-0",
+                  headerTitle: "hidden",
+                  headerSubtitle: "hidden",
+                  socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
+                  socialButtonsBlockButtonText: "text-foreground",
+                  dividerLine: "bg-border",
+                  dividerText: "text-muted-foreground",
+                  formFieldLabel: "text-foreground font-medium",
+                  formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
+                  footerActionLink: "text-primary hover:text-primary/80 font-medium",
+                  identityPreviewEditButton: "text-primary",
+                  formFieldErrorText: "text-red-600 text-sm",
+                  alert: "border-red-200 bg-red-50 text-red-800",
+                  alertText: "text-red-800"
+                }
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
