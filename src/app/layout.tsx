@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/session-provider";
 import { FinnChatbotWrapper } from "@/components/finn-chatbot-wrapper";
 
 // Dynamisch importeren van Header om Clerk hooks te vermijden tijdens static generation
-const Header = dynamic(() => import("@/components/header").then(mod => ({ default: mod.Header })), {
+const Header = dynamicImport(() => import("@/components/header").then(mod => ({ default: mod.Header })), {
   ssr: true, // We willen SSR, maar met error handling
 });
 
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 // Force dynamic rendering for all pages to handle Clerk authentication properly
-export const dynamic = 'force-dynamic';
+export const forceDynamic = 'force-dynamic';
 
 export default function RootLayout({
   children,
