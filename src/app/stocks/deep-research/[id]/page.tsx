@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs" // Not used directly anymore
 
 // Dynamic rendering wordt afgehandeld door de layout
 
@@ -12,6 +12,19 @@ function isClerkAvailable(): boolean {
          publishableKey !== 'pk_test_...' &&
          !publishableKey.includes('placeholder') &&
          !publishableKey.includes('dummy')
+}
+
+// Hook wrapper om Clerk hooks alleen aan te roepen als Clerk beschikbaar is
+function useClerkUser(): { user: any; isLoaded: boolean } {
+  // Als Clerk niet beschikbaar is, retourneer dummy data zonder hook aan te roepen
+  const clerkAvailable = isClerkAvailable()
+  if (!clerkAvailable) {
+    return { user: null, isLoaded: true }
+  }
+
+  // Alleen useUser aanroepen als Clerk beschikbaar is
+  const clerkData = useUser()
+  return clerkData
 }
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -111,23 +124,6 @@ const PERIODS = [
   { value: "ALL", label: "Alles" },
 ]
 
-// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
-function useClerkUser() {
-  // Altijd useUser aanroepen voor consistente React Hook volgorde
-  const clerkData = useUser()
-
-  // Als Clerk niet beschikbaar is, retourneer dummy data
-  const isClerkEnabled = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_...' &&
-                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder') &&
-                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('dummy') &&
-                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy_key_for_development'
-  if (!isClerkEnabled) {
-    return { user: null, isLoaded: true }
-  }
-
-  return clerkData
-}
 
 export default function DeepResearchDetailPage() {
   // Hook altijd aanroepen voor consistente React Hook volgorde

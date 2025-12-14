@@ -43,17 +43,16 @@ function FallbackAuthButtons() {
   )
 }
 
-// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
+// Hook wrapper om Clerk hooks alleen aan te roepen als Clerk beschikbaar is
 function useClerkUser() {
-  // Altijd useUser aanroepen voor consistente React Hook volgorde
-  const clerkData = useUser()
-
-  // Als Clerk niet beschikbaar is, retourneer dummy data
-  const isAuthenticated = isClerkAvailable()
-  if (!isAuthenticated) {
+  // Als Clerk niet beschikbaar is, retourneer dummy data zonder hook aan te roepen
+  const clerkAvailable = isClerkAvailable()
+  if (!clerkAvailable) {
     return { user: null, isLoaded: true }
   }
 
+  // Alleen useUser aanroepen als Clerk beschikbaar is
+  const clerkData = useUser()
   return clerkData
 }
 
@@ -70,7 +69,7 @@ function ClerkUserContent() {
   const clerkData = useClerkUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
-  const isAuthenticated = !!user
+  const isAuthenticated = !!user && isClerkAvailable()
 
   React.useEffect(() => {
     setIsMounted(true)
@@ -204,6 +203,7 @@ export function ClerkUserSection() {
     return <FallbackAuthButtons />
   }
 
+  // Als Clerk beschikbaar is, gebruik error boundary
   return (
     <ClerkErrorBoundary>
       <ClerkUserContent />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { SignIn, SignUp } from "@clerk/nextjs"
 import {
   Dialog,
@@ -16,7 +17,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Shield, Zap, CheckCircle } from "lucide-react"
 
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return !!publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy') &&
+         publishableKey !== 'pk_test_dummy_key_for_development'
+}
+
 export function SignInDialog() {
+  // Als Clerk niet beschikbaar is, toon direct link naar signin pagina
+  if (!isClerkAvailable()) {
+    return (
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/auth/signin">Inloggen</Link>
+      </Button>
+    )
+  }
+
   const [open, setOpen] = useState(false)
 
   return (
@@ -46,8 +66,7 @@ export function SignInDialog() {
         <Card className="border-0 shadow-none mt-6">
           <CardContent>
             <SignIn
-              routing="path"
-              path="/auth/signin"
+              routing="virtual"
               redirectUrl="/dashboard"
               appearance={{
                 baseTheme: undefined,
@@ -86,6 +105,18 @@ export function SignInDialog() {
 }
 
 export function AuthDialog() {
+  // Als Clerk niet beschikbaar is, toon direct link naar signup pagina
+  if (!isClerkAvailable()) {
+    return (
+      <Button size="sm" className="gap-2" asChild>
+        <Link href="/auth/signup">
+          <Sparkles className="h-4 w-4" />
+          Start gratis
+        </Link>
+      </Button>
+    )
+  }
+
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("signin")
 
@@ -130,8 +161,7 @@ export function AuthDialog() {
               </CardHeader>
               <CardContent>
                 <SignIn
-                  routing="path"
-                  path="/auth/signin"
+                  routing="virtual"
                   redirectUrl="/dashboard"
                   appearance={{
                     baseTheme: undefined,
@@ -198,8 +228,7 @@ export function AuthDialog() {
               </CardHeader>
               <CardContent>
                 <SignUp
-                  routing="path"
-                  path="/auth/signup"
+                  routing="virtual"
                   redirectUrl="/onboarding"
                   appearance={{
                     baseTheme: undefined,
