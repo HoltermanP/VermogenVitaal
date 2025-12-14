@@ -35,8 +35,8 @@ const questions = [
     },
     {
       id: 3,
-      title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
-      content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers?",
+      title: "Nieuwe fiscale regels 2025 - Wat verandert er?",
+      content: "Er zijn weer nieuwe fiscale regels in 2025. Wat zijn de belangrijkste wijzigingen voor ondernemers?",
       author: "aivermogen.nl",
       createdAt: "2024-01-01",
       category: "Fiscaal",

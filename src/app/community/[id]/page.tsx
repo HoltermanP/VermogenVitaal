@@ -61,7 +61,7 @@ Ik hoor verschillende verhalen over BV's en ben benieuwd naar jullie ervaringen.
               id: "3",
               author: "Lisa de Wit",
               date: "2024-01-17",
-              content: "Let ook op de gebruikelijk loon regeling. Als DGA moet je jezelf minimaal €49.000 salaris uitkeren (2024), wat belast wordt tegen inkomstenbelasting. Het netto voordeel van een BV kan daardoor kleiner zijn dan verwacht, vooral bij lagere winsten.",
+              content: "Let ook op de gebruikelijk loon regeling. Als DGA moet je jezelf minimaal €51.000 salaris uitkeren (2025), wat belast wordt tegen inkomstenbelasting. Het netto voordeel van een BV kan daardoor kleiner zijn dan verwacht, vooral bij lagere winsten.",
               votes: 3,
               isExpert: true
             }
@@ -105,12 +105,12 @@ Ik hoor verschillende verhalen over BV's en ben benieuwd naar jullie ervaringen.
         return {
           post: {
             id: "3",
-            title: "Nieuwe fiscale regels 2024 - Wat verandert er?",
+            title: "Nieuwe fiscale regels 2025 - Wat verandert er?",
             author: "aivermogen.nl",
             date: "2024-01-01",
             category: "Fiscaal",
             status: "Beantwoord",
-            content: "Er zijn weer nieuwe fiscale regels in 2024. Wat zijn de belangrijkste wijzigingen voor ondernemers? Ik hoor veel over veranderingen in de zelfstandigenaftrek en oudedagsreserve.",
+            content: "Er zijn weer nieuwe fiscale regels in 2025. Wat zijn de belangrijkste wijzigingen voor ondernemers? Ik hoor veel over veranderingen in de zelfstandigenaftrek en fiscale oudedagsreserve.",
             votes: 25,
             replies: 1
           },
@@ -119,7 +119,7 @@ Ik hoor verschillende verhalen over BV's en ben benieuwd naar jullie ervaringen.
               id: "1",
               author: "Fiscal Expert Team",
               date: "2024-01-02",
-              content: "Belangrijkste wijzigingen 2024 voor ondernemers: 1) Zelfstandigenaftrek daalt naar €5.030 (was €5.363), 2) Startersaftrek blijft €2.123, 3) Oudedagsreserve maximum stijgt naar €9.395, 4) MKB-winstvrijstelling blijft 14%, 5) Gebruikelijk loon DGA minimum €49.000.",
+              content: "Belangrijkste wijzigingen 2025 voor ondernemers: 1) Zelfstandigenaftrek bedraagt €5.030, 2) Startersaftrek blijft €2.123, 3) Fiscale oudedagsreserve maximum bedraagt ongeveer €10.000, 4) MKB-winstvrijstelling blijft 14%, 5) Gebruikelijk loon DGA minimum €51.000.",
               votes: 18,
               isExpert: true
             }

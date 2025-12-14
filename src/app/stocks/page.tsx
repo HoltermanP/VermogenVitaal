@@ -109,16 +109,29 @@ const EXCHANGES = [
   { value: "SIX", label: "Swiss Exchange (SIX)" },
 ]
 
-function StocksPageContent() {
-  // Controleer of Clerk beschikbaar is
+// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
+function useClerkUser() {
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data
   const isClerkEnabled = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
                          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_...' &&
-                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder')
+                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder') &&
+                         !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('dummy') &&
+                         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_dummy_key_for_development'
+  if (!isClerkEnabled) {
+    return { user: null, isLoaded: true }
+  }
 
-  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
-  const { user, isLoaded } = useUser()
-  const effectiveUser = isClerkEnabled ? user : null
-  const effectiveIsLoaded = isClerkEnabled ? isLoaded : true
+  return clerkData
+}
+
+function StocksPageContent() {
+  // Hook altijd aanroepen voor consistente React Hook volgorde
+  const { user, isLoaded } = useClerkUser()
+  const effectiveUser = user
+  const effectiveIsLoaded = isLoaded
   const searchParams = useSearchParams()
   const [selectedStock, setSelectedStock] = useState("ASML")
 

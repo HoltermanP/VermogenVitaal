@@ -62,7 +62,7 @@ export function TaxChatbot() {
           content: msg.content
         }))
 
-      const response = await fetch("/api/advies/chat", {
+      const response = await fetch("/api/tips/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

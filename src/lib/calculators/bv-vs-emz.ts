@@ -100,18 +100,18 @@ function calculateEmzDeductions(profit: number, selfEmployedDeduction: boolean, 
   let deductions = 0
   
   if (selfEmployedDeduction) {
-    deductions += Math.min(profit * 0.14, 12200) // Zelfstandigenaftrek 2024
+    deductions += Math.min(profit * 0.14, 5030) // Zelfstandigenaftrek 2025
   }
   
   if (starterDeduction) {
-    deductions += 2123 // Startersaftrek 2024
+    deductions += 2123 // Startersaftrek 2025
   }
   
   return deductions
 }
 
 function calculateIncomeTax(taxableIncome: number): number {
-  // Vereenvoudigde inkomstenbelasting berekening 2024
+  // Vereenvoudigde inkomstenbelasting berekening 2025
   if (taxableIncome <= 75000) {
     return taxableIncome * 0.3695
   } else {
@@ -127,9 +127,9 @@ function calculateCorpTax(profit: number, mkbProfitExemption: boolean): number {
     taxableProfit = profit * 0.76 // MKB-winstvrijstelling
   }
   
-  return taxableProfit * 0.259 // VPB tarief 2024
+  return taxableProfit * 0.259 // VPB tarief 2025
 }
 
 function calculateDividendTax(dividend: number): number {
-  return dividend * 0.265 // Dividendbelasting 2024
+  return dividend * 0.265 // Dividendbelasting 2025
 }

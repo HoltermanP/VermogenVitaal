@@ -25,7 +25,8 @@ function isClerkAvailable(): boolean {
   return !!publishableKey &&
          publishableKey !== 'pk_test_...' &&
          !publishableKey.includes('placeholder') &&
-         !publishableKey.includes('dummy')
+         !publishableKey.includes('dummy') &&
+         publishableKey !== 'pk_test_dummy_key_for_development'
 }
 
 // Fallback component voor wanneer Clerk niet beschikbaar is
@@ -42,12 +43,31 @@ function FallbackAuthButtons() {
   )
 }
 
+// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
+function useClerkUser() {
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data
+  const isAuthenticated = isClerkAvailable()
+  if (!isAuthenticated) {
+    return { user: null, isLoaded: true }
+  }
+
+  return clerkData
+}
+
 // Separate component voor Clerk user - wordt dynamisch geïmporteerd om build errors te voorkomen
 function ClerkUserContent() {
   const [isMounted, setIsMounted] = React.useState(false)
+  const [userData, setUserData] = React.useState<{
+    tier: 'FREE' | 'PREMIUM'
+    isTrialActive: boolean
+    trialEndsAt: string | null
+  } | null>(null)
 
-  // Hook altijd aanroepen - React vereist dat hooks altijd in dezelfde volgorde worden aangeroepen
-  const clerkData = useUser()
+  // Hook alleen aanroepen als Clerk beschikbaar is
+  const clerkData = useClerkUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
   const isAuthenticated = !!user
@@ -56,10 +76,27 @@ function ClerkUserContent() {
     setIsMounted(true)
   }, [])
 
-  // Als Clerk niet beschikbaar is, toon fallback
-  if (!isClerkAvailable()) {
-    return <FallbackAuthButtons />
-  }
+  // Haal user data op wanneer user is ingelogd
+  React.useEffect(() => {
+    if (isAuthenticated && isLoaded) {
+      fetch('/api/user')
+        .then(response => response.json())
+        .then(data => {
+          if (!data.error) {
+            setUserData({
+              tier: data.tier,
+              isTrialActive: data.isTrialActive,
+              trialEndsAt: data.trialEndsAt,
+            })
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching user data:', error)
+        })
+    }
+  }, [isAuthenticated, isLoaded])
+
+  // Clerk is beschikbaar (gecheckt in parent component)
   
   if (!isMounted) {
     return <Skeleton className="h-10 w-20" />
@@ -79,7 +116,11 @@ function ClerkUserContent() {
   }
   
   const isAdmin = user?.publicMetadata?.role === 'ADMIN'
-  const tier: 'FREE' | 'PREMIUM' = 'FREE' // TODO: Haal tier op uit database
+
+  // Gebruik opgehaalde user data, of fallback naar defaults
+  const tier = userData?.tier || 'FREE'
+  const isTrialActive = userData?.isTrialActive || false
+  const trialEndsAt = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null
   
   return (
     <>
@@ -110,8 +151,13 @@ function ClerkUserContent() {
                 {user?.emailAddresses?.[0]?.emailAddress}
               </p>
               <Badge variant="secondary" className="mt-2 w-fit">
-                {tier} Plan
+                {isTrialActive ? 'Proefperiode' : `${tier} Plan`}
               </Badge>
+              {isTrialActive && trialEndsAt && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Verloopt op {new Date(trialEndsAt).toLocaleDateString('nl-NL')}
+                </p>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -153,6 +199,11 @@ function ClerkUserContent() {
 
 // Export wrapper die error handling heeft
 export function ClerkUserSection() {
+  // Als Clerk niet beschikbaar is, toon direct fallback zonder ClerkErrorBoundary
+  if (!isClerkAvailable()) {
+    return <FallbackAuthButtons />
+  }
+
   return (
     <ClerkErrorBoundary>
       <ClerkUserContent />

@@ -47,7 +47,7 @@ const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatch
   "/api/stocks/search(.*)",
   // /api/stocks/favorites is NIET public - vereist authenticatie
   // AI endpoints zijn publiek maar handelen zelf limieten af
-  "/api/advies/chat(.*)",
+  "/api/tips/chat(.*)",
   "/api/stocks/deep-research(.*)",
   "/api/audit/(.*)", // Audit endpoints zijn publiek maar handelen authenticatie zelf af
 ]) : null

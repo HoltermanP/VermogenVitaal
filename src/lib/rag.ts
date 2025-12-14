@@ -246,7 +246,7 @@ function generateExpertAnswer(question: CommunityQuestion, articles: KnowledgeAr
 
   switch (question.category.toLowerCase()) {
     case 'bv/emz':
-      content = `Bij ${question.content.includes('€') ? 'deze omzet' : 'deze situatie'} is een BV zeker het overwegen waard. De belangrijkste fiscale voordelen zijn: lagere vennootschapsbelasting (19%) versus progressieve inkomstenbelasting, mogelijkheid tot salarisoptimalisatie, en betere pensioenopbouw mogelijkheden. Belangrijke aandachtspunten: DGA-regeling vereist marktconform salaris van minimaal €49.000 (2024), extra administratieve lasten, en zorg voor goede cashflow planning.`
+      content = `Bij ${question.content.includes('€') ? 'deze omzet' : 'deze situatie'} is een BV zeker het overwegen waard. De belangrijkste fiscale voordelen zijn: lagere vennootschapsbelasting (19%) versus progressieve inkomstenbelasting, mogelijkheid tot salarisoptimalisatie, en betere pensioenopbouw mogelijkheden. Belangrijke aandachtspunten: DGA-regeling vereist marktconform salaris van minimaal €51.000 (2025), extra administratieve lasten, en zorg voor goede cashflow planning.`
       break
 
     case 'beleggen':
@@ -254,11 +254,11 @@ function generateExpertAnswer(question: CommunityQuestion, articles: KnowledgeAr
       break
 
     case 'fiscaal':
-      content = `De belangrijkste fiscale wijzigingen voor 2024 zijn: zelfstandigenaftrek daalt naar €5.030, MKB-winstvrijstelling blijft 14%, gebruikelijk loon DGA minimum €49.000, en oudedagsreserve maximum stijgt naar €9.395. Ondernemers zouden hun fiscale planning hierop moeten aanpassen, vooral als ze afhankelijk zijn van de zelfstandigenaftrek.`
+      content = `De belangrijkste fiscale wijzigingen voor 2025 zijn: zelfstandigenaftrek bedraagt €5.030, MKB-winstvrijstelling blijft 14%, gebruikelijk loon DGA minimum €51.000 (bij winst tot €200.000), en fiscale oudedagsreserve maximum bedraagt ongeveer €10.000. Ondernemers zouden hun fiscale planning hierop moeten aanpassen, vooral als ze afhankelijk zijn van de zelfstandigenaftrek.`
       break
 
     case 'vastgoed':
-      content = `Voor Nederlandse belastingplichtigen geldt dat buitenlands vastgoed in box 3 valt tegen 1,3% belasting (2024). Huurinkomsten worden belast tegen 49,5% inkomstenbelasting. Let op dubbele belastingverdragen - Duitsland heeft gunstige afspraken met Nederland. Zorg voor goede administratie van kosten voor aftrekposten.`
+      content = `Voor Nederlandse belastingplichtigen geldt dat buitenlands vastgoed in box 3 valt en wordt belast via de nieuwe box 3 regeling (2025) met forfaitaire rendementen. Huurinkomsten worden belast tegen 49,5% inkomstenbelasting. Let op dubbele belastingverdragen - Duitsland heeft gunstige afspraken met Nederland. Zorg voor goede administratie van kosten voor aftrekposten.`
       break
 
     case 'crypto':

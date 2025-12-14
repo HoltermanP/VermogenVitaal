@@ -31,7 +31,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center text-center space-y-6 max-w-3xl mx-auto">
           <Badge variant="secondary" className="mb-2 bg-slate-800/50 backdrop-blur-sm border-slate-700">
             <Sparkles className="mr-2 h-3 w-3" />
-            Nieuwe fiscale regels 2024
+            Nieuwe fiscale regels 2025
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl text-foreground animate-fade-in">
             <span className="text-gradient-financial">aivermogen.nl</span>

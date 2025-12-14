@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
       ],
       sources: [
         {
-          title: "Inkomstenbelasting voor ondernemers 2024",
-          slug: "inkomstenbelasting-ondernemers-2024",
-          effectiveFrom: new Date("2024-01-01"),
+          title: "Inkomstenbelasting voor ondernemers 2025",
+          slug: "inkomstenbelasting-ondernemers-2025",
+          effectiveFrom: new Date("2025-01-01"),
           version: "1.0"
         }
       ],

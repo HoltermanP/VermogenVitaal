@@ -84,9 +84,9 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    href="/advies"
+                    href="/tips"
                     className={`px-4 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      isActive("/advies") ? "text-primary" : "text-muted-foreground"
+                      isActive("/tips") ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
                     Ondersteuning
@@ -188,9 +188,9 @@ export function Header() {
                   Calculators
                 </Link>
                 <Link
-                  href="/advies"
+                  href="/tips"
                   className={`text-lg font-medium ${
-                    isActive("/advies") ? "text-primary" : "text-muted-foreground"
+                    isActive("/tips") ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   Ondersteuning

@@ -30,7 +30,7 @@ export const PAGE_NEWS_KEYWORDS: Record<string, string[]> = {
   "/": ["tax", "taxation", "fiscal", "tax news", "tax policy"],
   "/dashboard": ["business tax", "corporate tax", "entrepreneurs", "small business", "taxation"],
   "/calculators": ["tax calculation", "tax optimization", "tax rates", "fiscal"],
-  "/advies": ["tax information", "tax consultation", "fiscal information", "tax planning"],
+  "/tips": ["tax information", "tax consultation", "fiscal information", "tax planning"],
   "/community": ["business news", "entrepreneurs", "small business", "taxation"],
   "/stocks": ["stock market", "stocks", "investing", "financial markets", "shares"],
   "/accounting": ["accounting", "bookkeeping", "accounting software", "finance"],

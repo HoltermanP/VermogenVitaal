@@ -139,10 +139,17 @@ export async function getClerkUser(request?: NextRequest) {
           clerkUserId: userId,
         })
         
+        // Nieuwe gebruikers krijgen automatisch een gratis proefmaand van 30 dagen
+        const trialEndsAt = new Date()
+        trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+
         user = await prisma.user.create({
           data: {
             email,
             name: userName,
+            tier: 'FREE', // Trial gebruikers blijven FREE tier maar hebben extra rechten
+            trialEndsAt,
+            isTrialActive: true,
           },
         })
         

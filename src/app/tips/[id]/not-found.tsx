@@ -20,7 +20,7 @@ export default function NotFound() {
             </CardHeader>
             <CardContent>
               <Button asChild className="mt-4">
-                <Link href="/advies">
+                <Link href="/tips">
                   Terug naar overzicht
                 </Link>
               </Button>

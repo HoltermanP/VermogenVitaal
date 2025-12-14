@@ -55,7 +55,7 @@ export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
           {/* Back button */}
           <div className="mb-6">
             <Button variant="ghost" asChild>
-              <Link href="/advies" className="flex items-center gap-2">
+              <Link href="/tips" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Terug naar overzicht
               </Link>
@@ -164,7 +164,7 @@ export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
                     const RelatedIcon = relatedTopic.icon
                     const relatedColorClass = colorMap[relatedTopic.color] || colorMap.blue
                     return (
-                      <Link key={relatedTopic.id} href={`/advies/${relatedTopic.id}`}>
+                      <Link key={relatedTopic.id} href={`/tips/${relatedTopic.id}`}>
                         <Card className="bg-muted/50 hover:bg-muted border-border transition-all duration-300 cursor-pointer group">
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3">

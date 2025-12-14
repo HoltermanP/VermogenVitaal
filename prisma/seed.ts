@@ -8,31 +8,31 @@ async function main() {
   // Create knowledge articles
   const knowledgeArticles = [
     {
-      title: "Inkomstenbelasting voor ondernemers 2024",
-      slug: "inkomstenbelasting-ondernemers-2024",
-      tags: ["inkomstenbelasting", "ondernemers", "2024"],
+      title: "Inkomstenbelasting voor ondernemers 2025",
+      slug: "inkomstenbelasting-ondernemers-2025",
+      tags: ["inkomstenbelasting", "ondernemers", "2025"],
       jurisdiction: "NL",
-      effectiveFrom: new Date("2024-01-01"),
-      effectiveTo: new Date("2024-12-31"),
+      effectiveFrom: new Date("2025-01-01"),
+      effectiveTo: new Date("2025-12-31"),
       version: "1.0",
-      body: `# Inkomstenbelasting voor ondernemers 2024
+      body: `# Inkomstenbelasting voor ondernemers 2025
 
 ## Belangrijke wijzigingen
 
-De inkomstenbelasting voor ondernemers is in 2024 aangepast met nieuwe tarieven en regels.
+De inkomstenbelasting voor ondernemers is in 2025 aangepast met nieuwe tarieven en regels.
 
-### Belastingschijven 2024
+### Belastingschijven 2025
 
-- **Schijf 1 (€0 - €75.000)**: 36,97%
-- **Schijf 2 (€75.000+)**: 49,50%
+- **Schijf 1 (€0 - €75.518)**: 36,97%
+- **Schijf 2 (€75.518+)**: 49,50%
 
 ### Zelfstandigenaftrek
 
-De zelfstandigenaftrek bedraagt in 2024 €12.200. Dit is een forfaitaire aftrek voor ondernemers.
+De zelfstandigenaftrek bedraagt in 2025 €5.030. Dit is een forfaitaire aftrek voor ondernemers.
 
 ### Startersaftrek
 
-Nieuwe ondernemers kunnen gebruik maken van de startersaftrek van €2.123 in 2024.
+Nieuwe ondernemers kunnen gebruik maken van de startersaftrek van €2.123 in 2025.
 
 ## Praktische tips
 
@@ -46,31 +46,31 @@ Nieuwe ondernemers kunnen gebruik maken van de startersaftrek van €2.123 in 20
 Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkbegeleiding.`
     },
     {
-      title: "Vennootschapsbelasting en DGA salaris 2024",
-      slug: "vennootschapsbelasting-dga-2024",
-      tags: ["vennootschapsbelasting", "DGA", "BV", "2024"],
+      title: "Vennootschapsbelasting en DGA salaris 2025",
+      slug: "vennootschapsbelasting-dga-2025",
+      tags: ["vennootschapsbelasting", "DGA", "BV", "2025"],
       jurisdiction: "NL",
-      effectiveFrom: new Date("2024-01-01"),
-      effectiveTo: new Date("2024-12-31"),
+      effectiveFrom: new Date("2025-01-01"),
+      effectiveTo: new Date("2025-12-31"),
       version: "1.0",
-      body: `# Vennootschapsbelasting en DGA salaris 2024
+      body: `# Vennootschapsbelasting en DGA salaris 2025
 
 ## Vennootschapsbelasting tarieven
 
-De vennootschapsbelasting (VPB) kent in 2024 de volgende tarieven:
+De vennootschapsbelasting (VPB) kent in 2025 de volgende tarieven:
 
 - **Tot €200.000**: 19%
 - **Vanaf €200.000**: 25,8%
 
 ## MKB-winstvrijstelling
 
-De MKB-winstvrijstelling bedraagt 24% van de winst tot €200.000. Dit betekent een effectief tarief van 14,44% voor de eerste €200.000.
+De MKB-winstvrijstelling bedraagt 14% van de winst tot €200.000. Dit betekent een effectief tarief van 14,44% voor de eerste €200.000.
 
 ## DGA salaris
 
 Het DGA salaris moet marktconform zijn. De Belastingdienst hanteert richtlijnen voor het minimum DGA salaris.
 
-### Minimum DGA salaris 2024
+### Minimum DGA salaris 2025
 
 - **Bij winst tot €200.000**: €51.000
 - **Bij winst vanaf €200.000**: €75.000
@@ -91,51 +91,53 @@ Dividenduitkeringen zijn belast tegen 26,5% dividendbelasting.
 Deze informatie is algemeen van aard. Raadpleeg altijd een belastingadviseur voor maatwerkbegeleiding.`
     },
     {
-      title: "Box 3 vermogensbelasting 2024",
-      slug: "box3-vermogensbelasting-2024",
-      tags: ["box3", "vermogensbelasting", "beleggen", "2024"],
+      title: "Box 3 vermogensbelasting 2025",
+      slug: "box3-vermogensbelasting-2025",
+      tags: ["box3", "vermogensbelasting", "beleggen", "2025"],
       jurisdiction: "NL",
-      effectiveFrom: new Date("2024-01-01"),
-      effectiveTo: new Date("2024-12-31"),
+      effectiveFrom: new Date("2025-01-01"),
+      effectiveTo: new Date("2025-12-31"),
       version: "1.0",
-      body: `# Box 3 vermogensbelasting 2024
+      body: `# Box 3 vermogensbelasting 2025
 
-## Box 3 tarieven 2024
+## Nieuwe Box 3 regeling 2025
 
-De vermogensbelasting in Box 3 kent in 2024 de volgende tarieven:
+Vanaf 2025 geldt een nieuwe box 3 regeling met forfaitaire rendementen:
 
-- **Spaarrekeningen**: 0,36%
-- **Beleggingen**: 1,97%
-- **Overige bezittingen**: 1,97%
+- **Banktegoeden**: 0,36%
+- **Beleggingen**: 6,17%
+- **Schulden**: 2,57%
+
+Over het totale forfaitaire rendement betaal je 36% belasting.
 
 ## Heffingsvrij vermogen
 
-Het heffingsvrij vermogen bedraagt in 2024:
+Het heffingsvrij vermogen bedraagt in 2025:
 - **Alleenstaanden**: €57.000
 - **Partners**: €114.000
 
-## Beleggingscategorieën
+## Vermogenscategorieën
 
-### Categorie 1: Spaarrekeningen
-- Banktegoeden
+### Banktegoeden
+- Spaarrekeningen
 - Cash
 - Deposito's
 
-### Categorie 2: Beleggingen
+### Beleggingen en overige bezittingen
 - Aandelen
 - Obligaties
 - ETF's
-- Crypto (indien als belegging)
-
-### Categorie 3: Overige bezittingen
 - Vastgoed (indien niet in Box 1)
+- Crypto (indien als belegging)
 - Edelmetalen
-- Overige bezittingen
+
+### Schulden
+- Leningen en hypotheken (indien niet gerelateerd aan eigen woning)
 
 ## Praktische tips
 
 1. Optimaliseer je vermogensmix
-2. Houd rekening met de verschillende tarieven
+2. Houd rekening met de nieuwe forfaitaire rendementen
 3. Overweeg spreiding over categorieën
 4. Plan je uitbetalingen strategisch
 

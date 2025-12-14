@@ -71,7 +71,7 @@ export default function AdviesPage() {
 
           {/* News Ticker - Compact */}
           <div className="mb-8">
-            <NewsTicker pagePath="/advies" />
+            <NewsTicker pagePath="/tips" />
           </div>
 
           {/* Main Content - Symmetrische Grid Layout */}
@@ -173,7 +173,7 @@ export default function AdviesPage() {
                     const IconComponent = topic.icon
                     const colorClass = colorMap[topic.color] || colorMap.blue
                     return (
-                      <Link key={topic.id} href={`/advies/${topic.id}`}>
+                      <Link key={topic.id} href={`/tips/${topic.id}`}>
                         <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 h-full cursor-pointer group">
                           <CardHeader>
                             <div className="flex items-start gap-4">

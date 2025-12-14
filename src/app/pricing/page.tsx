@@ -42,35 +42,35 @@ export default function PricingPage() {
           <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 animate-fade-in delay-300">
             <CardHeader>
               <CardTitle className="text-2xl text-foreground">Gratis</CardTitle>
-              <CardDescription className="text-muted-foreground">Perfect om te beginnen</CardDescription>
+              <CardDescription className="text-muted-foreground">Voor iedereen toegankelijk zonder account</CardDescription>
               <div className="text-4xl font-bold mt-4 text-gradient-financial">€0</div>
-              <p className="text-sm text-muted-foreground">per maand</p>
+              <p className="text-sm text-muted-foreground">gratis toegankelijk</p>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 mb-6">
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">QuickScan Belasting (5 min)</span>
+                  <span className="text-muted-foreground">Alle calculators bekijken</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">ETF basisallocatie</span>
+                  <span className="text-muted-foreground">Beurskoersen bekijken</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Vastgoed quick cashflow</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">Crypto-risicoprofiel (educatief)</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
-                  <span className="text-muted-foreground">3 kennisbankartikelen per maand</span>
+                  <span className="text-muted-foreground">Kennisbank artikelen lezen</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-muted-foreground">Community lezen & reageren</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Portfolio tracking (basis)</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
+                  <span className="text-muted-foreground">Geen AI functionaliteiten</span>
                 </li>
               </ul>
               <Button className="w-full border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" variant="outline" asChild>
@@ -98,7 +98,7 @@ export default function PricingPage() {
               <div className="text-4xl font-bold mt-4 text-gradient-financial">€19,95</div>
               <p className="text-sm text-muted-foreground">per maand</p>
               <Badge variant="secondary" className="mt-2 bg-green-500/20 text-green-400 border-green-500/50">
-                30 dagen gratis proefperiode
+                30 dagen gratis proefperiode bij aanmelden
               </Badge>
             </CardHeader>
             <CardContent>
@@ -193,8 +193,8 @@ export default function PricingPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
-                        Je krijgt 30 dagen volledige toegang tot alle Premium functionaliteiten zonder kosten. 
-                        Na de proefperiode kun je kiezen om door te gaan met Premium (€19,95/maand) of terug te gaan naar Gratis. 
+                        Wanneer je je aanmeldt, krijg je automatisch 30 dagen gratis toegang tot alle functionaliteiten inclusief AI features.
+                        Gedurende deze periode heb je maximaal 10 AI aanroepen beschikbaar. Na de proefperiode kun je kiezen om door te gaan met Premium (€19,95/maand) voor onbeperkte AI toegang, of terug te gaan naar de gratis versie zonder AI.
                         Je kunt op elk moment tijdens de proefperiode annuleren zonder kosten.
                       </p>
                     </AccordionContent>
@@ -237,8 +237,20 @@ export default function PricingPage() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="text-muted-foreground">
-                        Je kunt alle functionaliteiten bekijken en verkennen zonder account. 
-                        Voor het gebruik van calculators en het opslaan van resultaten heb je een gratis account nodig.
+                        Ja! Alle calculators, beurskoersen, kennisbank artikelen en community features zijn volledig toegankelijk zonder account.
+                        Alleen AI-gedreven functionaliteiten vereisen een account met proefperiode of Premium abonnement.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-6">
+                    <AccordionTrigger className="text-left text-foreground">
+                      Wat gebeurt er na mijn gratis proefperiode?
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-muted-foreground">
+                        Na 30 dagen wordt je account automatisch omgezet naar de gratis versie. Je behoudt toegang tot alle niet-AI functionaliteiten,
+                        maar AI features zoals Deep Research rapporten worden niet meer beschikbaar. Je kunt op elk moment upgraden naar Premium
+                        om onbeperkte AI toegang te behouden.
                       </p>
                     </AccordionContent>
                   </AccordionItem>

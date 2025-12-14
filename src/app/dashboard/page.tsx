@@ -239,7 +239,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4 sm:mb-6 group-hover:text-foreground transition-colors text-sm sm:text-base">
-                {tier === 'FREE' ? 'Persoonlijk advies (Pro+)' : 'Krijg persoonlijk fiscaal advies'}
+                {tier === 'FREE' ? 'Persoonlijke tips (Pro+)' : 'Krijg persoonlijke fiscale tips'}
               </p>
               <Button
                 size="sm"
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                 asChild
                 disabled={tier === 'FREE'}
               >
-                <Link href={tier === 'FREE' ? '/pricing' : '/advies'} className="flex items-center justify-center">
+                <Link href={tier === 'FREE' ? '/pricing' : '/tips'} className="flex items-center justify-center">
                   <span>{tier === 'FREE' ? 'Upgrade nodig' : 'Start gesprek'}</span>
                 </Link>
               </Button>

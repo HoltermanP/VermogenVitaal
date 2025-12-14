@@ -19,7 +19,8 @@ function isClerkAvailable(): boolean {
   return !!publishableKey &&
          publishableKey !== 'pk_test_...' &&
          !publishableKey.includes('placeholder') &&
-         !publishableKey.includes('dummy')
+         !publishableKey.includes('dummy') &&
+         publishableKey !== 'pk_test_dummy_key_for_development'
 }
 
 interface Message {
@@ -28,14 +29,28 @@ interface Message {
   timestamp: string
 }
 
+// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
+function useClerkUser() {
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data
+  const isAuthenticated = isClerkAvailable()
+  if (!isAuthenticated) {
+    return { user: null, isLoaded: true }
+  }
+
+  return clerkData
+}
+
 export function FinnChatbot() {
   // Als Clerk niet beschikbaar is, behandel als niet geauthenticeerd
   const isAuthenticated = isClerkAvailable()
 
-  // Hook altijd aanroepen, maar alleen gebruiken als Clerk beschikbaar is
-  const { user, isLoaded } = useUser()
-  const effectiveUser = isAuthenticated ? user : null
-  const effectiveIsLoaded = isAuthenticated ? isLoaded : true
+  // Hook alleen aanroepen als Clerk beschikbaar is
+  const { user, isLoaded } = useClerkUser()
+  const effectiveUser = user
+  const effectiveIsLoaded = isLoaded
   const [isOpen, setIsOpen] = useState(false)
   const [signInDialogOpen, setSignInDialogOpen] = useState(false)
   
@@ -122,7 +137,7 @@ export function FinnChatbot() {
           content: msg.content
         }))
 
-      const response = await fetch("/api/advies/chat", {
+      const response = await fetch("/api/tips/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

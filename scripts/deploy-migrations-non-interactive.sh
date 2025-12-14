@@ -70,3 +70,4 @@ echo "- Check database tabellen met: npx prisma studio"
 
 
 
+

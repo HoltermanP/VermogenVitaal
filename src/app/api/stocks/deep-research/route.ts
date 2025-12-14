@@ -591,28 +591,43 @@ export async function POST(request: NextRequest) {
     // Ondersteun anonieme gebruikers
     let userId: string | null = null
     let sessionId: string | null = null
-    let isPremium = false
 
+    let dbUser = null
     if (user && user.id) {
       // Ingelogde gebruiker
       userId = user.id
 
       // Haal gebruiker op uit database met tier informatie
-      const dbUser = await prisma.user.findUnique({
+      dbUser = await prisma.user.findUnique({
         where: { id: user.id },
-        select: { tier: true, trialEndsAt: true, isTrialActive: true }
+        select: { tier: true, trialEndsAt: true, isTrialActive: true, id: true }
       })
 
       if (dbUser) {
-        isPremium = dbUser.tier === "PREMIUM" || dbUser.isTrialActive
+        // Check premium status wordt later gebruikt voor AI call limieten
+      }
+
+      // Voor trial gebruikers: controleer of trial nog actief is
+      if (dbUser?.isTrialActive && dbUser?.trialEndsAt) {
+        const now = new Date()
+        if (now > dbUser.trialEndsAt) {
+          // Trial is verlopen, update database
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { isTrialActive: false }
+          })
+          // Trial is verlopen - gebruiker heeft geen premium rechten meer
+        }
       }
     } else {
       // Anonieme gebruiker - gebruik sessie ID
       sessionId = await getOrCreateAnonymousSessionId(request)
     }
-    
-    // Check AI call limiet voor FREE tier of anonieme gebruikers
-    if (!isPremium) {
+
+    // Check AI call limiet voor FREE tier, trial gebruikers, of anonieme gebruikers
+    // Alleen echte PREMIUM gebruikers (betaald) krijgen onbeperkte toegang
+    const isPaidPremium = dbUser?.tier === "PREMIUM"
+    if (!isPaidPremium) {
       const whereClause = userId
         ? {
             userId: userId,
@@ -635,10 +650,12 @@ export async function POST(request: NextRequest) {
 
       if (aiCallCount >= FREE_TIER_AI_CALL_LIMIT) {
         const response = NextResponse.json(
-          { 
+          {
             error: "AI_LIMIT_REACHED",
-            message: userId 
-              ? "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen."
+            message: userId
+              ? (dbUser?.isTrialActive
+                ? "Je hebt je limiet van 10 AI aanroepen tijdens je gratis proefmaand bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen."
+                : "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen.")
               : "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
             limit: FREE_TIER_AI_CALL_LIMIT,
             used: aiCallCount
