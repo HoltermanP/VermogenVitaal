@@ -28,6 +28,8 @@ function isClerkAvailable(): boolean {
 }
 
 export function SignInDialog() {
+  const [open, setOpen] = useState(false)
+
   // Als Clerk niet beschikbaar is, toon direct link naar signin pagina
   if (!isClerkAvailable()) {
     return (
@@ -36,8 +38,6 @@ export function SignInDialog() {
       </Button>
     )
   }
-
-  const [open, setOpen] = useState(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -105,6 +105,9 @@ export function SignInDialog() {
 }
 
 export function AuthDialog() {
+  const [open, setOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("signin")
+
   // Als Clerk niet beschikbaar is, toon direct link naar signup pagina
   if (!isClerkAvailable()) {
     return (
@@ -116,9 +119,6 @@ export function AuthDialog() {
       </Button>
     )
   }
-
-  const [open, setOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("signin")
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

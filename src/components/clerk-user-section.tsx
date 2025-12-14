@@ -45,14 +45,15 @@ function FallbackAuthButtons() {
 
 // Hook wrapper om Clerk hooks alleen aan te roepen als Clerk beschikbaar is
 function useClerkUser() {
-  // Als Clerk niet beschikbaar is, retourneer dummy data zonder hook aan te roepen
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data maar hook is al aangeroepen
   const clerkAvailable = isClerkAvailable()
   if (!clerkAvailable) {
     return { user: null, isLoaded: true }
   }
 
-  // Alleen useUser aanroepen als Clerk beschikbaar is
-  const clerkData = useUser()
   return clerkData
 }
 

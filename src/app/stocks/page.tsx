@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useUser } from "@clerk/nextjs" // Not used directly anymore
+import { useUser } from "@clerk/nextjs"
+import type { User } from "@clerk/backend"
 
 // Dynamic rendering wordt afgehandeld door de layout
 
@@ -15,16 +16,17 @@ function isClerkAvailable(): boolean {
 }
 
 // Hook wrapper om Clerk hooks alleen aan te roepen als Clerk beschikbaar is
-function useClerkUser(): { user: any; isLoaded: boolean } {
-  // Als Clerk niet beschikbaar is, retourneer dummy data zonder hook aan te roepen
+function useClerkUser() {
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data maar hook is al aangeroepen
   const clerkAvailable = isClerkAvailable()
   if (!clerkAvailable) {
     return { user: null, isLoaded: true }
   }
 
-  // Alleen useUser aanroepen als Clerk beschikbaar is
-  const clerkData = useUser()
-  return clerkData
+  return { user: clerkData.user || null, isLoaded: clerkData.isLoaded }
 }
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
