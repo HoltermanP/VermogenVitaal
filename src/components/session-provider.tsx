@@ -20,6 +20,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   // Render ClerkProvider met de echte key
-  return <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>
+  return (
+    <ClerkProvider
+      publishableKey={publishableKey}
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/onboarding"
+    >
+      {children}
+    </ClerkProvider>
+  )
 }
 
