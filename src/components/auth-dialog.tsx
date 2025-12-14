@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Shield, Zap, CheckCircle, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -102,43 +101,45 @@ function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="py-2">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="text-sm">{error}</AlertDescription>
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="signin-email">E-mailadres</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="signin-email" className="text-sm">E-mailadres</Label>
         <Input
           id="signin-email"
           type="email"
           placeholder="naam@voorbeeld.nl"
           {...register("email")}
           disabled={isLoading}
+          className="h-9"
         />
         {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p className="text-xs text-destructive">{errors.email.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="signin-password">Wachtwoord</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="signin-password" className="text-sm">Wachtwoord</Label>
         <Input
           id="signin-password"
           type="password"
           placeholder="••••••••"
           {...register("password")}
           disabled={isLoading}
+          className="h-9"
         />
         {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p className="text-xs text-destructive">{errors.password.message}</p>
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading || !isLoaded}>
+      <Button type="submit" className="w-full mt-4" disabled={isLoading || !isLoaded}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -238,16 +239,16 @@ function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
 
   if (pendingVerification) {
     return (
-      <form onSubmit={onVerifyCode} className="space-y-4">
+      <form onSubmit={onVerifyCode} className="space-y-3">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="py-2">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="verification-code">Verificatiecode</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="verification-code" className="text-sm">Verificatiecode</Label>
           <Input
             id="verification-code"
             type="text"
@@ -255,13 +256,14 @@ function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             disabled={isLoading}
+            className="h-9"
           />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             We hebben een verificatiecode gestuurd naar {getValues("email")}
           </p>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading || !isLoaded}>
+        <Button type="submit" className="w-full mt-4" disabled={isLoading || !isLoaded}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -289,76 +291,80 @@ function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="py-2">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="text-sm">{error}</AlertDescription>
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="signup-firstname">Voornaam</Label>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="signup-firstname" className="text-sm">Voornaam</Label>
           <Input
             id="signup-firstname"
             type="text"
             placeholder="Jan"
             {...register("firstName")}
             disabled={isLoading}
+            className="h-9"
           />
           {errors.firstName && (
-            <p className="text-sm text-destructive">{errors.firstName.message}</p>
+            <p className="text-xs text-destructive">{errors.firstName.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="signup-lastname">Achternaam</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="signup-lastname" className="text-sm">Achternaam</Label>
           <Input
             id="signup-lastname"
             type="text"
             placeholder="Jansen"
             {...register("lastName")}
             disabled={isLoading}
+            className="h-9"
           />
           {errors.lastName && (
-            <p className="text-sm text-destructive">{errors.lastName.message}</p>
+            <p className="text-xs text-destructive">{errors.lastName.message}</p>
           )}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="signup-email">E-mailadres</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="signup-email" className="text-sm">E-mailadres</Label>
         <Input
           id="signup-email"
           type="email"
           placeholder="naam@voorbeeld.nl"
           {...register("email")}
           disabled={isLoading}
+          className="h-9"
         />
         {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p className="text-xs text-destructive">{errors.email.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="signup-password">Wachtwoord</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="signup-password" className="text-sm">Wachtwoord</Label>
         <Input
           id="signup-password"
           type="password"
           placeholder="••••••••"
           {...register("password")}
           disabled={isLoading}
+          className="h-9"
         />
         {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p className="text-xs text-destructive">{errors.password.message}</p>
         )}
         <p className="text-xs text-muted-foreground">
           Minimaal 8 tekens
         </p>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading || !isLoaded}>
+      <Button type="submit" className="w-full mt-4" disabled={isLoading || !isLoaded}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -404,9 +410,9 @@ export function SignInDialog({
         </DialogTrigger>
       )}
 
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="text-center">
-          <div className="flex justify-center mb-4">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center space-y-3">
+          <div className="flex justify-center">
             <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/50 flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Welkom terug
@@ -420,11 +426,9 @@ export function SignInDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Card className="border-0 shadow-none mt-6">
-          <CardContent className="pt-6">
-            <SignInForm onSuccess={() => setOpen(false)} />
-          </CardContent>
-        </Card>
+        <div className="mt-4">
+          <SignInForm onSuccess={() => setOpen(false)} />
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -456,8 +460,8 @@ export function AuthDialog() {
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="text-center">
-          <div className="flex justify-center mb-4">
+        <DialogHeader className="text-center space-y-3">
+          <div className="flex justify-center">
             <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 border-purple-500/50 flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Veilig & Vertrouwd
@@ -471,60 +475,52 @@ export function AuthDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Inloggen</TabsTrigger>
             <TabsTrigger value="signup">Account aanmaken</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin" className="mt-6">
-            <Card className="border-0 shadow-none">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Welkom terug!</CardTitle>
-                <CardDescription>
-                  Log in om verder te gaan waar je gebleven was
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SignInForm onSuccess={() => setOpen(false)} />
-              </CardContent>
-            </Card>
+          <TabsContent value="signin" className="mt-4 space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Welkom terug!</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Log in om verder te gaan waar je gebleven was
+              </p>
+            </div>
+            <SignInForm onSuccess={() => setOpen(false)} />
           </TabsContent>
 
-          <TabsContent value="signup" className="mt-6">
-            <Card className="border-0 shadow-none">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  Start gratis proefperiode
-                  <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white text-xs">
-                    <Zap className="h-3 w-3 mr-1" />
-                    30 dagen
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Geen creditcard nodig • Annuleer op elk moment
-                </CardDescription>
+          <TabsContent value="signup" className="mt-4 space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold">Start gratis proefperiode</h3>
+                <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white text-xs">
+                  <Zap className="h-3 w-3 mr-1" />
+                  30 dagen
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Geen creditcard nodig • Annuleer op elk moment
+              </p>
 
-                {/* Features list */}
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span>QuickScan Belasting (5 min)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span>AI Document Analyse</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span>Uitgebreide calculators</span>
-                  </div>
+              {/* Features list */}
+              <div className="space-y-1.5 mb-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                  <span>QuickScan Belasting (5 min)</span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <SignUpForm onSuccess={() => setOpen(false)} />
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                  <span>AI Document Analyse</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                  <span>Uitgebreide calculators</span>
+                </div>
+              </div>
+            </div>
+            <SignUpForm onSuccess={() => setOpen(false)} />
           </TabsContent>
         </Tabs>
       </DialogContent>
