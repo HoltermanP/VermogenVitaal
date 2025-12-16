@@ -9,8 +9,18 @@ import { Send, Bot, User, Loader2, AlertCircle, MessageCircle, X, LogIn } from "
 import { toast } from "sonner"
 import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useUser } from "@clerk/nextjs"
-import { SignInDialog } from "./auth-dialog"
+import { useUser, SignIn } from "@clerk/nextjs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+// Controleer of Clerk beschikbaar is
+function isClerkAvailable(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  return !!publishableKey &&
+         publishableKey !== 'pk_test_...' &&
+         !publishableKey.includes('placeholder') &&
+         !publishableKey.includes('dummy') &&
+         publishableKey !== 'pk_test_dummy_key_for_development'
+}
 
 interface Message {
   role: "user" | "assistant"
@@ -18,16 +28,34 @@ interface Message {
   timestamp: string
 }
 
+// Hook wrapper om Clerk hooks altijd aan te roepen maar gedrag conditioneel te maken
+function useClerkUser() {
+  // Altijd useUser aanroepen voor consistente React Hook volgorde
+  const clerkData = useUser()
+
+  // Als Clerk niet beschikbaar is, retourneer dummy data
+  const isAuthenticated = isClerkAvailable()
+  if (!isAuthenticated) {
+    return { user: null, isLoaded: true }
+  }
+
+  return clerkData
+}
+
 export function FinnChatbot() {
-  // Clerk hooks gebruiken - component wordt alleen gerenderd als Clerk beschikbaar is
-  const { user, isLoaded } = useUser()
-  const isAuthenticated = !!user
+  // Als Clerk niet beschikbaar is, behandel als niet geauthenticeerd
+  const isAuthenticated = isClerkAvailable()
+
+  // Hook alleen aanroepen als Clerk beschikbaar is
+  const { user, isLoaded } = useClerkUser()
+  const effectiveUser = user
+  const effectiveIsLoaded = isLoaded
   const [isOpen, setIsOpen] = useState(false)
   const [signInDialogOpen, setSignInDialogOpen] = useState(false)
   
   // Initialiseer messages met aangepaste welcome message
   const getInitialMessage = () => {
-    if (!isLoaded) {
+    if (!effectiveIsLoaded) {
       return "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie..."
     }
     if (!isAuthenticated) {
@@ -62,11 +90,11 @@ export function FinnChatbot() {
 
   // Update welcome message wanneer authenticatie status verandert
   useEffect(() => {
-    if (isLoaded) {
+    if (effectiveIsLoaded) {
       const newWelcomeMessage = !isAuthenticated
         ? "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Log in om te beginnen met chatten en persoonlijke informatie te krijgen over belastingen, financiën, investeringen en meer."
         : "Hallo! Ik ben Finn, je AI-assistent voor financiële en belastinginformatie. Ik kan je helpen met vragen over belastingen, financiën, investeringen en meer. Hoe kan ik je helpen?"
-
+      
       setMessages(prev => {
         // Alleen updaten als we nog maar 1 bericht hebben (welkomstbericht)
         if (prev.length === 1 && prev[0].content !== newWelcomeMessage) {
@@ -79,7 +107,7 @@ export function FinnChatbot() {
         return prev
       })
     }
-  }, [isAuthenticated, isLoaded])
+  }, [isAuthenticated, effectiveIsLoaded])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -366,13 +394,19 @@ export function FinnChatbot() {
                 )}
                 {!isAuthenticated && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    <button
-                      type="button"
-                      className="text-primary hover:underline"
-                      onClick={() => setSignInDialogOpen(true)}
-                    >
-                      Log in
-                    </button>
+                    {isClerkAvailable() ? (
+                      <button
+                        type="button"
+                        className="text-primary hover:underline"
+                        onClick={() => setSignInDialogOpen(true)}
+                      >
+                        Log in
+                      </button>
+                    ) : (
+                      <Link href="/auth/signin" className="text-primary hover:underline">
+                        Log in
+                      </Link>
+                    )}
                     {" "}om Finn te gebruiken
                   </p>
                 )}
@@ -382,12 +416,49 @@ export function FinnChatbot() {
         </div>
       )}
 
-      {/* Sign In Dialog */}
-      <SignInDialog 
-        open={signInDialogOpen} 
-        onOpenChange={setSignInDialogOpen}
-        showTrigger={false}
-      />
+      {/* Custom Sign In Dialog */}
+      <Dialog open={signInDialogOpen} onOpenChange={setSignInDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inloggen vereist</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <SignIn
+              routing="path"
+              path="/auth/signin"
+              redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
+              appearance={{
+                baseTheme: undefined,
+                variables: {
+                  colorPrimary: "hsl(var(--primary))",
+                  colorBackground: "hsl(var(--background))",
+                  colorInputBackground: "hsl(var(--background))",
+                  colorInputText: "hsl(var(--foreground))",
+                  colorText: "hsl(var(--foreground))",
+                  borderRadius: "0.5rem"
+                },
+                elements: {
+                  formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
+                  card: "shadow-none border-0",
+                  headerTitle: "hidden",
+                  headerSubtitle: "hidden",
+                  socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
+                  socialButtonsBlockButtonText: "text-foreground",
+                  dividerLine: "bg-border",
+                  dividerText: "text-muted-foreground",
+                  formFieldLabel: "text-foreground font-medium",
+                  formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
+                  footerActionLink: "text-primary hover:text-primary/80 font-medium",
+                  identityPreviewEditButton: "text-primary",
+                  formFieldErrorText: "text-red-600 text-sm",
+                  alert: "border-red-200 bg-red-50 text-red-800",
+                  alertText: "text-red-800"
+                }
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

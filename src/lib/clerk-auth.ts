@@ -190,15 +190,30 @@ export async function getClerkUser(request?: NextRequest) {
       }
     } else {
       // Update naam als deze is veranderd met error handling
+      // En controleer of trial is verlopen
       try {
         const newName = clerkUser.firstName && clerkUser.lastName
           ? `${clerkUser.firstName} ${clerkUser.lastName}`
           : clerkUser.firstName || clerkUser.username || email
         
+        // Check of trial is verlopen
+        const updateData: { name?: string; isTrialActive?: boolean } = {}
         if (user.name !== newName) {
+          updateData.name = newName
+        }
+        
+        // Als trial actief is maar verlopen, zet isTrialActive op false
+        if (user.isTrialActive && user.trialEndsAt) {
+          const now = new Date()
+          if (now > user.trialEndsAt) {
+            updateData.isTrialActive = false
+          }
+        }
+        
+        if (Object.keys(updateData).length > 0) {
           user = await prisma.user.update({
             where: { id: user.id },
-            data: { name: newName },
+            data: updateData,
           })
         }
       } catch (updateError) {

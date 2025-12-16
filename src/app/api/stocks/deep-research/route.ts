@@ -624,9 +624,26 @@ export async function POST(request: NextRequest) {
       sessionId = await getOrCreateAnonymousSessionId(request)
     }
 
+    // Voor ingelogde gebruikers: check premium toegang (PREMIUM tier of actieve trial)
+    if (userId && dbUser) {
+      const { hasPremiumAccess } = await import("@/lib/utils")
+      const hasAccess = await hasPremiumAccess(userId)
+      
+      if (!hasAccess) {
+        return NextResponse.json(
+          {
+            error: "PREMIUM_REQUIRED",
+            message: "Deep Research is alleen beschikbaar voor Premium gebruikers of tijdens je gratis proefmaand. Upgrade naar Premium voor onbeperkte toegang.",
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     // Check AI call limiet voor FREE tier, trial gebruikers, of anonieme gebruikers
     // Alleen echte PREMIUM gebruikers (betaald) krijgen onbeperkte toegang
-    const isPaidPremium = dbUser?.tier === "PREMIUM"
+    // Trial gebruikers krijgen max 10 AI calls tijdens de trial periode
+    const isPaidPremium = dbUser?.tier === "PREMIUM" && !dbUser?.isTrialActive
     if (!isPaidPremium) {
       const whereClause = userId
         ? {

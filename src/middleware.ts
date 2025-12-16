@@ -35,21 +35,17 @@ if (isClerkConfigured) {
   }
 }
 
+// Alleen deze routes zijn publiek toegankelijk:
+// - Landingspagina (/)
+// - Authenticatie routes (/auth/*)
+// - Pricing pagina (/pricing)
+// - Webhook endpoints (voor Stripe)
 const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatcher([
   "/",
   "/auth/signin(.*)",
   "/auth/signup(.*)",
   "/pricing",
-  "/calculators(.*)", // Alle calculators zijn publiek om te bekijken
   "/api/webhooks(.*)",
-  // Stock API routes - laat de route zelf authenticatie afhandelen
-  // MAAR: deep-research routes hebben authenticatie nodig via middleware
-  "/api/stocks/search(.*)",
-  // /api/stocks/favorites is NIET public - vereist authenticatie
-  // AI endpoints zijn publiek maar handelen zelf limieten af
-  "/api/tips/chat(.*)",
-  "/api/stocks/deep-research(.*)",
-  "/api/audit/(.*)", // Audit endpoints zijn publiek maar handelen authenticatie zelf af
 ]) : null
 
 // Export middleware - conditioneel Clerk gebruiken
