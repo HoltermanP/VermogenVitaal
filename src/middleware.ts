@@ -64,16 +64,12 @@ export default isClerkConfigured && clerkMiddleware
       if (isPublicRoute && !isPublicRoute(request)) {
         // Check of gebruiker is ingelogd
         if (!auth.userId) {
-          // Check of auth_required parameter al aanwezig is (voorkom redirect loop)
-          const hasAuthRequired = request.nextUrl.searchParams.has('auth_required')
-          
-          if (!hasAuthRequired) {
-            // Voeg query parameter toe zodat pagina's een modal kunnen tonen
-            const url = request.nextUrl.clone()
-            url.searchParams.set('auth_required', 'true')
-            return NextResponse.redirect(url)
-          }
-          // Als auth_required al aanwezig is, laat door zodat de pagina de modal kan tonen
+          // Redirect naar landingpage met parameter die aangeeft welke pagina werd aangevraagd
+          const requestedPath = request.nextUrl.pathname
+          const landingUrl = new URL('/', request.url)
+          landingUrl.searchParams.set('auth_required', 'true')
+          landingUrl.searchParams.set('redirect', requestedPath)
+          return NextResponse.redirect(landingUrl)
         }
       }
 

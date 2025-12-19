@@ -74,9 +74,10 @@ interface AuthDialogProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   defaultMode?: "signin" | "signup"
+  onSuccess?: () => void
 }
 
-export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, defaultMode = "signup" }: AuthDialogProps) {
+export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, defaultMode = "signup", onSuccess }: AuthDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [mode, setMode] = useState<"signin" | "signup">(defaultMode)
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
@@ -84,7 +85,9 @@ export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: contro
 
   const handleSuccess = () => {
     setOpen(false)
-    if (typeof window !== 'undefined') {
+    if (onSuccess) {
+      onSuccess()
+    } else if (typeof window !== 'undefined') {
       window.location.reload()
     }
   }

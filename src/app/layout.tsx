@@ -8,6 +8,7 @@ import { SessionProvider } from "@/components/session-provider";
 import { FinnChatbotWrapper } from "@/components/finn-chatbot-wrapper";
 import { Suspense } from "react";
 import { AuthModalHandler } from "@/components/auth-modal-handler";
+import { PageContentGuard } from "@/components/page-content-guard";
 
 // Dynamisch importeren van Header om Clerk hooks te vermijden tijdens static generation
 const Header = dynamicImport(() => import("@/components/header").then(mod => ({ default: mod.Header })), {
@@ -50,7 +51,9 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            {children}
+            <PageContentGuard>
+              {children}
+            </PageContentGuard>
             <Suspense fallback={null}>
               <AuthModalHandler />
             </Suspense>

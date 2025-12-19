@@ -14,27 +14,43 @@ export function AuthModalHandler() {
   useEffect(() => {
     if (isLoaded && !isSignedIn && searchParams.get('auth_required') === 'true') {
       setShowModal(true)
-      // Verwijder query parameter uit URL zonder reload
+      // Verwijder query parameters uit URL zonder reload
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_required')
+      url.searchParams.delete('redirect')
       router.replace(url.pathname + url.search, { scroll: false })
     }
   }, [isLoaded, isSignedIn, searchParams, router])
+
+  const handleSuccess = () => {
+    setShowModal(false)
+    // Als er een redirect parameter is, ga daar naartoe na succesvol inloggen
+    const redirectPath = searchParams.get('redirect')
+    if (redirectPath) {
+      router.push(redirectPath)
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  const handleModalClose = (open: boolean) => {
+    setShowModal(open)
+    if (!open) {
+      // Verwijder query parameters wanneer modal wordt gesloten
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_required')
+      url.searchParams.delete('redirect')
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }
 
   if (!showModal) return null
 
   return (
     <AuthDialog 
       open={showModal} 
-      onOpenChange={(open) => {
-        setShowModal(open)
-        if (!open) {
-          // Verwijder query parameter wanneer modal wordt gesloten
-          const url = new URL(window.location.href)
-          url.searchParams.delete('auth_required')
-          router.replace(url.pathname + url.search, { scroll: false })
-        }
-      }}
+      onOpenChange={handleModalClose}
+      onSuccess={handleSuccess}
       defaultMode="signin"
     />
   )
