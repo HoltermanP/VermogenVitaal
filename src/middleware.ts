@@ -62,7 +62,13 @@ export default isClerkConfigured && clerkMiddleware
       // Laat public routes door zonder protect
       // API routes zoals /api/stocks handelen authenticatie zelf af voor betere controle
       if (isPublicRoute && !isPublicRoute(request)) {
-        await auth.protect()
+        // Check of gebruiker is ingelogd
+        if (!auth.userId) {
+          // In plaats van redirect, voeg query parameter toe zodat pagina's een modal kunnen tonen
+          const url = request.nextUrl.clone()
+          url.searchParams.set('auth_required', 'true')
+          return NextResponse.redirect(url)
+        }
       }
 
       // Zorg dat cookies worden doorgegeven in de response

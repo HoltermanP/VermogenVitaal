@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/session-provider";
 import { FinnChatbotWrapper } from "@/components/finn-chatbot-wrapper";
+import { Suspense } from "react";
+import { AuthModalHandler } from "@/components/auth-modal-handler";
 
 // Dynamisch importeren van Header om Clerk hooks te vermijden tijdens static generation
 const Header = dynamicImport(() => import("@/components/header").then(mod => ({ default: mod.Header })), {
@@ -49,6 +51,9 @@ export default function RootLayout({
           >
             <Header />
             {children}
+            <Suspense fallback={null}>
+              <AuthModalHandler />
+            </Suspense>
             <FinnChatbotWrapper />
             <Toaster />
           </ThemeProvider>
