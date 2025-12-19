@@ -40,12 +40,14 @@ if (isClerkConfigured) {
 // - Authenticatie routes (/auth/*)
 // - Pricing pagina (/pricing)
 // - Webhook endpoints (voor Stripe)
+// - Stocks API routes (handelen authenticatie zelf af waar nodig)
 const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatcher([
   "/",
   "/auth/signin(.*)",
   "/auth/signup(.*)",
   "/pricing",
   "/api/webhooks(.*)",
+  "/api/stocks(.*)",
 ]) : null
 
 // Export middleware - conditioneel Clerk gebruiken
