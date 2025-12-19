@@ -20,9 +20,26 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
 
+  // Debug logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PageContentGuard]', {
+        pathname,
+        isLoaded,
+        isSignedIn,
+        hasUser: !!user,
+        isPublicRoute,
+        hasRedirected
+      })
+    }
+  }, [pathname, isLoaded, isSignedIn, user, isPublicRoute, hasRedirected])
+
   // Als niet ingelogd en niet op public route, redirect naar landingpage
   useEffect(() => {
     if (isLoaded && !isSignedIn && !isPublicRoute && !hasRedirected) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[PageContentGuard] Redirecting to landingpage - user not signed in')
+      }
       setHasRedirected(true)
       // Redirect naar landingpage met auth_required parameter
       router.replace('/?auth_required=true&redirect=' + encodeURIComponent(pathname))
@@ -33,21 +50,25 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   useEffect(() => {
     if (isSignedIn && user) {
       setHasRedirected(false)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[PageContentGuard] User is signed in, showing content')
+      }
     }
   }, [isSignedIn, user])
 
-  // Als nog aan het laden, toon loading state (maar alleen kort)
+  // Als ingelogd (user bestaat), toon altijd content direct - zelfs tijdens loading
+  // Dit voorkomt dat ingelogde gebruikers geblokkeerd worden
+  if (user || isSignedIn) {
+    return <>{children}</>
+  }
+
+  // Als nog aan het laden, toon loading state (maar alleen als niet ingelogd)
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Laden...</div>
       </div>
     )
-  }
-
-  // Als ingelogd, toon altijd content (ook tijdens check)
-  if (isSignedIn) {
-    return <>{children}</>
   }
 
   // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)

@@ -63,13 +63,22 @@ export default isClerkConfigured && clerkMiddleware
       // API routes zoals /api/stocks handelen authenticatie zelf af voor betere controle
       if (isPublicRoute && !isPublicRoute(request)) {
         // Check of gebruiker is ingelogd
+        // Als userId bestaat, laat door (gebruiker is ingelogd)
         if (!auth.userId) {
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Middleware] User not authenticated, redirecting to landingpage. Path: ${request.nextUrl.pathname}`)
+          }
           // Redirect naar landingpage met parameter die aangeeft welke pagina werd aangevraagd
           const requestedPath = request.nextUrl.pathname
           const landingUrl = new URL('/', request.url)
           landingUrl.searchParams.set('auth_required', 'true')
           landingUrl.searchParams.set('redirect', requestedPath)
           return NextResponse.redirect(landingUrl)
+        }
+        // Als userId bestaat, gebruiker is ingelogd - laat door
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Middleware] User authenticated (userId: ${auth.userId}), allowing access to ${request.nextUrl.pathname}`)
         }
       }
 

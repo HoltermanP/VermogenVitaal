@@ -51,9 +51,11 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            <PageContentGuard>
-              {children}
-            </PageContentGuard>
+            <Suspense fallback={null}>
+              <PageContentGuard>
+                {children}
+              </PageContentGuard>
+            </Suspense>
             <Suspense fallback={null}>
               <AuthModalHandler />
             </Suspense>
