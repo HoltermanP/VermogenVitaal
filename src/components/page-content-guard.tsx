@@ -15,13 +15,25 @@ interface PageContentGuardProps {
 export function PageContentGuard({ children }: PageContentGuardProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isLoaded, isSignedIn } = useUser()
+  const { isLoaded, isSignedIn, user } = useUser()
   const [hasRedirected, setHasRedirected] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
   
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
 
-  // Als nog aan het laden, toon loading state
-  if (!isLoaded) {
+  // Wacht even na mount om Clerk de tijd te geven om authenticatie status te updaten
+  useEffect(() => {
+    if (isLoaded) {
+      // Korte delay om Clerk de tijd te geven om authenticatie status te updaten
+      const timer = setTimeout(() => {
+        setIsChecking(false)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoaded])
+
+  // Als nog aan het laden of checken, toon loading state
+  if (!isLoaded || isChecking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Laden...</div>
@@ -31,12 +43,12 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
 
   // Als niet ingelogd en niet op public route, redirect naar landingpage
   useEffect(() => {
-    if (isLoaded && !isSignedIn && !isPublicRoute && !hasRedirected) {
+    if (isLoaded && !isChecking && !isSignedIn && !isPublicRoute && !hasRedirected) {
       setHasRedirected(true)
       // Redirect naar landingpage met auth_required parameter
       router.replace('/?auth_required=true&redirect=' + encodeURIComponent(pathname))
     }
-  }, [isLoaded, isSignedIn, isPublicRoute, pathname, router, hasRedirected])
+  }, [isLoaded, isChecking, isSignedIn, isPublicRoute, pathname, router, hasRedirected])
 
   // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)
   if (!isSignedIn && !isPublicRoute) {
@@ -45,10 +57,10 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
 
   // Reset redirect flag als gebruiker is ingelogd
   useEffect(() => {
-    if (isSignedIn) {
+    if (isSignedIn && user) {
       setHasRedirected(false)
     }
-  }, [isSignedIn])
+  }, [isSignedIn, user])
 
   // Toon content als ingelogd of op public route
   return <>{children}</>
