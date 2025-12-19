@@ -3,7 +3,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState, ReactNode } from "react"
+import { useState, ReactNode, cloneElement, isValidElement } from "react"
 import { CustomSignIn } from "@/components/custom-sign-in"
 import { CustomSignUp } from "@/components/custom-sign-up"
 
@@ -25,19 +25,28 @@ export function SignInDialog({ trigger, open: controlledOpen, onOpenChange: cont
     }
   }
 
+  const handleOpen = () => setOpen(true)
+
   const defaultTrigger = (
     <Button
       variant="outline"
-      onClick={() => setOpen(true)}
+      onClick={handleOpen}
       className="border-primary/50 hover:bg-primary/10 hover:border-primary"
     >
       Inloggen
     </Button>
   )
 
+  // Clone trigger en voeg onClick toe als het een React element is
+  const triggerElement = trigger 
+    ? (isValidElement(trigger) 
+        ? cloneElement(trigger as React.ReactElement, { onClick: handleOpen } as any)
+        : trigger)
+    : defaultTrigger
+
   return (
     <>
-      {trigger || defaultTrigger}
+      {triggerElement}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent">
           <Card className="w-full border-border shadow-xl">
@@ -80,18 +89,27 @@ export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: contro
     }
   }
 
+  const handleOpen = () => setOpen(true)
+
   const defaultTrigger = (
     <Button
       className="gradient-financial text-white shadow-financial hover:shadow-financial-lg"
-      onClick={() => setOpen(true)}
+      onClick={handleOpen}
     >
       Aanmelden
     </Button>
   )
 
+  // Clone trigger en voeg onClick toe als het een React element is
+  const triggerElement = trigger 
+    ? (isValidElement(trigger) 
+        ? cloneElement(trigger as React.ReactElement, { onClick: handleOpen } as any)
+        : trigger)
+    : defaultTrigger
+
   return (
     <>
-      {trigger || defaultTrigger}
+      {triggerElement}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent">
           <Card className="w-full border-border shadow-xl">
