@@ -32,15 +32,6 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     }
   }, [isLoaded])
 
-  // Als nog aan het laden of checken, toon loading state
-  if (!isLoaded || isChecking) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-muted-foreground">Laden...</div>
-      </div>
-    )
-  }
-
   // Als niet ingelogd en niet op public route, redirect naar landingpage
   useEffect(() => {
     if (isLoaded && !isChecking && !isSignedIn && !isPublicRoute && !hasRedirected) {
@@ -50,17 +41,26 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     }
   }, [isLoaded, isChecking, isSignedIn, isPublicRoute, pathname, router, hasRedirected])
 
-  // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)
-  if (!isSignedIn && !isPublicRoute) {
-    return null
-  }
-
   // Reset redirect flag als gebruiker is ingelogd
   useEffect(() => {
     if (isSignedIn && user) {
       setHasRedirected(false)
     }
   }, [isSignedIn, user])
+
+  // Als nog aan het laden of checken, toon loading state
+  if (!isLoaded || isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-muted-foreground">Laden...</div>
+      </div>
+    )
+  }
+
+  // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)
+  if (!isSignedIn && !isPublicRoute) {
+    return null
+  }
 
   // Toon content als ingelogd of op public route
   return <>{children}</>
