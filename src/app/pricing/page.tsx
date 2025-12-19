@@ -1,4 +1,5 @@
-import Link from "next/link"
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
 import { CheckCircle, Sparkles, Brain, Zap, Bot } from "lucide-react"
+import { AuthDialog, SignInDialog } from "@/components/auth-dialog"
 
 export default function PricingPage() {
   return (
@@ -73,9 +75,13 @@ export default function PricingPage() {
                   <span className="text-muted-foreground">Geen AI functionaliteiten</span>
                 </li>
               </ul>
-              <Button className="w-full border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" variant="outline" asChild>
-                <Link href="/auth/signin">Start gratis</Link>
-              </Button>
+              <SignInDialog
+                trigger={
+                  <Button className="w-full border-primary/50 hover:bg-primary/10 hover:border-primary transition-all duration-300" variant="outline">
+                    Start gratis
+                  </Button>
+                }
+              />
             </CardContent>
           </Card>
 
@@ -162,9 +168,13 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-              <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
-                <Link href="/auth/signin">Start gratis proefperiode</Link>
-              </Button>
+              <AuthDialog
+                trigger={
+                  <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
+                    Start gratis proefperiode
+                  </Button>
+                }
+              />
               <p className="text-xs text-muted-foreground text-center mt-3">
                 Geen creditcard nodig voor proefperiode. Annuleer op elk moment.
               </p>
@@ -269,9 +279,13 @@ export default function PricingPage() {
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto animate-fade-in delay-1200">
             Start vandaag nog met je gratis account en ontdek hoe je belastingen kunt optimaliseren.
           </p>
-          <Button size="lg" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300" asChild>
-            <Link href="/auth/signin">Start gratis nu</Link>
-          </Button>
+          <AuthDialog
+            trigger={
+              <Button size="lg" className="gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
+                Start gratis nu
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>

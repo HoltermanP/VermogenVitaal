@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, Bot, User, Loader2, AlertCircle, MessageCircle, X, LogIn } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useUser } from "@clerk/nextjs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { CustomSignIn } from "@/components/custom-sign-in"
 
 // Controleer of Clerk beschikbaar is
@@ -419,21 +419,26 @@ export function FinnChatbot() {
 
       {/* Custom Sign In Dialog */}
       <Dialog open={signInDialogOpen} onOpenChange={setSignInDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Inloggen vereist</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <CustomSignIn
-              redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
-              onSuccess={() => {
-                setSignInDialogOpen(false)
-                if (typeof window !== 'undefined') {
-                  window.location.reload()
-                }
-              }}
-            />
-          </div>
+        <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent">
+          <Card className="w-full border-border shadow-xl">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold">Inloggen</CardTitle>
+              <CardDescription>
+                Log in op je account om verder te gaan
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomSignIn
+                redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
+                onSuccess={() => {
+                  setSignInDialogOpen(false)
+                  if (typeof window !== 'undefined') {
+                    window.location.reload()
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
         </DialogContent>
       </Dialog>
     </>
