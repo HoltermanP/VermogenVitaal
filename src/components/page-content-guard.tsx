@@ -17,29 +17,17 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   const router = useRouter()
   const { isLoaded, isSignedIn, user } = useUser()
   const [hasRedirected, setHasRedirected] = useState(false)
-  const [isChecking, setIsChecking] = useState(true)
   
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
 
-  // Wacht even na mount om Clerk de tijd te geven om authenticatie status te updaten
-  useEffect(() => {
-    if (isLoaded) {
-      // Korte delay om Clerk de tijd te geven om authenticatie status te updaten
-      const timer = setTimeout(() => {
-        setIsChecking(false)
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [isLoaded])
-
   // Als niet ingelogd en niet op public route, redirect naar landingpage
   useEffect(() => {
-    if (isLoaded && !isChecking && !isSignedIn && !isPublicRoute && !hasRedirected) {
+    if (isLoaded && !isSignedIn && !isPublicRoute && !hasRedirected) {
       setHasRedirected(true)
       // Redirect naar landingpage met auth_required parameter
       router.replace('/?auth_required=true&redirect=' + encodeURIComponent(pathname))
     }
-  }, [isLoaded, isChecking, isSignedIn, isPublicRoute, pathname, router, hasRedirected])
+  }, [isLoaded, isSignedIn, isPublicRoute, pathname, router, hasRedirected])
 
   // Reset redirect flag als gebruiker is ingelogd
   useEffect(() => {
@@ -48,8 +36,8 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     }
   }, [isSignedIn, user])
 
-  // Als nog aan het laden of checken, toon loading state
-  if (!isLoaded || isChecking) {
+  // Als nog aan het laden, toon loading state (maar alleen kort)
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Laden...</div>
@@ -57,12 +45,17 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     )
   }
 
+  // Als ingelogd, toon altijd content (ook tijdens check)
+  if (isSignedIn) {
+    return <>{children}</>
+  }
+
   // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)
-  if (!isSignedIn && !isPublicRoute) {
+  if (!isPublicRoute) {
     return null
   }
 
-  // Toon content als ingelogd of op public route
+  // Toon content als op public route
   return <>{children}</>
 }
 
