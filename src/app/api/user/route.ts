@@ -51,9 +51,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Haal uitgebreide user data op uit database
+    // Haal email op van Clerk user
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress || 
+                 clerkUser?.primaryEmailAddress?.emailAddress ||
+                 clerkUser?.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress ||
+                 user?.email
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "Geen email gevonden voor gebruiker" },
+        { status: 400 }
+      )
+    }
+
+    // Zoek gebruiker op email (niet op id, want id is een CUID)
     let dbUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { email },
       select: {
         id: true,
         email: true,
@@ -70,42 +83,67 @@ export async function GET(request: NextRequest) {
     if (!dbUser) {
       if (!clerkUser) {
         return NextResponse.json(
-          { error: "Gebruiker niet gevonden" },
+          { error: "Gebruiker niet gevonden en kan niet worden aangemaakt" },
           { status: 404 }
         )
       }
       
-      // Maak nieuwe gebruiker aan in database
-      const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
-                   clerkUser.primaryEmailAddress?.emailAddress ||
-                   clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
+      // Maak nieuwe gebruiker aan in database (zonder id, laat Prisma CUID genereren)
+      // Nieuwe gebruikers krijgen automatisch een gratis proefmaand van 30 dagen
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30)
       
-      if (!email) {
-        return NextResponse.json(
-          { error: "Geen email gevonden voor gebruiker" },
-          { status: 400 }
-        )
+      try {
+        dbUser = await prisma.user.create({
+          data: {
+            email,
+            name: clerkUser.firstName && clerkUser.lastName
+              ? `${clerkUser.firstName} ${clerkUser.lastName}`
+              : clerkUser.firstName || clerkUser.username || email,
+            tier: 'FREE', // Trial gebruikers blijven FREE tier maar hebben extra rechten
+            trialEndsAt,
+            isTrialActive: true,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            tier: true,
+            trialEndsAt: true,
+            isTrialActive: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        })
+      } catch (createError) {
+        console.error("Error creating user:", createError)
+        // Als gebruiker al bestaat (race condition), probeer opnieuw op te halen
+        if (createError instanceof Error && createError.message.includes('Unique constraint')) {
+          dbUser = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              tier: true,
+              trialEndsAt: true,
+              isTrialActive: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          })
+        } else {
+          throw createError
+        }
       }
-      
-      dbUser = await prisma.user.create({
-        data: {
-          id: userId,
-          email,
-          name: clerkUser.firstName && clerkUser.lastName
-            ? `${clerkUser.firstName} ${clerkUser.lastName}`
-            : clerkUser.firstName || clerkUser.username || email,
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          tier: true,
-          trialEndsAt: true,
-          isTrialActive: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      })
+    }
+
+    // Als dbUser nog steeds null is na alle pogingen, return error
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: "Kon gebruiker niet vinden of aanmaken" },
+        { status: 500 }
+      )
     }
 
     // Controleer of trial nog actief is
