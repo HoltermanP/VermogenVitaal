@@ -1,12 +1,20 @@
 "use client"
 
-import { SignIn, SignUp } from "@clerk/nextjs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { CustomSignIn } from "@/components/custom-sign-in"
+import { CustomSignUp } from "@/components/custom-sign-up"
 
 export function SignInDialog() {
   const [open, setOpen] = useState(false)
+
+  const handleSuccess = () => {
+    setOpen(false)
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
 
   return (
     <>
@@ -23,38 +31,9 @@ export function SignInDialog() {
             <DialogTitle>Inloggen</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <SignIn
-              routing="path"
-              path="/auth/signin"
+            <CustomSignIn
               redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
-              appearance={{
-                baseTheme: undefined,
-                variables: {
-                  colorPrimary: "hsl(var(--primary))",
-                  colorBackground: "hsl(var(--background))",
-                  colorInputBackground: "hsl(var(--background))",
-                  colorInputText: "hsl(var(--foreground))",
-                  colorText: "hsl(var(--foreground))",
-                  borderRadius: "0.5rem"
-                },
-                elements: {
-                  formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
-                  card: "shadow-none border-0",
-                  headerTitle: "hidden",
-                  headerSubtitle: "hidden",
-                  socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
-                  socialButtonsBlockButtonText: "text-foreground",
-                  dividerLine: "bg-border",
-                  dividerText: "text-muted-foreground",
-                  formFieldLabel: "text-foreground font-medium",
-                  formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
-                  footerActionLink: "text-primary hover:text-primary/80 font-medium",
-                  identityPreviewEditButton: "text-primary",
-                  formFieldErrorText: "text-red-600 text-sm",
-                  alert: "border-red-200 bg-red-50 text-red-800",
-                  alertText: "text-red-800"
-                }
-              }}
+              onSuccess={handleSuccess}
             />
           </div>
         </DialogContent>
@@ -65,7 +44,14 @@ export function SignInDialog() {
 
 export function AuthDialog() {
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<"signin" | "signup">("signin")
+  const [mode, setMode] = useState<"signin" | "signup">("signup")
+
+  const handleSuccess = () => {
+    setOpen(false)
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
 
   return (
     <>
@@ -82,72 +68,14 @@ export function AuthDialog() {
           </DialogHeader>
           <div className="mt-4">
             {mode === "signin" ? (
-              <SignIn
-                routing="path"
-                path="/auth/signin"
+              <CustomSignIn
                 redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
-                appearance={{
-                  baseTheme: undefined,
-                  variables: {
-                    colorPrimary: "hsl(var(--primary))",
-                    colorBackground: "hsl(var(--background))",
-                    colorInputBackground: "hsl(var(--background))",
-                    colorInputText: "hsl(var(--foreground))",
-                    colorText: "hsl(var(--foreground))",
-                    borderRadius: "0.5rem"
-                  },
-                  elements: {
-                    formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
-                    card: "shadow-none border-0",
-                    headerTitle: "hidden",
-                    headerSubtitle: "hidden",
-                    socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
-                    socialButtonsBlockButtonText: "text-foreground",
-                    dividerLine: "bg-border",
-                    dividerText: "text-muted-foreground",
-                    formFieldLabel: "text-foreground font-medium",
-                    formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
-                    footerActionLink: "text-primary hover:text-primary/80 font-medium",
-                    identityPreviewEditButton: "text-primary",
-                    formFieldErrorText: "text-red-600 text-sm",
-                    alert: "border-red-200 bg-red-50 text-red-800",
-                    alertText: "text-red-800"
-                  }
-                }}
+                onSuccess={handleSuccess}
               />
             ) : (
-              <SignUp
-                routing="path"
-                path="/auth/signup"
-                redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
-                appearance={{
-                  baseTheme: undefined,
-                  variables: {
-                    colorPrimary: "hsl(var(--primary))",
-                    colorBackground: "hsl(var(--background))",
-                    colorInputBackground: "hsl(var(--background))",
-                    colorInputText: "hsl(var(--foreground))",
-                    colorText: "hsl(var(--foreground))",
-                    borderRadius: "0.5rem"
-                  },
-                  elements: {
-                    formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
-                    card: "shadow-none border-0",
-                    headerTitle: "hidden",
-                    headerSubtitle: "hidden",
-                    socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
-                    socialButtonsBlockButtonText: "text-foreground",
-                    dividerLine: "bg-border",
-                    dividerText: "text-muted-foreground",
-                    formFieldLabel: "text-foreground font-medium",
-                    formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
-                    footerActionLink: "text-primary hover:text-primary/80 font-medium",
-                    identityPreviewEditButton: "text-primary",
-                    formFieldErrorText: "text-red-600 text-sm",
-                    alert: "border-red-200 bg-red-50 text-red-800",
-                    alertText: "text-red-800"
-                  }
-                }}
+              <CustomSignUp
+                redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/onboarding'}
+                onSuccess={handleSuccess}
               />
             )}
             <div className="mt-4 text-center text-sm text-muted-foreground">

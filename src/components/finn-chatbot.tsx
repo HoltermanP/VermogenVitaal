@@ -9,8 +9,9 @@ import { Send, Bot, User, Loader2, AlertCircle, MessageCircle, X, LogIn } from "
 import { toast } from "sonner"
 import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useUser, SignIn } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CustomSignIn } from "@/components/custom-sign-in"
 
 // Controleer of Clerk beschikbaar is
 function isClerkAvailable(): boolean {
@@ -423,36 +424,12 @@ export function FinnChatbot() {
             <DialogTitle>Inloggen vereist</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <SignIn
-              routing="path"
-              path="/auth/signin"
+            <CustomSignIn
               redirectUrl={typeof window !== 'undefined' ? window.location.pathname : '/dashboard'}
-              appearance={{
-                baseTheme: undefined,
-                variables: {
-                  colorPrimary: "hsl(var(--primary))",
-                  colorBackground: "hsl(var(--background))",
-                  colorInputBackground: "hsl(var(--background))",
-                  colorInputText: "hsl(var(--foreground))",
-                  colorText: "hsl(var(--foreground))",
-                  borderRadius: "0.5rem"
-                },
-                elements: {
-                  formButtonPrimary: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium",
-                  card: "shadow-none border-0",
-                  headerTitle: "hidden",
-                  headerSubtitle: "hidden",
-                  socialButtonsBlockButton: "border border-border hover:bg-accent transition-colors",
-                  socialButtonsBlockButtonText: "text-foreground",
-                  dividerLine: "bg-border",
-                  dividerText: "text-muted-foreground",
-                  formFieldLabel: "text-foreground font-medium",
-                  formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary/20",
-                  footerActionLink: "text-primary hover:text-primary/80 font-medium",
-                  identityPreviewEditButton: "text-primary",
-                  formFieldErrorText: "text-red-600 text-sm",
-                  alert: "border-red-200 bg-red-50 text-red-800",
-                  alertText: "text-red-800"
+              onSuccess={() => {
+                setSignInDialogOpen(false)
+                if (typeof window !== 'undefined') {
+                  window.location.reload()
                 }
               }}
             />

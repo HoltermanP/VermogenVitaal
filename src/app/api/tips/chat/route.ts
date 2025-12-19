@@ -3,9 +3,168 @@ import OpenAI from "openai"
 import { getClerkUser } from "@/lib/clerk-auth"
 import { prisma } from "@/lib/prisma"
 import { getOrCreateAnonymousSessionId } from "@/lib/anonymous-session"
+import { taxTopics2025, type TaxTopic } from "@/lib/tax-info-2025"
 
 const FREE_TIER_AI_CALL_LIMIT = 10
 const ANONYMOUS_SESSION_DURATION_HOURS = 24 // 24 uur tijdslimiet voor anonieme gebruikers
+
+// Functie om te zoeken in knowledge base zonder AI
+async function findRelevantKnowledgeArticles(message: string) {
+  try {
+    // Extract zoektermen uit de vraag
+    const searchTerms = extractSearchTermsFromMessage(message)
+    
+    if (searchTerms.length === 0) {
+      return []
+    }
+    
+    // Zoek in knowledge base
+    const articles = await prisma.knowledge.findMany({
+      where: {
+        AND: [
+          {
+            OR: searchTerms.map(term => ({
+              OR: [
+                { title: { contains: term, mode: 'insensitive' } },
+                { body: { contains: term, mode: 'insensitive' } },
+                { tags: { has: term } }
+              ]
+            }))
+          },
+          {
+            effectiveFrom: { lte: new Date() },
+            OR: [
+              { effectiveTo: null },
+              { effectiveTo: { gte: new Date() } }
+            ]
+          }
+        ]
+      },
+      orderBy: { effectiveFrom: 'desc' },
+      take: 3
+    })
+
+    return articles
+  } catch (error) {
+    console.warn("Kon knowledge artikelen niet ophalen:", error)
+    return []
+  }
+}
+
+// Functie om te zoeken in tax-info-2025
+function findRelevantTaxInfo(message: string): TaxTopic[] {
+  const lowerMessage = message.toLowerCase()
+  const relevantTopics: TaxTopic[] = []
+
+  // Zoek op keywords
+  for (const topic of taxTopics2025) {
+    const topicText = (topic.title + " " + topic.shortDescription + " " + topic.category).toLowerCase()
+    
+    // Check of de vraag relevante termen bevat
+    const keywords = [
+      topic.id,
+      ...topic.title.toLowerCase().split(" "),
+      ...topic.category.toLowerCase().split(" ")
+    ]
+    
+    const hasRelevantKeyword = keywords.some(keyword => {
+      if (keyword.length <= 3) return false
+      return lowerMessage.includes(keyword) || 
+             (keyword.length > 4 && lowerMessage.includes(keyword.substring(0, 4)))
+    })
+    
+    // Check ook op specifieke termen in de vraag
+    const questionWords = lowerMessage.split(/\s+/).filter(w => w.length > 3)
+    const hasMatchingWord = questionWords.some(word => 
+      topicText.includes(word) || topic.title.toLowerCase().includes(word)
+    )
+    
+    if (hasRelevantKeyword || hasMatchingWord) {
+      relevantTopics.push(topic)
+    }
+  }
+
+  return relevantTopics.slice(0, 2) // Maximaal 2 relevante topics
+}
+
+// Extract zoektermen uit bericht
+function extractSearchTermsFromMessage(message: string): string[] {
+  const lowerMessage = message.toLowerCase()
+  const terms: string[] = []
+
+  // Belasting gerelateerde termen
+  const taxKeywords = [
+    'belasting', 'fiscaal', 'aftrek', 'korting', 'inkomstenbelasting',
+    'vennootschapsbelasting', 'btw', 'dividend', 'box 1', 'box 2', 'box 3',
+    'hypotheek', 'pensioen', 'lijfrente', 'bv', 'emz', 'dga', 'mkb',
+    'zelfstandigenaftrek', 'heffingskorting', 'arbeidskorting', 'vennootschap',
+    'ondernemer', 'winstvrijstelling', 'eigenwoning', 'vermogen'
+  ]
+
+  taxKeywords.forEach(keyword => {
+    if (lowerMessage.includes(keyword)) {
+      terms.push(keyword)
+    }
+  })
+
+  // Voeg belangrijke woorden toe (minimaal 4 karakters)
+  const words = message.toLowerCase().split(/\s+/).filter(w => w.length > 4)
+  terms.push(...words.slice(0, 5))
+
+  return [...new Set(terms)]
+}
+
+// Genereer antwoord op basis van knowledge artikelen en tax info
+function generateAnswerFromKnowledge(
+  message: string,
+  articles: Array<{ title: string; body: string; slug: string }>,
+  taxTopics: TaxTopic[]
+): string | null {
+  // Als er geen relevante informatie is, return null
+  if (articles.length === 0 && taxTopics.length === 0) {
+    return null
+  }
+
+  let answer = ""
+
+  // Voeg informatie toe van tax topics
+  if (taxTopics.length > 0) {
+    for (const topic of taxTopics) {
+      answer += `**${topic.title}**\n\n`
+      
+      // Voeg relevante secties toe
+      for (const section of topic.sections.slice(0, 2)) {
+        answer += `### ${section.title}\n${section.content}\n\n`
+        
+        if (section.subsections) {
+          for (const subsection of section.subsections.slice(0, 2)) {
+            answer += `**${subsection.title}**: ${subsection.content}\n\n`
+          }
+        }
+      }
+      
+      if (topic.importantNotes && topic.importantNotes.length > 0) {
+        answer += `**Belangrijk**: ${topic.importantNotes[0]}\n\n`
+      }
+    }
+  }
+
+  // Voeg informatie toe van knowledge artikelen
+  if (articles.length > 0) {
+    answer += "**Aanvullende informatie:**\n\n"
+    for (const article of articles) {
+      const preview = article.body.length > 500 
+        ? article.body.substring(0, 500) + "..." 
+        : article.body
+      answer += `**${article.title}**\n${preview}\n\n`
+    }
+  }
+
+  // Voeg disclaimer toe
+  answer += "\n\n*Let op: Dit is algemene informatie. Voor persoonlijk advies raad ik aan om een gecertificeerd belastingadviseur te raadplegen.*"
+
+  return answer.trim()
+}
 
 export async function POST(request: NextRequest) {
   // Check of database beschikbaar is
@@ -51,6 +210,42 @@ export async function POST(request: NextRequest) {
       sessionId = await getOrCreateAnonymousSessionId(request)
     }
 
+    const { message, conversationHistory = [] } = await request.json()
+
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Bericht is verplicht" },
+        { status: 400 }
+      )
+    }
+
+    // STAP 1: Probeer eerst antwoord te geven zonder AI
+    const knowledgeArticles = await findRelevantKnowledgeArticles(message)
+    const taxTopics = findRelevantTaxInfo(message)
+    const knowledgeAnswer = generateAnswerFromKnowledge(message, knowledgeArticles, taxTopics)
+
+    // Als we een goed antwoord hebben zonder AI, gebruik dat
+    if (knowledgeAnswer && knowledgeAnswer.length > 100) {
+      const jsonResponse = NextResponse.json({
+        message: knowledgeAnswer,
+        timestamp: new Date().toISOString(),
+        source: "knowledge_base"
+      })
+
+      // Stel cookie in voor anonieme gebruikers
+      if (sessionId && !userId) {
+        jsonResponse.cookies.set("anonymous_session_id", sessionId, {
+          path: "/",
+          maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+          sameSite: "lax",
+          httpOnly: true
+        })
+      }
+
+      return jsonResponse
+    }
+
+    // STAP 2: Als geen antwoord zonder AI mogelijk is, check AI limieten
     // Check limiet voor FREE tier gebruikers of anonieme gebruikers (alleen als database beschikbaar is)
     if (!isPremium && dbAvailable) {
       try {
@@ -87,8 +282,8 @@ export async function POST(request: NextRequest) {
             { 
               error: "AI_LIMIT_REACHED",
               message: userId 
-                ? "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Upgrade naar Premium voor onbeperkte AI aanroepen."
-                : "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
+                ? "Ik kon geen antwoord vinden in de kennisbank. Voor complexere vragen heb je een betaald abonnement nodig om AI te gebruiken. Upgrade naar Premium voor onbeperkte AI aanroepen."
+                : "Ik kon geen antwoord vinden in de kennisbank. Voor complexere vragen heb je een betaald abonnement nodig om AI te gebruiken. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
               limit: FREE_TIER_AI_CALL_LIMIT,
               used: aiCallCount
             },
@@ -135,14 +330,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { message, conversationHistory = [] } = await request.json()
-
-    if (!message || typeof message !== "string" || message.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Bericht is verplicht" },
-        { status: 400 }
-      )
-    }
+    // STAP 3: Gebruik OpenAI als laatste redmiddel
 
     const openaiApiKey = process.env.OPENAI_API_KEY
     if (!openaiApiKey) {
@@ -211,7 +399,8 @@ BELANGRIJKE RICHTLIJNEN:
 
     const jsonResponse = NextResponse.json({
       message: assistantMessage,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: "ai"
     })
 
     // Stel cookie in voor anonieme gebruikers

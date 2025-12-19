@@ -1,6 +1,7 @@
 "use client"
 
-import { useUser, UserButton } from "@clerk/nextjs"
+import { useUser, useClerk } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,7 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Home, FileText, TrendingUp, Linkedin } from "lucide-react"
+import { Home, FileText, TrendingUp, Linkedin, LogOut } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
 import { ClerkErrorBoundary } from "./clerk-error-boundary"
@@ -65,12 +66,24 @@ function ClerkUserContent() {
     isTrialActive: boolean
     trialEndsAt: string | null
   } | null>(null)
+  const { signOut } = useClerk()
+  const router = useRouter()
 
   // Hook alleen aanroepen als Clerk beschikbaar is
   const clerkData = useClerkUser()
   const user = clerkData.user
   const isLoaded = clerkData.isLoaded
   const isAuthenticated = !!user && isClerkAvailable()
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      router.push("/")
+      router.refresh()
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
 
   React.useEffect(() => {
     setIsMounted(true)
@@ -190,9 +203,13 @@ function ClerkUserContent() {
               </DropdownMenuItem>
             </>
           )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
+            <LogOut className="mr-2 h-4 w-4" />
+            Uitloggen
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <UserButton afterSignOutUrl="/" />
     </>
   )
 }
