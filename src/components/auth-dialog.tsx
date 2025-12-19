@@ -40,7 +40,7 @@ export function SignInDialog({ trigger, open: controlledOpen, onOpenChange: cont
   // Clone trigger en voeg onClick toe als het een React element is
   const triggerElement = trigger 
     ? (isValidElement(trigger) 
-        ? cloneElement(trigger as React.ReactElement, { onClick: handleOpen } as any)
+        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, { onClick: handleOpen })
         : trigger)
     : defaultTrigger
 
@@ -103,7 +103,7 @@ export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: contro
   // Clone trigger en voeg onClick toe als het een React element is
   const triggerElement = trigger 
     ? (isValidElement(trigger) 
-        ? cloneElement(trigger as React.ReactElement, { onClick: handleOpen } as any)
+        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, { onClick: handleOpen })
         : trigger)
     : defaultTrigger
 
