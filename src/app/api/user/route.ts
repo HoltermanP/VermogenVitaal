@@ -68,19 +68,67 @@ export async function GET(request: NextRequest) {
     }
 
     // Zoek gebruiker op email (niet op id, want id is een CUID)
-    let dbUser = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        tier: true,
-        trialEndsAt: true,
-        isTrialActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    let dbUser = null
+    try {
+      dbUser = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tier: true,
+          trialEndsAt: true,
+          isTrialActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+    } catch (queryError) {
+      console.error("Error querying user from database:", queryError)
+      // Als de kolommen niet bestaan, probeer zonder trial kolommen
+      try {
+        dbUser = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            tier: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        })
+        // Als gebruiker gevonden maar zonder trial kolommen, update deze
+        if (dbUser) {
+          const trialEndsAt = new Date()
+          trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              trialEndsAt,
+              isTrialActive: true,
+            },
+          })
+          // Haal gebruiker opnieuw op met alle kolommen
+          dbUser = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              tier: true,
+              trialEndsAt: true,
+              isTrialActive: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          })
+        }
+      } catch (fallbackError) {
+        console.error("Error in fallback query:", fallbackError)
+        throw queryError // Re-throw original error
+      }
+    }
 
     // Als gebruiker niet in database bestaat, maak aan (sync met Clerk)
     if (!dbUser) {
@@ -178,10 +226,10 @@ export async function GET(request: NextRequest) {
       email: dbUser.email,
       name: dbUser.name,
       tier: dbUser.tier,
-      trialEndsAt: dbUser.trialEndsAt,
-      isTrialActive,
-      createdAt: dbUser.createdAt,
-      updatedAt: dbUser.updatedAt,
+      trialEndsAt: dbUser.trialEndsAt ? dbUser.trialEndsAt.toISOString() : null,
+      isTrialActive: isTrialActive ?? false,
+      createdAt: dbUser.createdAt.toISOString(),
+      updatedAt: dbUser.updatedAt.toISOString(),
     })
   } catch (error) {
     // Verbeterde error logging voor debugging
