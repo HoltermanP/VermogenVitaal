@@ -1,13 +1,50 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { getClerkUser } from "@/lib/clerk-auth"
 import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   try {
-    // Haal gebruiker op via Clerk
-    const user = await getClerkUser(request)
+    // Probeer eerst auth() direct (werkt automatisch in API routes via middleware)
+    let userId: string | null = null
+    let clerkUser = null
+    
+    try {
+      const authResult = await auth()
+      userId = authResult?.userId || null
+      
+      if (userId) {
+        try {
+          clerkUser = await currentUser()
+        } catch (userError) {
+          console.error("Error getting currentUser:", userError)
+        }
+      }
+    } catch (authError) {
+      console.error("Error calling auth():", authError)
+    }
 
-    if (!user || !user.id) {
+    // Als auth() niet werkt, probeer getClerkUser als fallback
+    let user = null
+    if (!userId) {
+      try {
+        user = await getClerkUser(request)
+        userId = user?.id || null
+      } catch (getUserError) {
+        console.error("Error calling getClerkUser:", getUserError)
+      }
+    } else if (clerkUser && !user) {
+      // We hebben userId van auth() maar geen user object, maak een user object
+      user = {
+        id: userId,
+        email: clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.primaryEmailAddress?.emailAddress,
+        name: clerkUser.firstName && clerkUser.lastName 
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`
+          : clerkUser.firstName || clerkUser.username || '',
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: "Niet geautoriseerd" },
         { status: 401 }
@@ -15,8 +52,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Haal uitgebreide user data op uit database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
+    let dbUser = await prisma.user.findUnique({
+      where: { id: userId },
       select: {
         id: true,
         email: true,
@@ -29,11 +66,46 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Als gebruiker niet in database bestaat, maak aan (sync met Clerk)
     if (!dbUser) {
-      return NextResponse.json(
-        { error: "Gebruiker niet gevonden" },
-        { status: 404 }
-      )
+      if (!clerkUser) {
+        return NextResponse.json(
+          { error: "Gebruiker niet gevonden" },
+          { status: 404 }
+        )
+      }
+      
+      // Maak nieuwe gebruiker aan in database
+      const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                   clerkUser.primaryEmailAddress?.emailAddress ||
+                   clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress
+      
+      if (!email) {
+        return NextResponse.json(
+          { error: "Geen email gevonden voor gebruiker" },
+          { status: 400 }
+        )
+      }
+      
+      dbUser = await prisma.user.create({
+        data: {
+          id: userId,
+          email,
+          name: clerkUser.firstName && clerkUser.lastName
+            ? `${clerkUser.firstName} ${clerkUser.lastName}`
+            : clerkUser.firstName || clerkUser.username || email,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tier: true,
+          trialEndsAt: true,
+          isTrialActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
     }
 
     // Controleer of trial nog actief is
