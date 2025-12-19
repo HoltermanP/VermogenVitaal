@@ -29,18 +29,11 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       try {
         user = await getClerkUser(request)
-        userId = user?.id || null
+        if (user?.id) {
+          userId = user.id
+        }
       } catch (getUserError) {
         console.error("Error calling getClerkUser:", getUserError)
-      }
-    } else if (clerkUser && !user) {
-      // We hebben userId van auth() maar geen user object, maak een user object
-      user = {
-        id: userId,
-        email: clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.primaryEmailAddress?.emailAddress,
-        name: clerkUser.firstName && clerkUser.lastName 
-          ? `${clerkUser.firstName} ${clerkUser.lastName}`
-          : clerkUser.firstName || clerkUser.username || '',
       }
     }
 
@@ -51,13 +44,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Haal email op van Clerk user
-    const email = clerkUser?.emailAddresses?.[0]?.emailAddress || 
-                 clerkUser?.primaryEmailAddress?.emailAddress ||
-                 clerkUser?.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress ||
-                 user?.email
+    // Haal email op van Clerk user - probeer verschillende bronnen
+    let email: string | null = null
+    
+    if (clerkUser) {
+      email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+              clerkUser.primaryEmailAddress?.emailAddress ||
+              clerkUser.externalAccounts?.find(ea => ea.provider === 'oauth_google')?.emailAddress ||
+              null
+    }
+    
+    // Fallback naar user object email
+    if (!email && user?.email) {
+      email = user.email
+    }
 
     if (!email) {
+      console.error("No email found for user", { userId, hasClerkUser: !!clerkUser, hasUser: !!user })
       return NextResponse.json(
         { error: "Geen email gevonden voor gebruiker" },
         { status: 400 }
@@ -81,11 +84,15 @@ export async function GET(request: NextRequest) {
 
     // Als gebruiker niet in database bestaat, maak aan (sync met Clerk)
     if (!dbUser) {
-      if (!clerkUser) {
-        return NextResponse.json(
-          { error: "Gebruiker niet gevonden en kan niet worden aangemaakt" },
-          { status: 404 }
-        )
+      // Bepaal naam van gebruiker
+      let userName = email // Fallback naar email
+      
+      if (clerkUser) {
+        userName = clerkUser.firstName && clerkUser.lastName
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`
+          : clerkUser.firstName || clerkUser.username || email
+      } else if (user?.name) {
+        userName = user.name
       }
       
       // Maak nieuwe gebruiker aan in database (zonder id, laat Prisma CUID genereren)
@@ -97,9 +104,7 @@ export async function GET(request: NextRequest) {
         dbUser = await prisma.user.create({
           data: {
             email,
-            name: clerkUser.firstName && clerkUser.lastName
-              ? `${clerkUser.firstName} ${clerkUser.lastName}`
-              : clerkUser.firstName || clerkUser.username || email,
+            name: userName,
             tier: 'FREE', // Trial gebruikers blijven FREE tier maar hebben extra rechten
             trialEndsAt,
             isTrialActive: true,
@@ -117,21 +122,29 @@ export async function GET(request: NextRequest) {
         })
       } catch (createError) {
         console.error("Error creating user:", createError)
-        // Als gebruiker al bestaat (race condition), probeer opnieuw op te halen
-        if (createError instanceof Error && createError.message.includes('Unique constraint')) {
-          dbUser = await prisma.user.findUnique({
-            where: { email },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              tier: true,
-              trialEndsAt: true,
-              isTrialActive: true,
-              createdAt: true,
-              updatedAt: true,
-            },
-          })
+        // Als gebruiker al bestaat (race condition of unique constraint), probeer opnieuw op te halen
+        if (createError instanceof Error && (
+          createError.message.includes('Unique constraint') ||
+          createError.message.includes('P2002') // Prisma unique constraint error code
+        )) {
+          try {
+            dbUser = await prisma.user.findUnique({
+              where: { email },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                tier: true,
+                trialEndsAt: true,
+                isTrialActive: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            })
+          } catch (findError) {
+            console.error("Error finding user after create error:", findError)
+            throw createError // Re-throw original error
+          }
         } else {
           throw createError
         }
@@ -171,9 +184,22 @@ export async function GET(request: NextRequest) {
       updatedAt: dbUser.updatedAt,
     })
   } catch (error) {
-    console.error("Error fetching user data:", error)
+    // Verbeterde error logging voor debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    console.error("Error fetching user data:", {
+      message: errorMessage,
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+    })
+    
+    // Return meer details in development, minder in production
     return NextResponse.json(
-      { error: "Interne server fout" },
+      { 
+        error: "Interne server fout",
+        ...(process.env.NODE_ENV === 'development' && { details: errorMessage })
+      },
       { status: 500 }
     )
   }

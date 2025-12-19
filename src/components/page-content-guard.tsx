@@ -60,15 +60,17 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   // Dit voorkomt dat ingelogde gebruikers geblokkeerd worden
   if (user || isSignedIn) {
     // Als gebruiker is ingelogd en op landingpage met redirect parameter, redirect direct
-    if (pathname === '/' && typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search)
-      const redirect = urlParams.get('redirect')
-      if (redirect && !hasRedirected) {
-        setHasRedirected(true)
-        router.replace(redirect)
-        return null // Return null tijdens redirect
+    useEffect(() => {
+      if (pathname === '/' && typeof window !== 'undefined' && !hasRedirected) {
+        const urlParams = new URLSearchParams(window.location.search)
+        const redirect = urlParams.get('redirect')
+        if (redirect) {
+          setHasRedirected(true)
+          router.replace(redirect)
+        }
       }
-    }
+    }, [pathname, hasRedirected, router])
+    
     return <>{children}</>
   }
 

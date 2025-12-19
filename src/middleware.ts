@@ -71,23 +71,25 @@ export default isClerkConfigured && clerkMiddleware
       // Voor pagina routes, check authenticatie
       if (isPublicRoute && !isPublicRoute(request)) {
         // Check of gebruiker is ingelogd
-        // Als userId bestaat, laat door (gebruiker is ingelogd)
-        if (!auth.userId) {
-          // Debug logging
+        // Als userId bestaat, laat ALTIJD door (gebruiker is ingelogd, ongeacht tier)
+        if (auth.userId) {
+          // Gebruiker is ingelogd - laat door (FREE, PREMIUM, etc. - alle tiers hebben toegang)
           if (process.env.NODE_ENV === 'development') {
-            console.log(`[Middleware] User not authenticated, redirecting to landingpage. Path: ${request.nextUrl.pathname}`)
+            console.log(`[Middleware] User authenticated (userId: ${auth.userId}), allowing access to ${request.nextUrl.pathname}`)
           }
-          // Redirect naar landingpage met parameter die aangeeft welke pagina werd aangevraagd
-          const requestedPath = request.nextUrl.pathname
-          const landingUrl = new URL('/', request.url)
-          landingUrl.searchParams.set('auth_required', 'true')
-          landingUrl.searchParams.set('redirect', requestedPath)
-          return NextResponse.redirect(landingUrl)
+          return NextResponse.next()
         }
-        // Als userId bestaat, gebruiker is ingelogd - laat door
+        
+        // Gebruiker is niet ingelogd - redirect naar landingpage
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[Middleware] User authenticated (userId: ${auth.userId}), allowing access to ${request.nextUrl.pathname}`)
+          console.log(`[Middleware] User not authenticated, redirecting to landingpage. Path: ${request.nextUrl.pathname}`)
         }
+        // Redirect naar landingpage met parameter die aangeeft welke pagina werd aangevraagd
+        const requestedPath = request.nextUrl.pathname
+        const landingUrl = new URL('/', request.url)
+        landingUrl.searchParams.set('auth_required', 'true')
+        landingUrl.searchParams.set('redirect', requestedPath)
+        return NextResponse.redirect(landingUrl)
       }
 
       // Zorg dat cookies worden doorgegeven in the response
