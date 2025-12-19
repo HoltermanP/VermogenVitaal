@@ -64,14 +64,20 @@ export default isClerkConfigured && clerkMiddleware
       if (isPublicRoute && !isPublicRoute(request)) {
         // Check of gebruiker is ingelogd
         if (!auth.userId) {
-          // In plaats van redirect, voeg query parameter toe zodat pagina's een modal kunnen tonen
-          const url = request.nextUrl.clone()
-          url.searchParams.set('auth_required', 'true')
-          return NextResponse.redirect(url)
+          // Check of auth_required parameter al aanwezig is (voorkom redirect loop)
+          const hasAuthRequired = request.nextUrl.searchParams.has('auth_required')
+          
+          if (!hasAuthRequired) {
+            // Voeg query parameter toe zodat pagina's een modal kunnen tonen
+            const url = request.nextUrl.clone()
+            url.searchParams.set('auth_required', 'true')
+            return NextResponse.redirect(url)
+          }
+          // Als auth_required al aanwezig is, laat door zodat de pagina de modal kan tonen
         }
       }
 
-      // Zorg dat cookies worden doorgegeven in de response
+      // Zorg dat cookies worden doorgegeven in the response
       const response = NextResponse.next()
 
       // Zorg dat cookies worden doorgegeven (voor CORS en cookie sharing)
