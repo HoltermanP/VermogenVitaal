@@ -86,7 +86,10 @@ export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: contro
   const handleSuccess = () => {
     setOpen(false)
     if (onSuccess) {
-      onSuccess()
+      // Wacht even zodat Clerk de authenticatie status kan updaten
+      setTimeout(() => {
+        onSuccess()
+      }, 300)
     } else if (typeof window !== 'undefined') {
       window.location.reload()
     }

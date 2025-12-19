@@ -24,13 +24,18 @@ export function AuthModalHandler() {
 
   const handleSuccess = () => {
     setShowModal(false)
-    // Als er een redirect parameter is, ga daar naartoe na succesvol inloggen
-    const redirectPath = searchParams.get('redirect')
-    if (redirectPath) {
-      router.push(redirectPath)
-    } else {
-      router.push('/dashboard')
-    }
+    // Wacht even zodat Clerk de authenticatie status kan updaten
+    setTimeout(() => {
+      // Als er een redirect parameter is, ga daar naartoe na succesvol inloggen
+      const redirectPath = searchParams.get('redirect')
+      if (redirectPath) {
+        router.push(redirectPath)
+        router.refresh() // Refresh om ervoor te zorgen dat de pagina correct laadt
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
+    }, 500)
   }
 
   const handleModalClose = (open: boolean) => {
