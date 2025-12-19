@@ -12,7 +12,6 @@ function validateDatabaseUrl(): string {
   }
 
   const databaseUrl = process.env.DATABASE_URL
-  const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
   
   // Tijdens build-time (NEXT_PHASE is undefined), skip validatie
@@ -137,8 +136,9 @@ function getPrismaClient(): PrismaClient {
 
 // Export prisma met lazy initialization
 export const prisma = new Proxy({} as PrismaClient, {
-  get(_target, prop) {
+  get(_target, prop: string | symbol) {
     const client = getPrismaClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const value = (client as any)[prop]
     
     // Als het een functie is, bind de context
@@ -148,7 +148,7 @@ export const prisma = new Proxy({} as PrismaClient, {
     
     return value
   }
-})
+}) as PrismaClient
 
 // Test database connectie bij eerste gebruik (alleen in development en als DATABASE_URL is ingesteld)
 if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
