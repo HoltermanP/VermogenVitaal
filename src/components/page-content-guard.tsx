@@ -59,6 +59,16 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   // Als ingelogd (user bestaat), toon altijd content direct - zelfs tijdens loading
   // Dit voorkomt dat ingelogde gebruikers geblokkeerd worden
   if (user || isSignedIn) {
+    // Als gebruiker is ingelogd en op landingpage met redirect parameter, redirect direct
+    if (pathname === '/' && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirect = urlParams.get('redirect')
+      if (redirect && !hasRedirected) {
+        setHasRedirected(true)
+        router.replace(redirect)
+        return null // Return null tijdens redirect
+      }
+    }
     return <>{children}</>
   }
 

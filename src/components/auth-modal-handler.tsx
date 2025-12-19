@@ -10,9 +10,16 @@ export function AuthModalHandler() {
   const router = useRouter()
   const { isLoaded, isSignedIn } = useUser()
   const [showModal, setShowModal] = useState(false)
+  const [redirectPath, setRedirectPath] = useState<string | null>(null)
 
   useEffect(() => {
     if (isLoaded && !isSignedIn && searchParams.get('auth_required') === 'true') {
+      // Sla redirect path op voordat we het verwijderen
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        setRedirectPath(redirect)
+      }
+      
       setShowModal(true)
       // Verwijder query parameters uit URL zonder reload
       const url = new URL(window.location.href)
@@ -26,15 +33,10 @@ export function AuthModalHandler() {
     setShowModal(false)
     // Wacht even zodat Clerk de authenticatie status kan updaten
     setTimeout(() => {
-      // Als er een redirect parameter is, ga daar naartoe na succesvol inloggen
-      const redirectPath = searchParams.get('redirect')
-      if (redirectPath) {
-        router.push(redirectPath)
-        router.refresh() // Refresh om ervoor te zorgen dat de pagina correct laadt
-      } else {
-        router.push('/dashboard')
-        router.refresh()
-      }
+      // Gebruik opgeslagen redirect path of fallback naar dashboard
+      const path = redirectPath || searchParams.get('redirect') || '/dashboard'
+      router.push(path)
+      router.refresh() // Refresh om ervoor te zorgen dat de pagina correct laadt
     }, 500)
   }
 
