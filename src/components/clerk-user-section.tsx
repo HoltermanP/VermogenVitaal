@@ -93,7 +93,17 @@ function ClerkUserContent() {
   React.useEffect(() => {
     if (isAuthenticated && isLoaded) {
       fetch('/api/user')
-        .then(response => response.json())
+        .then(response => {
+          // Check of response OK is en content-type is JSON
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const contentType = response.headers.get('content-type')
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON')
+          }
+          return response.json()
+        })
         .then(data => {
           if (!data.error) {
             setUserData({
@@ -104,7 +114,11 @@ function ClerkUserContent() {
           }
         })
         .catch(error => {
-          console.error('Error fetching user data:', error)
+          // Alleen loggen in development, niet in production om console te vermijden
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching user data:', error)
+          }
+          // Stil falen - gebruiker kan nog steeds de app gebruiken zonder tier info
         })
     }
   }, [isAuthenticated, isLoaded])

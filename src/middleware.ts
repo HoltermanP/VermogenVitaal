@@ -41,6 +41,7 @@ if (isClerkConfigured) {
 // - Pricing pagina (/pricing)
 // - Webhook endpoints (voor Stripe)
 // - Stocks API routes (handelen authenticatie zelf af waar nodig)
+// - User API route (handelt authenticatie zelf af)
 const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatcher([
   "/",
   "/auth/signin(.*)",
@@ -48,6 +49,7 @@ const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatch
   "/pricing",
   "/api/webhooks(.*)",
   "/api/stocks(.*)",
+  "/api/user", // User API route handelt authenticatie zelf af
 ]) : null
 
 // Export middleware - conditioneel Clerk gebruiken
@@ -59,8 +61,14 @@ export default isClerkConfigured && clerkMiddleware
         console.log(`[Middleware] ${request.method} ${request.url} - Public: ${isPublicRoute ? isPublicRoute(request) : false} - Cookies: ${!!cookieHeader}`)
       }
 
+      // API routes handelen authenticatie zelf af - laat altijd door
+      // Dit voorkomt dat API routes worden geblokkeerd door de middleware
+      if (request.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.next()
+      }
+
       // Laat public routes door zonder protect
-      // API routes zoals /api/stocks handelen authenticatie zelf af voor betere controle
+      // Voor pagina routes, check authenticatie
       if (isPublicRoute && !isPublicRoute(request)) {
         // Check of gebruiker is ingelogd
         // Als userId bestaat, laat door (gebruiker is ingelogd)
