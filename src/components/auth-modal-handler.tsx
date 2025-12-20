@@ -13,6 +13,20 @@ export function AuthModalHandler() {
   const [redirectPath, setRedirectPath] = useState<string | null>(null)
 
   useEffect(() => {
+    // Als gebruiker is ingelogd en er is een redirect parameter, redirect direct
+    if (isLoaded && isSignedIn && searchParams.get('redirect')) {
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        // Verwijder query parameters en redirect
+        const url = new URL(window.location.href)
+        url.searchParams.delete('auth_required')
+        url.searchParams.delete('redirect')
+        router.replace(redirect)
+        return
+      }
+    }
+    
+    // Alleen modal tonen als gebruiker NIET is ingelogd
     if (isLoaded && !isSignedIn && searchParams.get('auth_required') === 'true') {
       // Sla redirect path op voordat we het verwijderen
       const redirect = searchParams.get('redirect')

@@ -63,7 +63,11 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
       const redirect = urlParams.get('redirect')
       if (redirect) {
         setHasRedirected(true)
-        router.replace(redirect)
+        // Wacht even zodat Clerk volledig is geladen voordat we redirecten
+        setTimeout(() => {
+          router.replace(redirect)
+          router.refresh()
+        }, 100)
       }
     }
   }, [user, isSignedIn, pathname, hasRedirected, router])

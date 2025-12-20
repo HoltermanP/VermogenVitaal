@@ -74,13 +74,23 @@ export default isClerkConfigured && clerkMiddleware
         // Als userId bestaat, laat ALTIJD door (gebruiker is ingelogd, ongeacht tier)
         if (auth.userId) {
           // Gebruiker is ingelogd - laat door (FREE, PREMIUM, etc. - alle tiers hebben toegang)
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[Middleware] User authenticated (userId: ${auth.userId}), allowing access to ${request.nextUrl.pathname}`)
+          // Verwijder eventuele auth_required parameters uit de URL als gebruiker is ingelogd
+          const url = request.nextUrl.clone()
+          if (url.searchParams.has('auth_required') || url.searchParams.has('redirect')) {
+            url.searchParams.delete('auth_required')
+            url.searchParams.delete('redirect')
+            return NextResponse.redirect(url)
           }
           return NextResponse.next()
         }
         
         // Gebruiker is niet ingelogd - redirect naar landingpage
+        // MAAR: als er al auth_required in de URL staat, laat door (voorkom redirect loop)
+        if (request.nextUrl.searchParams.has('auth_required')) {
+          // Al op landingpage met auth_required - laat door zodat modal kan openen
+          return NextResponse.next()
+        }
+        
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Middleware] User not authenticated, redirecting to landingpage. Path: ${request.nextUrl.pathname}`)
         }
