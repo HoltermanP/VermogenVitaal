@@ -17,17 +17,17 @@ export function AuthModalHandler() {
     if (isLoaded && isSignedIn && searchParams.get('redirect')) {
       const redirect = searchParams.get('redirect')
       if (redirect) {
+        console.log('[AuthModalHandler] ✅ User is signed in, redirecting to:', redirect)
         // Verwijder query parameters en redirect
-        const url = new URL(window.location.href)
-        url.searchParams.delete('auth_required')
-        url.searchParams.delete('redirect')
         router.replace(redirect)
+        router.refresh()
         return
       }
     }
     
     // Alleen modal tonen als gebruiker NIET is ingelogd
     if (isLoaded && !isSignedIn && searchParams.get('auth_required') === 'true') {
+      console.log('[AuthModalHandler] ❌ User not signed in, opening auth modal')
       // Sla redirect path op voordat we het verwijderen
       const redirect = searchParams.get('redirect')
       if (redirect) {
@@ -36,6 +36,13 @@ export function AuthModalHandler() {
       
       setShowModal(true)
       // Verwijder query parameters uit URL zonder reload
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_required')
+      url.searchParams.delete('redirect')
+      router.replace(url.pathname + url.search, { scroll: false })
+    } else if (isLoaded && isSignedIn && searchParams.get('auth_required') === 'true') {
+      // Als gebruiker is ingelogd maar er staat nog auth_required in URL, verwijder het
+      console.log('[AuthModalHandler] ✅ User is signed in but auth_required in URL, cleaning up')
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_required')
       url.searchParams.delete('redirect')

@@ -55,28 +55,30 @@ const isPublicRoute = isClerkConfigured && createRouteMatcher ? createRouteMatch
 // Export middleware - conditioneel Clerk gebruiken
 export default isClerkConfigured && clerkMiddleware
   ? clerkMiddleware(async (auth, request) => {
-      // Debug: log de request URL en of het een public route is
-      if (process.env.NODE_ENV === 'development') {
-        const cookieHeader = request.headers.get('cookie')
-        console.log(`[Middleware] ${request.method} ${request.url} - Public: ${isPublicRoute ? isPublicRoute(request) : false} - Cookies: ${!!cookieHeader}`)
-      }
+      const pathname = request.nextUrl.pathname
+      const isPublic = isPublicRoute ? isPublicRoute(request) : false
+      
+      // Debug logging (ook in productie voor troubleshooting)
+      console.log(`[Middleware] ${request.method} ${pathname} - userId: ${auth.userId || 'null'} - Public: ${isPublic} - SessionId: ${auth.sessionId || 'null'}`)
 
       // API routes handelen authenticatie zelf af - laat altijd door
       // Dit voorkomt dat API routes worden geblokkeerd door de middleware
-      if (request.nextUrl.pathname.startsWith('/api/')) {
+      if (pathname.startsWith('/api/')) {
         return NextResponse.next()
       }
 
       // Laat public routes door zonder protect
       // Voor pagina routes, check authenticatie
-      if (isPublicRoute && !isPublicRoute(request)) {
+      if (isPublicRoute && !isPublic) {
         // Check of gebruiker is ingelogd
         // Als userId bestaat, laat ALTIJD door (gebruiker is ingelogd, ongeacht tier)
         if (auth.userId) {
+          console.log(`[Middleware] ✅ User authenticated (userId: ${auth.userId}), allowing access to ${pathname}`)
           // Gebruiker is ingelogd - laat door (FREE, PREMIUM, etc. - alle tiers hebben toegang)
           // Verwijder eventuele auth_required parameters uit de URL als gebruiker is ingelogd
           const url = request.nextUrl.clone()
           if (url.searchParams.has('auth_required') || url.searchParams.has('redirect')) {
+            console.log(`[Middleware] Removing auth_required params from URL for authenticated user`)
             url.searchParams.delete('auth_required')
             url.searchParams.delete('redirect')
             return NextResponse.redirect(url)
@@ -87,15 +89,14 @@ export default isClerkConfigured && clerkMiddleware
         // Gebruiker is niet ingelogd - redirect naar landingpage
         // MAAR: als er al auth_required in de URL staat, laat door (voorkom redirect loop)
         if (request.nextUrl.searchParams.has('auth_required')) {
+          console.log(`[Middleware] Already on landingpage with auth_required, allowing through`)
           // Al op landingpage met auth_required - laat door zodat modal kan openen
           return NextResponse.next()
         }
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[Middleware] User not authenticated, redirecting to landingpage. Path: ${request.nextUrl.pathname}`)
-        }
+        console.log(`[Middleware] ❌ User not authenticated, redirecting to landingpage. Path: ${pathname}`)
         // Redirect naar landingpage met parameter die aangeeft welke pagina werd aangevraagd
-        const requestedPath = request.nextUrl.pathname
+        const requestedPath = pathname
         const landingUrl = new URL('/', request.url)
         landingUrl.searchParams.set('auth_required', 'true')
         landingUrl.searchParams.set('redirect', requestedPath)

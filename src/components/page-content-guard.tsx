@@ -20,26 +20,23 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname)
 
-  // Debug logging
+  // Debug logging (ook in productie voor troubleshooting)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[PageContentGuard]', {
-        pathname,
-        isLoaded,
-        isSignedIn,
-        hasUser: !!user,
-        isPublicRoute,
-        hasRedirected
-      })
-    }
+    console.log('[PageContentGuard]', {
+      pathname,
+      isLoaded,
+      isSignedIn,
+      hasUser: !!user,
+      userId: user?.id || 'null',
+      isPublicRoute,
+      hasRedirected
+    })
   }, [pathname, isLoaded, isSignedIn, user, isPublicRoute, hasRedirected])
 
   // Als niet ingelogd en niet op public route, redirect naar landingpage
   useEffect(() => {
     if (isLoaded && !isSignedIn && !isPublicRoute && !hasRedirected) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PageContentGuard] Redirecting to landingpage - user not signed in')
-      }
+      console.log('[PageContentGuard] ❌ User not signed in, redirecting to landingpage')
       setHasRedirected(true)
       // Redirect naar landingpage met auth_required parameter
       router.replace('/?auth_required=true&redirect=' + encodeURIComponent(pathname))
@@ -49,10 +46,8 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
   // Reset redirect flag als gebruiker is ingelogd
   useEffect(() => {
     if (isSignedIn && user) {
+      console.log('[PageContentGuard] ✅ User is signed in, showing content', { userId: user.id })
       setHasRedirected(false)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PageContentGuard] User is signed in, showing content')
-      }
     }
   }, [isSignedIn, user])
 
@@ -74,7 +69,15 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
 
   // Als ingelogd (user bestaat), toon altijd content direct - zelfs tijdens loading
   // Dit voorkomt dat ingelogde gebruikers geblokkeerd worden
-  if (user || isSignedIn) {
+  // BELANGRIJK: Check user object eerst, want isSignedIn kan false zijn tijdens initial load
+  if (user) {
+    console.log('[PageContentGuard] ✅ User object exists, showing content immediately')
+    return <>{children}</>
+  }
+  
+  // Als isSignedIn true is maar user object nog niet geladen, wacht even
+  if (isSignedIn && !user && isLoaded) {
+    console.log('[PageContentGuard] ⏳ isSignedIn=true but user object not loaded yet, showing content anyway')
     return <>{children}</>
   }
 
