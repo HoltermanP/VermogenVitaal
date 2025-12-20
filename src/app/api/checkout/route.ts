@@ -14,13 +14,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { priceId } = body
+    let { priceId } = body
 
     if (!priceId) {
       return NextResponse.json(
         { error: "Price ID is required" },
         { status: 400 }
       )
+    }
+
+    // Resolve price ID if it's an identifier
+    if (priceId === 'premium') {
+      priceId = PRICING.PREMIUM.priceId
     }
 
     // Haal gebruiker op

@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -10,10 +11,64 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Sparkles, Brain, Zap, Bot } from "lucide-react"
+import { CheckCircle, Sparkles, Brain, Zap, Bot, CreditCard } from "lucide-react"
 import { AuthDialog, SignInDialog } from "@/components/auth-dialog"
+import { useUser } from "@clerk/nextjs"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function PricingPage() {
+  const { user, isLoaded } = useUser()
+  const [userData, setUserData] = useState<{tier: 'FREE' | 'PREMIUM', isTrialActive: boolean} | null>(null)
+  const [upgrading, setUpgrading] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetch('/api/user')
+        .then(response => response.json())
+        .then(data => {
+          if (!data.error) {
+            setUserData({ tier: data.tier, isTrialActive: data.isTrialActive })
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching user data:', error)
+        })
+    }
+  }, [isLoaded, user])
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true)
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: 'premium',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.sessionId && data.url) {
+        // Redirect naar Stripe Checkout
+        window.location.href = data.url
+      } else {
+        throw new Error(data.error || 'Er is iets misgegaan bij het starten van de upgrade')
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error)
+      toast.error('Er is iets misgegaan bij het upgraden. Probeer het opnieuw.')
+    } finally {
+      setUpgrading(false)
+    }
+  }
+
+  const isExistingFreeUser = userData?.tier === 'FREE' && !userData?.isTrialActive
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
       {/* Animated background elements */}
@@ -168,16 +223,43 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-              <AuthDialog
-                trigger={
-                  <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
-                    Start gratis proefperiode
+              {isExistingFreeUser ? (
+                <>
+                  <Button
+                    onClick={handleUpgrade}
+                    disabled={upgrading}
+                    className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300"
+                  >
+                    {upgrading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Upgraden...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Upgrade naar Premium
+                      </>
+                    )}
                   </Button>
-                }
-              />
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                Geen creditcard nodig voor proefperiode. Annuleer op elk moment.
-              </p>
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    Direct toegang tot alle Premium functies
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AuthDialog
+                    trigger={
+                      <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
+                        Start gratis proefperiode
+                      </Button>
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    Geen creditcard nodig voor proefperiode. Annuleer op elk moment.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

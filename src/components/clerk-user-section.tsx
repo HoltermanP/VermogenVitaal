@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Home, FileText, TrendingUp, Linkedin, LogOut } from "lucide-react"
+import { Home, FileText, TrendingUp, Linkedin, LogOut, CreditCard } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
 import { ClerkErrorBoundary } from "./clerk-error-boundary"
@@ -200,10 +200,18 @@ function ClerkUserContent() {
               Rapporten
             </Link>
           </DropdownMenuItem>
+          {tier === 'FREE' && !isTrialActive && (
+            <DropdownMenuItem asChild>
+              <Link href="/pricing" className="flex items-center bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20">
+                <CreditCard className="mr-2 h-4 w-4 text-primary" />
+                <span className="text-primary font-medium">Upgrade naar Premium</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link href="/pricing" className="flex items-center">
               <TrendingUp className="mr-2 h-4 w-4" />
-              Upgrade Plan
+              {tier === 'FREE' && !isTrialActive ? 'Meer informatie' : 'Plan details'}
             </Link>
           </DropdownMenuItem>
           {isAdmin && (

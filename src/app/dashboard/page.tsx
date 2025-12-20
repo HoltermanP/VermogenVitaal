@@ -1,16 +1,122 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck, Linkedin, BarChart3, PieChart, MessageSquare, Receipt } from "lucide-react"
+import { Calculator, FileText, Users, TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Zap, Target, FileCheck, Linkedin, BarChart3, PieChart, MessageSquare, Receipt, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { NewsTicker } from "@/components/news-ticker"
 import { DailyTop3 } from "@/components/daily-top-3"
+import { useUser } from "@clerk/nextjs"
+import { useEffect, useState } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+
+interface UserData {
+  tier: 'FREE' | 'PREMIUM'
+  isTrialActive: boolean
+  trialEndsAt: string | null
+  name: string
+  email: string
+}
 
 export default function DashboardPage() {
-  // Temporarily disabled authentication for testing
-  const user = { name: "Test Gebruiker", email: "test@example.com" }
-  const tier: 'FREE' | 'PREMIUM' = 'FREE' as 'FREE' | 'PREMIUM'
+  const { user: clerkUser, isLoaded } = useUser()
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState(false)
+  const router = useRouter()
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true)
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: 'premium', // Use identifier, backend will resolve to actual price ID
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.sessionId && data.url) {
+        // Redirect naar Stripe Checkout
+        window.location.href = data.url
+      } else {
+        throw new Error(data.error || 'Er is iets misgegaan bij het starten van de upgrade')
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error)
+      toast.error('Er is iets misgegaan bij het upgraden. Probeer het opnieuw.')
+    } finally {
+      setUpgrading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isLoaded && clerkUser) {
+      fetch('/api/user')
+        .then(response => response.json())
+        .then(data => {
+          if (!data.error) {
+            setUserData(data)
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching user data:', error)
+        })
+        .finally(() => setLoading(false))
+    } else if (isLoaded && !clerkUser) {
+      setLoading(false)
+    }
+  }, [isLoaded, clerkUser])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <Skeleton className="h-10 w-64 mb-3" />
+                <Skeleton className="h-6 w-96" />
+              </div>
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 lg:gap-8">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Geen toegang</h1>
+          <p className="text-muted-foreground mb-4">Je moet ingelogd zijn om je dashboard te bekijken.</p>
+          <Button asChild>
+            <Link href="/auth/signin">Inloggen</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const tier = userData.tier
+  const user = { name: userData.name, email: userData.email }
+  const isTrialActive = userData.isTrialActive
+  const trialEndsAt = userData.trialEndsAt ? new Date(userData.trialEndsAt) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
@@ -37,10 +143,16 @@ export default function DashboardPage() {
               <Badge variant={tier === 'FREE' ? 'secondary' : 'default'}>
                 {tier} Plan
               </Badge>
-              {tier === 'FREE' && (
+              {tier === 'FREE' && !isTrialActive && (
                 <Badge variant="outline" className="border-primary/50 bg-primary/10 hover:bg-primary/20">
                   <Sparkles className="w-3 h-3 mr-1 animate-spin" />
                   Upgrade beschikbaar
+                </Badge>
+              )}
+              {isTrialActive && trialEndsAt && (
+                <Badge variant="outline" className="border-blue-500/50 bg-blue-500/10 text-blue-400">
+                  <Zap className="w-3 h-3 mr-1" />
+                  Proefperiode actief tot {new Date(trialEndsAt).toLocaleDateString('nl-NL')}
                 </Badge>
               )}
             </div>
@@ -336,16 +448,38 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {tier === 'FREE' && (
+                {tier === 'FREE' && !isTrialActive && (
                   <>
-                    <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
-                      <div className="flex items-center mb-2">
-                        <Zap className="h-5 w-5 text-primary mr-2" />
-                        <h4 className="font-semibold text-foreground">Upgrade naar Pro</h4>
+                    <div className="p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all duration-300">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <CreditCard className="h-5 w-5 text-primary mr-2" />
+                          <h4 className="font-semibold text-foreground">Upgrade naar Premium</h4>
+                        </div>
+                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/50">
+                          €19,95/maand
+                        </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Krijg toegang tot document upload en expert Q&A
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Krijg toegang tot AI document analyse, Deep Research rapporten en expert Q&A
                       </p>
+                      <Button
+                        onClick={handleUpgrade}
+                        disabled={upgrading}
+                        className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300"
+                      >
+                        {upgrading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Upgraden...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Start Premium nu
+                          </>
+                        )}
+                      </Button>
                     </div>
                     <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl hover:bg-accent/20 hover:border-primary/40 transition-all duration-300">
                       <div className="flex items-center mb-2">
