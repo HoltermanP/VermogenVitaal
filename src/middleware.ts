@@ -58,8 +58,29 @@ export default isClerkConfigured && clerkMiddleware
       const pathname = request.nextUrl.pathname
       const isPublic = isPublicRoute ? isPublicRoute(request) : false
       
+      // Check cookies voor debugging
+      const cookieHeader = request.headers.get('cookie') || ''
+      const hasClerkCookie = cookieHeader.includes('__clerk') || cookieHeader.includes('__session')
+      const clerkCookies = cookieHeader.split(';').filter(c => c.includes('__clerk') || c.includes('__session'))
+      
       // Debug logging (ook in productie voor troubleshooting)
-      console.log(`[Middleware] ${request.method} ${pathname} - userId: ${auth.userId || 'null'} - Public: ${isPublic} - SessionId: ${auth.sessionId || 'null'}`)
+      console.log(`[Middleware] ${request.method} ${pathname} - userId: ${auth.userId || 'null'} - Public: ${isPublic} - SessionId: ${auth.sessionId || 'null'} - HasClerkCookie: ${hasClerkCookie} - ClerkCookies: ${clerkCookies.length}`)
+      
+      // Als auth.userId null is maar er zijn Clerk cookies, probeer auth() direct aan te roepen
+      let actualUserId = auth.userId
+      if (!actualUserId && hasClerkCookie) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { auth: authFunction } = require("@clerk/nextjs/server")
+          const authResult = await authFunction()
+          if (authResult?.userId) {
+            actualUserId = authResult.userId
+            console.log(`[Middleware] ⚠️  auth.userId was null but auth() returned userId: ${actualUserId}`)
+          }
+        } catch (error) {
+          console.error(`[Middleware] Error calling auth() directly:`, error)
+        }
+      }
 
       // API routes handelen authenticatie zelf af - laat altijd door
       // Dit voorkomt dat API routes worden geblokkeerd door de middleware
@@ -71,9 +92,10 @@ export default isClerkConfigured && clerkMiddleware
       // Voor pagina routes, check authenticatie
       if (isPublicRoute && !isPublic) {
         // Check of gebruiker is ingelogd
+        // Gebruik actualUserId (kan van fallback komen)
         // Als userId bestaat, laat ALTIJD door (gebruiker is ingelogd, ongeacht tier)
-        if (auth.userId) {
-          console.log(`[Middleware] ✅ User authenticated (userId: ${auth.userId}), allowing access to ${pathname}`)
+        if (actualUserId) {
+          console.log(`[Middleware] ✅ User authenticated (userId: ${actualUserId}), allowing access to ${pathname}`)
           // Gebruiker is ingelogd - laat door (FREE, PREMIUM, etc. - alle tiers hebben toegang)
           // Verwijder eventuele auth_required parameters uit de URL als gebruiker is ingelogd
           const url = request.nextUrl.clone()
@@ -86,11 +108,20 @@ export default isClerkConfigured && clerkMiddleware
           return NextResponse.next()
         }
         
-        // Gebruiker is niet ingelogd - redirect naar landingpage
+        // Gebruiker is niet ingelogd volgens middleware
         // MAAR: als er al auth_required in de URL staat, laat door (voorkom redirect loop)
         if (request.nextUrl.searchParams.has('auth_required')) {
           console.log(`[Middleware] Already on landingpage with auth_required, allowing through`)
           // Al op landingpage met auth_required - laat door zodat modal kan openen
+          return NextResponse.next()
+        }
+        
+        // BELANGRIJK: Als er Clerk cookies zijn maar userId is null, kan het zijn dat
+        // Clerk nog aan het laden is. Laat de client-side component beslissen.
+        // Dit voorkomt dat we te snel redirecten voordat Clerk volledig is geladen.
+        if (hasClerkCookie && !actualUserId) {
+          console.log(`[Middleware] ⚠️  Clerk cookies found but userId is null - allowing through for client-side check`)
+          // Laat door - PageContentGuard zal de uiteindelijke beslissing nemen
           return NextResponse.next()
         }
         
