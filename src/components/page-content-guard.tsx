@@ -67,27 +67,30 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     }
   }, [user, isSignedIn, pathname, hasRedirected, router])
 
-  // Als ingelogd (user bestaat), toon altijd content direct - zelfs tijdens loading
-  // Dit voorkomt dat ingelogde gebruikers geblokkeerd worden
-  // BELANGRIJK: Check user object eerst, want isSignedIn kan false zijn tijdens initial load
-  if (user) {
-    console.log('[PageContentGuard] ✅ User object exists, showing content immediately')
-    return <>{children}</>
-  }
-  
-  // Als isSignedIn true is maar user object nog niet geladen, wacht even
-  if (isSignedIn && !user && isLoaded) {
-    console.log('[PageContentGuard] ⏳ isSignedIn=true but user object not loaded yet, showing content anyway')
-    return <>{children}</>
-  }
-
-  // Als nog aan het laden, toon loading state (maar alleen als niet ingelogd)
+  // BELANGRIJK: Als Clerk nog aan het laden is, wacht even voordat we beslissingen nemen
+  // Dit voorkomt race conditions waarbij we te vroeg redirecten
   if (!isLoaded) {
+    // Als we op een public route zijn, toon content direct (ook tijdens loading)
+    if (isPublicRoute) {
+      return <>{children}</>
+    }
+    // Voor protected routes, toon loading state
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Laden...</div>
       </div>
     )
+  }
+
+  // Na het laden: check of gebruiker is ingelogd
+  // Check user object eerst (meest betrouwbaar), dan isSignedIn
+  if (user || isSignedIn) {
+    console.log('[PageContentGuard] ✅ User is authenticated, showing content', { 
+      hasUser: !!user, 
+      isSignedIn,
+      userId: user?.id || 'unknown'
+    })
+    return <>{children}</>
   }
 
   // Als niet ingelogd en niet op public route, verberg content (redirect wordt afgehandeld door useEffect)
