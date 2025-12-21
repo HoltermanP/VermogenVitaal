@@ -245,6 +245,13 @@ export default function PricingPage() {
                   <p className="text-xs text-muted-foreground text-center mt-3">
                     Direct toegang tot alle Premium functies
                   </p>
+
+                  {/* DEBUG: Toon user info */}
+                  <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <p className="text-xs text-yellow-600">
+                      DEBUG: Tier: {userData?.tier}, Trial: {userData?.isTrialActive ? 'Ja' : 'Nee'}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <>
