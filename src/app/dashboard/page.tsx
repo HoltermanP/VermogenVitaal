@@ -146,10 +146,10 @@ export default function DashboardPage() {
               <Badge variant={tier === 'FREE' ? 'secondary' : 'default'}>
                 {tier} Plan
               </Badge>
-              {tier === 'FREE' && !isTrialActive && (
+              {tier !== 'PREMIUM' && (
                 <Badge variant="outline" className="border-primary/50 bg-primary/10 hover:bg-primary/20">
                   <Sparkles className="w-3 h-3 mr-1 animate-spin" />
-                  Upgrade beschikbaar
+                  {isTrialActive ? 'Premium beschikbaar' : 'Upgrade beschikbaar'}
                 </Badge>
               )}
               {isTrialActive && trialEndsAt && (
@@ -452,7 +452,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 {(() => {
-                  console.log('Dashboard Debug - Upgrade button check:', { tier, isTrialActive, condition: tier === 'FREE' && !isTrialActive })
+                  console.log('Dashboard Debug - Upgrade button check:', { tier, isTrialActive, condition: tier !== 'PREMIUM' })
                   return null
                 })()}
 
@@ -489,20 +489,25 @@ export default function DashboardPage() {
                   </Button>
                 </div>
 
-                {tier === 'FREE' && !isTrialActive && (
+                {tier !== 'PREMIUM' && (
                   <>
                     <div className="p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all duration-300">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 text-primary mr-2" />
-                          <h4 className="font-semibold text-foreground">Upgrade naar Premium</h4>
+                          <h4 className="font-semibold text-foreground">
+                            {isTrialActive ? 'Nu Premium nemen' : 'Upgrade naar Premium'}
+                          </h4>
                         </div>
                         <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/50">
                           €19,95/maand
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Krijg toegang tot AI document analyse, Deep Research rapporten en expert Q&A
+                        {isTrialActive
+                          ? 'Behoud toegang tot AI document analyse, Deep Research rapporten en expert Q&A na je proefperiode'
+                          : 'Krijg toegang tot AI document analyse, Deep Research rapporten en expert Q&A'
+                        }
                       </p>
                       <Button
                         onClick={handleUpgrade}
@@ -512,12 +517,12 @@ export default function DashboardPage() {
                         {upgrading ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Upgraden...
+                            {isTrialActive ? 'Premium nemen...' : 'Upgraden...'}
                           </>
                         ) : (
                           <>
                             <Sparkles className="h-4 w-4 mr-2" />
-                            Start Premium nu
+                            {isTrialActive ? 'Nu Premium nemen' : 'Start Premium nu'}
                           </>
                         )}
                       </Button>

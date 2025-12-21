@@ -155,7 +155,7 @@ function ClerkUserContent() {
     tier,
     isTrialActive,
     userData,
-    showUpgradeButton: tier === 'FREE' && !isTrialActive
+    showUpgradeButton: tier !== 'PREMIUM'
   })
   
   return (
@@ -209,11 +209,13 @@ function ClerkUserContent() {
               Rapporten
             </Link>
           </DropdownMenuItem>
-          {tier === 'FREE' && !isTrialActive && (
+          {tier !== 'PREMIUM' && (
             <DropdownMenuItem asChild>
               <Link href="/pricing" className="flex items-center bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20">
                 <CreditCard className="mr-2 h-4 w-4 text-primary" />
-                <span className="text-primary font-medium">Upgrade naar Premium</span>
+                <span className="text-primary font-medium">
+                  {isTrialActive ? 'Nu Premium nemen' : 'Upgrade naar Premium'}
+                </span>
               </Link>
             </DropdownMenuItem>
           )}

@@ -67,7 +67,7 @@ export default function PricingPage() {
     }
   }
 
-  const isExistingFreeUser = userData?.tier === 'FREE' && !userData?.isTrialActive
+  const canUpgrade = userData?.tier !== 'PREMIUM'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 relative overflow-hidden py-12">
@@ -223,7 +223,7 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-              {isExistingFreeUser ? (
+              {canUpgrade ? (
                 <>
                   <Button
                     onClick={handleUpgrade}
@@ -233,17 +233,20 @@ export default function PricingPage() {
                     {upgrading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Upgraden...
+                        {userData?.isTrialActive ? 'Premium nemen...' : 'Upgraden...'}
                       </>
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4 mr-2" />
-                        Upgrade naar Premium
+                        {userData?.isTrialActive ? 'Nu Premium nemen' : 'Upgrade naar Premium'}
                       </>
                     )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center mt-3">
-                    Direct toegang tot alle Premium functies
+                    {userData?.isTrialActive
+                      ? 'Behoud toegang tot alle Premium functies na je proefperiode'
+                      : 'Direct toegang tot alle Premium functies'
+                    }
                   </p>
 
                   {/* DEBUG: Toon user info */}
@@ -255,15 +258,14 @@ export default function PricingPage() {
                 </>
               ) : (
                 <>
-                  <AuthDialog
-                    trigger={
-                      <Button className="w-full gradient-financial text-white shadow-financial hover:shadow-financial-lg transition-all duration-300">
-                        Start gratis proefperiode
-                      </Button>
-                    }
-                  />
+                  <div className="text-center py-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="text-green-400 font-medium">Premium actief</span>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground text-center mt-3">
-                    Geen creditcard nodig voor proefperiode. Annuleer op elk moment.
+                    Je hebt al toegang tot alle Premium functies
                   </p>
                 </>
               )}
