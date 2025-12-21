@@ -63,8 +63,10 @@ export default function DashboardPage() {
       fetch('/api/user')
         .then(response => response.json())
         .then(data => {
+          console.log('Dashboard Debug - User API response:', data)
           if (!data.error) {
             setUserData(data)
+            console.log('Dashboard Debug - UserData set:', data)
           }
         })
         .catch(error => {
@@ -72,6 +74,7 @@ export default function DashboardPage() {
         })
         .finally(() => setLoading(false))
     } else if (isLoaded && !clerkUser) {
+      console.log('Dashboard Debug - No clerk user')
       setLoading(false)
     }
   }, [isLoaded, clerkUser])
@@ -448,6 +451,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {(() => {
+                  console.log('Dashboard Debug - Upgrade button check:', { tier, isTrialActive, condition: tier === 'FREE' && !isTrialActive })
+                  return null
+                })()}
                 {tier === 'FREE' && !isTrialActive && (
                   <>
                     <div className="p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all duration-300">

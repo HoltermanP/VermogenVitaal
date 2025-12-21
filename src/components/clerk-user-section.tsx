@@ -148,6 +148,15 @@ function ClerkUserContent() {
   const tier = userData?.tier || 'FREE'
   const isTrialActive = userData?.isTrialActive || false
   const trialEndsAt = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null
+
+  // Debug logging
+  console.log('ClerkUserSection Debug:', {
+    userId: user?.id,
+    tier,
+    isTrialActive,
+    userData,
+    showUpgradeButton: tier === 'FREE' && !isTrialActive
+  })
   
   return (
     <>
