@@ -455,6 +455,40 @@ export default function DashboardPage() {
                   console.log('Dashboard Debug - Upgrade button check:', { tier, isTrialActive, condition: tier === 'FREE' && !isTrialActive })
                   return null
                 })()}
+
+                {/* TEMP: Force upgrade button for debugging - altijd zichtbaar */}
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <CreditCard className="h-5 w-5 text-red-500 mr-2" />
+                      <h4 className="font-semibold text-foreground">DEBUG: Force Upgrade Button</h4>
+                    </div>
+                    <Badge variant="secondary" className="bg-red-500/20 text-red-400 border-red-500/50">
+                      Debug Mode
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Deze button is altijd zichtbaar voor debugging. Tier: {tier}, Trial: {isTrialActive ? 'Ja' : 'Nee'}
+                  </p>
+                  <Button
+                    onClick={handleUpgrade}
+                    disabled={upgrading}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg transition-all duration-300"
+                  >
+                    {upgrading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Upgraden...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Force Upgrade Test
+                      </>
+                    )}
+                  </Button>
+                </div>
+
                 {tier === 'FREE' && !isTrialActive && (
                   <>
                     <div className="p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-xl hover:bg-primary/20 hover:border-primary/40 transition-all duration-300">
