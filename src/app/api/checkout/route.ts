@@ -7,11 +7,26 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("STRIPE_SECRET_KEY is not set in environment")
       return NextResponse.json(
         { error: "Stripe is not configured" },
         { status: 500 }
       )
     }
+
+    if (!process.env.STRIPE_PREMIUM_PRICE_ID) {
+      console.error("STRIPE_PREMIUM_PRICE_ID is not set in environment")
+      return NextResponse.json(
+        { error: "Stripe Premium Price ID is not configured" },
+        { status: 500 }
+      )
+    }
+
+    console.log("Environment check passed:", {
+      hasStripeSecret: !!process.env.STRIPE_SECRET_KEY,
+      hasPremiumPriceId: !!process.env.STRIPE_PREMIUM_PRICE_ID,
+      premiumPriceId: process.env.STRIPE_PREMIUM_PRICE_ID?.substring(0, 10) + "..."
+    })
 
     const body = await request.json()
     let { priceId } = body
@@ -67,6 +82,16 @@ export async function POST(request: NextRequest) {
       stripeCustomerId = payment.stripeCustomerId
     }
 
+    // Log checkout parameters for debugging
+    console.log("Creating checkout session with params:", {
+      priceId,
+      stripeCustomerId,
+      hasUsedTrial,
+      isPremiumSubscription: isPremiumSubscription,
+      successUrl: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+      cancelUrl: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`
+    })
+
     // Maak checkout session
     const session = await createCheckoutSession(
       priceId,
@@ -76,14 +101,54 @@ export async function POST(request: NextRequest) {
       hasUsedTrial
     )
 
+    console.log("Checkout session created successfully:", {
+      sessionId: session.id,
+      url: session.url
+    })
+
     return NextResponse.json({ 
       sessionId: session.id,
       url: session.url 
     })
   } catch (error) {
-    console.error("Checkout error:", error)
+    console.error("Checkout error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      code: (error as any)?.code,
+      statusCode: (error as any)?.statusCode,
+      requestId: (error as any)?.requestId,
+      type: (error as any)?.type
+    })
+
+    // Meer specifieke foutmeldingen
+    let errorMessage = "Failed to create checkout session"
+    if (error instanceof Error) {
+      if (error.message.includes("Stripe is not configured")) {
+        errorMessage = "Stripe is not properly configured. Please check environment variables."
+      } else if (error.message.includes("No such price")) {
+        errorMessage = "Invalid price ID. Please check your Stripe configuration."
+      } else if (error.message.includes("Invalid API Key")) {
+        errorMessage = "Invalid Stripe API key. Please check your configuration."
+      } else if ((error as any)?.code === 'card_declined') {
+        errorMessage = "Card was declined. Please try a different payment method."
+      } else if ((error as any)?.code === 'expired_card') {
+        errorMessage = "Card has expired. Please update your payment method."
+      } else if ((error as any)?.code === 'incorrect_cvc') {
+        errorMessage = "Incorrect CVC code. Please check your card details."
+      } else if ((error as any)?.type === 'StripeConnectionError') {
+        errorMessage = "Network error while connecting to Stripe. Please try again."
+      } else if ((error as any)?.type === 'StripeRateLimitError') {
+        errorMessage = "Too many requests. Please wait a moment and try again."
+      } else if ((error as any)?.type === 'StripeInvalidRequestError') {
+        errorMessage = `Invalid request: ${error.message}`
+      } else {
+        errorMessage = error.message
+      }
+    }
+
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: errorMessage },
       { status: 500 }
     )
   }

@@ -12,7 +12,7 @@ function createStripeInstance(): Stripe {
     return {} as Stripe
   }
   return new Stripe(stripeSecretKey, {
-    apiVersion: '2025-09-30.clover',
+    apiVersion: '2024-11-20.acacia',
   })
 }
 
@@ -61,8 +61,20 @@ export async function createCheckoutSession(
     throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.")
   }
 
+  console.log("createCheckoutSession called with:", {
+    priceId,
+    customerId,
+    hasUsedTrial,
+    allPricingIds: {
+      premium: PRICING.PREMIUM.priceId,
+      fiscaleCheck: PRICING.FISCALE_OPTIMALISATIE_CHECK.priceId,
+      documentAnalyse: PRICING.PREMIUM_DOCUMENT_ANALYSE.priceId,
+      dueDiligence: PRICING.DUE_DILIGENCE_VASTGOED.priceId
+    }
+  })
+
   // Determine if this is a subscription or one-time payment
-  const isOneTime = 
+  const isOneTime =
     priceId === PRICING.FISCALE_OPTIMALISATIE_CHECK.priceId ||
     priceId === PRICING.PREMIUM_DOCUMENT_ANALYSE.priceId ||
     priceId === PRICING.DUE_DILIGENCE_VASTGOED.priceId
@@ -70,6 +82,13 @@ export async function createCheckoutSession(
   // Voor Premium subscriptions: voeg trial period toe als gebruiker nog geen trial heeft gebruikt
   const isPremiumSubscription = priceId === PRICING.PREMIUM.priceId && !isOneTime
   const shouldAddTrial = isPremiumSubscription && !hasUsedTrial
+
+  console.log("Checkout session config:", {
+    isOneTime,
+    isPremiumSubscription,
+    shouldAddTrial,
+    mode: isOneTime ? 'payment' : 'subscription'
+  })
 
   const sessionConfig: Stripe.Checkout.SessionCreateParams = {
     mode: isOneTime ? 'payment' : 'subscription',
@@ -96,9 +115,20 @@ export async function createCheckoutSession(
     }
   }
 
-  const session = await stripe.checkout.sessions.create(sessionConfig)
+  console.log("Final session config:", JSON.stringify(sessionConfig, null, 2))
 
-  return session
+  try {
+    const session = await stripe.checkout.sessions.create(sessionConfig)
+    console.log("Stripe session created successfully:", {
+      id: session.id,
+      url: session.url,
+      customer: session.customer
+    })
+    return session
+  } catch (error) {
+    console.error("Stripe session creation failed:", error)
+    throw error
+  }
 }
 
 export async function createCustomerPortalSession(customerId: string) {
