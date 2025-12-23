@@ -12,7 +12,7 @@ function createStripeInstance(): Stripe {
     return {} as Stripe
   }
   return new Stripe(stripeSecretKey, {
-    apiVersion: '2024-11-20.acacia',
+    apiVersion: '2025-09-30.clover',
   })
 }
 
