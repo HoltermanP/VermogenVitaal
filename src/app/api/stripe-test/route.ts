@@ -14,10 +14,11 @@ export async function GET() {
     let stripeTest = "Not tested"
     try {
       // Try to retrieve account info (this will fail if API key is wrong)
-      const account = await stripe.accounts.retrieve()
+      await stripe.accounts.retrieve()
       stripeTest = "Connected successfully"
-    } catch (error: any) {
-      stripeTest = `Failed: ${error.message}`
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      stripeTest = `Failed: ${errorMessage}`
     }
 
     // Test Price retrieval
@@ -29,8 +30,9 @@ export async function GET() {
       } else {
         priceTest = "Price ID not configured"
       }
-    } catch (error: any) {
-      priceTest = `Failed: ${error.message}`
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      priceTest = `Failed: ${errorMessage}`
     }
 
     return NextResponse.json({
@@ -44,9 +46,10 @@ export async function GET() {
         dueDiligence: PRICING.DUE_DILIGENCE_VASTGOED.priceId
       }
     })
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: error.message },
+      { error: errorMessage },
       { status: 500 }
     )
   }

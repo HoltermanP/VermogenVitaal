@@ -115,10 +115,10 @@ export async function POST(request: NextRequest) {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       type: error instanceof Error ? error.constructor.name : typeof error,
-      code: (error as any)?.code,
-      statusCode: (error as any)?.statusCode,
-      requestId: (error as any)?.requestId,
-      type: (error as any)?.type
+      code: error && typeof error === 'object' && 'code' in error ? (error as { code: unknown }).code : undefined,
+      statusCode: error && typeof error === 'object' && 'statusCode' in error ? (error as { statusCode: unknown }).statusCode : undefined,
+      requestId: error && typeof error === 'object' && 'requestId' in error ? (error as { requestId: unknown }).requestId : undefined,
+      errorType: error && typeof error === 'object' && 'type' in error ? (error as { type: unknown }).type : undefined
     })
 
     // Meer specifieke foutmeldingen
@@ -130,17 +130,17 @@ export async function POST(request: NextRequest) {
         errorMessage = "Invalid price ID. Please check your Stripe configuration."
       } else if (error.message.includes("Invalid API Key")) {
         errorMessage = "Invalid Stripe API key. Please check your configuration."
-      } else if ((error as any)?.code === 'card_declined') {
+      } else if (error && typeof error === 'object' && 'code' in error && (error as { code: unknown }).code === 'card_declined') {
         errorMessage = "Card was declined. Please try a different payment method."
-      } else if ((error as any)?.code === 'expired_card') {
+      } else if (error && typeof error === 'object' && 'code' in error && (error as { code: unknown }).code === 'expired_card') {
         errorMessage = "Card has expired. Please update your payment method."
-      } else if ((error as any)?.code === 'incorrect_cvc') {
+      } else if (error && typeof error === 'object' && 'code' in error && (error as { code: unknown }).code === 'incorrect_cvc') {
         errorMessage = "Incorrect CVC code. Please check your card details."
-      } else if ((error as any)?.type === 'StripeConnectionError') {
+      } else if (error && typeof error === 'object' && 'type' in error && (error as { type: unknown }).type === 'StripeConnectionError') {
         errorMessage = "Network error while connecting to Stripe. Please try again."
-      } else if ((error as any)?.type === 'StripeRateLimitError') {
+      } else if (error && typeof error === 'object' && 'type' in error && (error as { type: unknown }).type === 'StripeRateLimitError') {
         errorMessage = "Too many requests. Please wait a moment and try again."
-      } else if ((error as any)?.type === 'StripeInvalidRequestError') {
+      } else if (error && typeof error === 'object' && 'type' in error && (error as { type: unknown }).type === 'StripeInvalidRequestError') {
         errorMessage = `Invalid request: ${error.message}`
       } else {
         errorMessage = error.message
