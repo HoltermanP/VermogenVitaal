@@ -54,6 +54,7 @@ import {
 import { toast } from "sonner"
 import { NewsTicker } from "@/components/news-ticker"
 import { DailyTop3 } from "@/components/daily-top-3"
+import ReactMarkdown from "react-markdown"
 import { 
   detectAllPatterns, 
   getPatternName, 
@@ -2019,10 +2020,13 @@ function StocksPageContent() {
       
       // Check of alle analyses succesvol zijn voltooid
       const failed = results.filter(r => r.status === 'rejected')
+      const successful = results.filter(r => r.status === 'fulfilled')
+      
       if (failed.length > 0) {
-        toast.error(`${failed.length} van ${results.length} analyses mislukt`)
+        console.error('Failed AI analyses:', failed.map(r => r.status === 'rejected' ? r.reason : null))
+        toast.error(`${failed.length} van ${results.length} analyses mislukt. ${successful.length} analyses succesvol.`)
       } else {
-        toast.success("AI analyse succesvol voltooid!")
+        toast.success("AI analyse succesvol voltooid voor alle termijnen!")
       }
     } catch (error) {
       console.error('Error starting AI analysis:', error)
@@ -3999,11 +4003,63 @@ function StocksPageContent() {
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
-                                      <p className="text-sm text-muted-foreground leading-relaxed">{displayAnalysis}</p>
+                                      <div className="prose prose-sm dark:prose-invert max-w-none
+                                        prose-headings:text-foreground prose-headings:font-semibold
+                                        prose-h2:text-lg prose-h2:mb-2 prose-h2:mt-4 prose-h2:text-primary
+                                        prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 prose-h3:text-foreground
+                                        prose-p:text-sm prose-p:leading-relaxed prose-p:mb-3 prose-p:text-muted-foreground
+                                        prose-strong:text-foreground prose-strong:font-semibold
+                                        prose-ul:text-sm prose-ul:my-2 prose-ul:space-y-1 prose-ul:list-disc prose-ul:pl-4
+                                        prose-ol:text-sm prose-ol:my-2 prose-ol:space-y-1 prose-ol:list-decimal prose-ol:pl-4
+                                        prose-li:text-muted-foreground prose-li:leading-relaxed
+                                        prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-2
+                                        prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono
+                                        prose-hr:border-border prose-hr:my-4">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({...props}) => (
+                                              <h2 className="text-lg font-semibold mb-2 mt-4 text-primary" {...props} />
+                                            ),
+                                            h3: ({...props}) => (
+                                              <h3 className="text-base font-semibold mb-2 mt-3 text-foreground" {...props} />
+                                            ),
+                                            p: ({...props}) => (
+                                              <p className="text-sm leading-relaxed mb-3 text-muted-foreground" {...props} />
+                                            ),
+                                            ul: ({...props}) => (
+                                              <ul className="text-sm my-2 space-y-1 list-disc pl-4" {...props} />
+                                            ),
+                                            ol: ({...props}) => (
+                                              <ol className="text-sm my-2 space-y-1 list-decimal pl-4" {...props} />
+                                            ),
+                                            li: ({...props}) => (
+                                              <li className="text-muted-foreground leading-relaxed" {...props} />
+                                            ),
+                                            blockquote: ({...props}) => (
+                                              <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2" {...props} />
+                                            ),
+                                            code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
+                                              const isInline = !props.className || !props.className.includes('language-');
+                                              return isInline ? (
+                                                <code className="text-xs bg-muted px-1 py-0.5 rounded font-mono" {...props} />
+                                              ) : (
+                                                <code className="block text-xs bg-muted p-2 rounded overflow-x-auto" {...props} />
+                                              );
+                                            },
+                                            hr: ({...props}) => (
+                                              <hr className="border-border my-4" {...props} />
+                                            ),
+                                          }}
+                                        >
+                                          {displayAnalysis}
+                                        </ReactMarkdown>
+                                      </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
                                           <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.veryShortTermScore.toFixed(1)}/10):</div>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">{aiData.scoreExplanation}</p>
+                                          <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
+                                            <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -4052,11 +4108,63 @@ function StocksPageContent() {
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
-                                      <p className="text-sm text-muted-foreground leading-relaxed">{displayAnalysis}</p>
+                                      <div className="prose prose-sm dark:prose-invert max-w-none
+                                        prose-headings:text-foreground prose-headings:font-semibold
+                                        prose-h2:text-lg prose-h2:mb-2 prose-h2:mt-4 prose-h2:text-primary
+                                        prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 prose-h3:text-foreground
+                                        prose-p:text-sm prose-p:leading-relaxed prose-p:mb-3 prose-p:text-muted-foreground
+                                        prose-strong:text-foreground prose-strong:font-semibold
+                                        prose-ul:text-sm prose-ul:my-2 prose-ul:space-y-1 prose-ul:list-disc prose-ul:pl-4
+                                        prose-ol:text-sm prose-ol:my-2 prose-ol:space-y-1 prose-ol:list-decimal prose-ol:pl-4
+                                        prose-li:text-muted-foreground prose-li:leading-relaxed
+                                        prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-2
+                                        prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono
+                                        prose-hr:border-border prose-hr:my-4">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({...props}) => (
+                                              <h2 className="text-lg font-semibold mb-2 mt-4 text-primary" {...props} />
+                                            ),
+                                            h3: ({...props}) => (
+                                              <h3 className="text-base font-semibold mb-2 mt-3 text-foreground" {...props} />
+                                            ),
+                                            p: ({...props}) => (
+                                              <p className="text-sm leading-relaxed mb-3 text-muted-foreground" {...props} />
+                                            ),
+                                            ul: ({...props}) => (
+                                              <ul className="text-sm my-2 space-y-1 list-disc pl-4" {...props} />
+                                            ),
+                                            ol: ({...props}) => (
+                                              <ol className="text-sm my-2 space-y-1 list-decimal pl-4" {...props} />
+                                            ),
+                                            li: ({...props}) => (
+                                              <li className="text-muted-foreground leading-relaxed" {...props} />
+                                            ),
+                                            blockquote: ({...props}) => (
+                                              <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2" {...props} />
+                                            ),
+                                            code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
+                                              const isInline = !props.className || !props.className.includes('language-');
+                                              return isInline ? (
+                                                <code className="text-xs bg-muted px-1 py-0.5 rounded font-mono" {...props} />
+                                              ) : (
+                                                <code className="block text-xs bg-muted p-2 rounded overflow-x-auto" {...props} />
+                                              );
+                                            },
+                                            hr: ({...props}) => (
+                                              <hr className="border-border my-4" {...props} />
+                                            ),
+                                          }}
+                                        >
+                                          {displayAnalysis}
+                                        </ReactMarkdown>
+                                      </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
                                           <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.shortTermScore.toFixed(1)}/10):</div>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">{aiData.scoreExplanation}</p>
+                                          <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
+                                            <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -4105,11 +4213,63 @@ function StocksPageContent() {
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
-                                      <p className="text-sm text-muted-foreground leading-relaxed">{displayAnalysis}</p>
+                                      <div className="prose prose-sm dark:prose-invert max-w-none
+                                        prose-headings:text-foreground prose-headings:font-semibold
+                                        prose-h2:text-lg prose-h2:mb-2 prose-h2:mt-4 prose-h2:text-primary
+                                        prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 prose-h3:text-foreground
+                                        prose-p:text-sm prose-p:leading-relaxed prose-p:mb-3 prose-p:text-muted-foreground
+                                        prose-strong:text-foreground prose-strong:font-semibold
+                                        prose-ul:text-sm prose-ul:my-2 prose-ul:space-y-1 prose-ul:list-disc prose-ul:pl-4
+                                        prose-ol:text-sm prose-ol:my-2 prose-ol:space-y-1 prose-ol:list-decimal prose-ol:pl-4
+                                        prose-li:text-muted-foreground prose-li:leading-relaxed
+                                        prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-2
+                                        prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono
+                                        prose-hr:border-border prose-hr:my-4">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({...props}) => (
+                                              <h2 className="text-lg font-semibold mb-2 mt-4 text-primary" {...props} />
+                                            ),
+                                            h3: ({...props}) => (
+                                              <h3 className="text-base font-semibold mb-2 mt-3 text-foreground" {...props} />
+                                            ),
+                                            p: ({...props}) => (
+                                              <p className="text-sm leading-relaxed mb-3 text-muted-foreground" {...props} />
+                                            ),
+                                            ul: ({...props}) => (
+                                              <ul className="text-sm my-2 space-y-1 list-disc pl-4" {...props} />
+                                            ),
+                                            ol: ({...props}) => (
+                                              <ol className="text-sm my-2 space-y-1 list-decimal pl-4" {...props} />
+                                            ),
+                                            li: ({...props}) => (
+                                              <li className="text-muted-foreground leading-relaxed" {...props} />
+                                            ),
+                                            blockquote: ({...props}) => (
+                                              <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2" {...props} />
+                                            ),
+                                            code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
+                                              const isInline = !props.className || !props.className.includes('language-');
+                                              return isInline ? (
+                                                <code className="text-xs bg-muted px-1 py-0.5 rounded font-mono" {...props} />
+                                              ) : (
+                                                <code className="block text-xs bg-muted p-2 rounded overflow-x-auto" {...props} />
+                                              );
+                                            },
+                                            hr: ({...props}) => (
+                                              <hr className="border-border my-4" {...props} />
+                                            ),
+                                          }}
+                                        >
+                                          {displayAnalysis}
+                                        </ReactMarkdown>
+                                      </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
                                           <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.mediumTermScore.toFixed(1)}/10):</div>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">{aiData.scoreExplanation}</p>
+                                          <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
+                                            <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -4158,11 +4318,63 @@ function StocksPageContent() {
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
-                                      <p className="text-sm text-muted-foreground leading-relaxed">{displayAnalysis}</p>
+                                      <div className="prose prose-sm dark:prose-invert max-w-none
+                                        prose-headings:text-foreground prose-headings:font-semibold
+                                        prose-h2:text-lg prose-h2:mb-2 prose-h2:mt-4 prose-h2:text-primary
+                                        prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 prose-h3:text-foreground
+                                        prose-p:text-sm prose-p:leading-relaxed prose-p:mb-3 prose-p:text-muted-foreground
+                                        prose-strong:text-foreground prose-strong:font-semibold
+                                        prose-ul:text-sm prose-ul:my-2 prose-ul:space-y-1 prose-ul:list-disc prose-ul:pl-4
+                                        prose-ol:text-sm prose-ol:my-2 prose-ol:space-y-1 prose-ol:list-decimal prose-ol:pl-4
+                                        prose-li:text-muted-foreground prose-li:leading-relaxed
+                                        prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-2
+                                        prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono
+                                        prose-hr:border-border prose-hr:my-4">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({...props}) => (
+                                              <h2 className="text-lg font-semibold mb-2 mt-4 text-primary" {...props} />
+                                            ),
+                                            h3: ({...props}) => (
+                                              <h3 className="text-base font-semibold mb-2 mt-3 text-foreground" {...props} />
+                                            ),
+                                            p: ({...props}) => (
+                                              <p className="text-sm leading-relaxed mb-3 text-muted-foreground" {...props} />
+                                            ),
+                                            ul: ({...props}) => (
+                                              <ul className="text-sm my-2 space-y-1 list-disc pl-4" {...props} />
+                                            ),
+                                            ol: ({...props}) => (
+                                              <ol className="text-sm my-2 space-y-1 list-decimal pl-4" {...props} />
+                                            ),
+                                            li: ({...props}) => (
+                                              <li className="text-muted-foreground leading-relaxed" {...props} />
+                                            ),
+                                            blockquote: ({...props}) => (
+                                              <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2" {...props} />
+                                            ),
+                                            code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
+                                              const isInline = !props.className || !props.className.includes('language-');
+                                              return isInline ? (
+                                                <code className="text-xs bg-muted px-1 py-0.5 rounded font-mono" {...props} />
+                                              ) : (
+                                                <code className="block text-xs bg-muted p-2 rounded overflow-x-auto" {...props} />
+                                              );
+                                            },
+                                            hr: ({...props}) => (
+                                              <hr className="border-border my-4" {...props} />
+                                            ),
+                                          }}
+                                        >
+                                          {displayAnalysis}
+                                        </ReactMarkdown>
+                                      </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
                                           <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.longTermScore.toFixed(1)}/10):</div>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">{aiData.scoreExplanation}</p>
+                                          <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
+                                            <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -4211,11 +4423,63 @@ function StocksPageContent() {
                                     </div>
                                   ) : (
                                     <div className="space-y-3">
-                                      <p className="text-sm text-muted-foreground leading-relaxed">{displayAnalysis}</p>
+                                      <div className="prose prose-sm dark:prose-invert max-w-none
+                                        prose-headings:text-foreground prose-headings:font-semibold
+                                        prose-h2:text-lg prose-h2:mb-2 prose-h2:mt-4 prose-h2:text-primary
+                                        prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 prose-h3:text-foreground
+                                        prose-p:text-sm prose-p:leading-relaxed prose-p:mb-3 prose-p:text-muted-foreground
+                                        prose-strong:text-foreground prose-strong:font-semibold
+                                        prose-ul:text-sm prose-ul:my-2 prose-ul:space-y-1 prose-ul:list-disc prose-ul:pl-4
+                                        prose-ol:text-sm prose-ol:my-2 prose-ol:space-y-1 prose-ol:list-decimal prose-ol:pl-4
+                                        prose-li:text-muted-foreground prose-li:leading-relaxed
+                                        prose-blockquote:border-l-2 prose-blockquote:border-primary prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-2
+                                        prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-mono
+                                        prose-hr:border-border prose-hr:my-4">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({...props}) => (
+                                              <h2 className="text-lg font-semibold mb-2 mt-4 text-primary" {...props} />
+                                            ),
+                                            h3: ({...props}) => (
+                                              <h3 className="text-base font-semibold mb-2 mt-3 text-foreground" {...props} />
+                                            ),
+                                            p: ({...props}) => (
+                                              <p className="text-sm leading-relaxed mb-3 text-muted-foreground" {...props} />
+                                            ),
+                                            ul: ({...props}) => (
+                                              <ul className="text-sm my-2 space-y-1 list-disc pl-4" {...props} />
+                                            ),
+                                            ol: ({...props}) => (
+                                              <ol className="text-sm my-2 space-y-1 list-decimal pl-4" {...props} />
+                                            ),
+                                            li: ({...props}) => (
+                                              <li className="text-muted-foreground leading-relaxed" {...props} />
+                                            ),
+                                            blockquote: ({...props}) => (
+                                              <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2" {...props} />
+                                            ),
+                                            code: ({...props}: React.HTMLAttributes<HTMLElement>) => {
+                                              const isInline = !props.className || !props.className.includes('language-');
+                                              return isInline ? (
+                                                <code className="text-xs bg-muted px-1 py-0.5 rounded font-mono" {...props} />
+                                              ) : (
+                                                <code className="block text-xs bg-muted p-2 rounded overflow-x-auto" {...props} />
+                                              );
+                                            },
+                                            hr: ({...props}) => (
+                                              <hr className="border-border my-4" {...props} />
+                                            ),
+                                          }}
+                                        >
+                                          {displayAnalysis}
+                                        </ReactMarkdown>
+                                      </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
                                           <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.veryLongTermScore.toFixed(1)}/10):</div>
-                                          <p className="text-xs text-muted-foreground leading-relaxed">{aiData.scoreExplanation}</p>
+                                          <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
+                                            <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
