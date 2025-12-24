@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
           tier: true,
           trialEndsAt: true,
           isTrialActive: true,
+          whatsappNumber: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -94,6 +95,7 @@ export async function GET(request: NextRequest) {
             email: true,
             name: true,
             tier: true,
+            whatsappNumber: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -119,6 +121,7 @@ export async function GET(request: NextRequest) {
               tier: true,
               trialEndsAt: true,
               isTrialActive: true,
+              whatsappNumber: true,
               createdAt: true,
               updatedAt: true,
             },
@@ -164,6 +167,7 @@ export async function GET(request: NextRequest) {
             tier: true,
             trialEndsAt: true,
             isTrialActive: true,
+            whatsappNumber: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -185,6 +189,7 @@ export async function GET(request: NextRequest) {
                 tier: true,
                 trialEndsAt: true,
                 isTrialActive: true,
+                whatsappNumber: true,
                 createdAt: true,
                 updatedAt: true,
               },
@@ -228,6 +233,7 @@ export async function GET(request: NextRequest) {
       tier: dbUser.tier,
       trialEndsAt: dbUser.trialEndsAt ? dbUser.trialEndsAt.toISOString() : null,
       isTrialActive: isTrialActive ?? false,
+      whatsappNumber: dbUser.whatsappNumber || null,
       createdAt: dbUser.createdAt.toISOString(),
       updatedAt: dbUser.updatedAt.toISOString(),
     })
@@ -248,6 +254,56 @@ export async function GET(request: NextRequest) {
         error: "Interne server fout",
         ...(process.env.NODE_ENV === 'development' && { details: errorMessage })
       },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - Update gebruiker instellingen (bijv. WhatsApp nummer)
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await getClerkUser(request)
+    
+    if (!user || !user.id) {
+      return NextResponse.json(
+        { error: "Niet geautoriseerd" },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { whatsappNumber } = body
+
+    // Update gebruiker
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...(whatsappNumber !== undefined && { whatsappNumber: whatsappNumber || null }),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tier: true,
+        whatsappNumber: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+
+    return NextResponse.json({
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      tier: updated.tier,
+      whatsappNumber: updated.whatsappNumber || null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    })
+  } catch (error) {
+    console.error("Error updating user:", error)
+    return NextResponse.json(
+      { error: "Fout bij bijwerken gebruiker" },
       { status: 500 }
     )
   }

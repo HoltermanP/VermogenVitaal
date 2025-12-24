@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getClerkUser } from "@/lib/clerk-auth"
 import { prisma } from "@/lib/prisma"
 import { sendAlertNotifications } from "@/lib/notification-service"
 
-// Helper functie om koers op te halen (hergebruik van quote route)
+// Helper functie om koers op te halen
 async function getStockQuote(symbol: string) {
   try {
-    // Converteer Nederlandse symbolen naar Yahoo Finance format
     const dutchSymbols: Record<string, string> = {
       ASML: "ASML.AS",
       INGA: "INGA.AS",
@@ -39,54 +37,39 @@ async function getStockQuote(symbol: string) {
   }
 }
 
-// POST - Check alle portfolio items voor alerts
-export async function POST(request: NextRequest) {
+// GET - Cron job endpoint voor automatische alert checks
+// Deze wordt aangeroepen door Vercel Cron Jobs
+export async function GET(request: NextRequest) {
   try {
-    const user = await getClerkUser(request)
-    
-    if (!user || !user.id) {
+    // Verifieer dat dit een cron job request is (optioneel: check Authorization header)
+    const authHeader = request.headers.get("authorization")
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json(
         { error: "Niet geautoriseerd" },
         { status: 401 }
       )
     }
 
-    // Haal gebruiker op voor email en whatsapp nummer
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { email: true, name: true, whatsappNumber: true },
-    })
-
-    if (!dbUser) {
-      return NextResponse.json(
-        { error: "Gebruiker niet gevonden" },
-        { status: 404 }
-      )
-    }
-
     // Haal alle portfolio items op met alerts enabled
     const portfolioItems = await prisma.portfolioItem.findMany({
       where: {
-        userId: user.id,
         alertEnabled: true,
         alertThreshold: { not: null },
       },
       include: {
         user: {
-          select: { email: true, name: true, whatsappNumber: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            whatsappNumber: true,
+          },
         },
       },
     })
 
-    const alerts: Array<{
-      id: string
-      symbol: string
-      name: string
-      changePercent: number
-      currentPrice: number
-      previousPrice: number
-      type: 'gain' | 'loss'
-    }> = []
+    let alertsProcessed = 0
+    let notificationsSent = 0
 
     // Check elk item
     for (const item of portfolioItems) {
@@ -119,30 +102,29 @@ export async function POST(request: NextRequest) {
         const shouldAlert = !item.lastAlertAt || item.lastAlertAt < oneHourAgo
 
         if (shouldAlert) {
-          const alertData = {
-            id: item.id,
-            symbol: item.symbol,
-            name: item.name,
-            changePercent: changePercent,
-            currentPrice: currentPrice,
-            previousPrice: item.lastPrice,
-            type: changePercent > 0 ? 'gain' : 'loss' as 'gain' | 'loss',
-          }
-
-          alerts.push(alertData)
+          alertsProcessed++
 
           // Verstuur notificaties
           try {
             const notificationType = item.alertNotificationType || 'EMAIL'
-            await sendAlertNotifications(
+            const result = await sendAlertNotifications(
               {
-                ...alertData,
-                userEmail: dbUser.email,
-                userName: dbUser.name || undefined,
+                symbol: item.symbol,
+                name: item.name,
+                changePercent: changePercent,
+                currentPrice: currentPrice,
+                previousPrice: item.lastPrice,
+                type: changePercent > 0 ? 'gain' : 'loss',
+                userEmail: item.user.email,
+                userName: item.user.name || undefined,
               },
               notificationType,
-              dbUser.whatsappNumber || null
+              item.user.whatsappNumber || null
             )
+
+            if (result.emailSent || result.whatsappSent) {
+              notificationsSent++
+            }
           } catch (notificationError) {
             console.error("Fout bij verzenden notificaties:", notificationError)
             // Ga door, update wel de lastAlertAt zodat we niet te vaak proberen
@@ -166,9 +148,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ alerts })
+    return NextResponse.json({
+      success: true,
+      alertsProcessed,
+      notificationsSent,
+      timestamp: new Date().toISOString(),
+    })
   } catch (error) {
-    console.error("Error checking alerts:", error)
+    console.error("Error in cron job checking alerts:", error)
     return NextResponse.json(
       { error: "Fout bij controleren alerts" },
       { status: 500 }

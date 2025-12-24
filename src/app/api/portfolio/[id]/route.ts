@@ -19,7 +19,7 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { quantity, averagePrice, alertThreshold, alertEnabled } = body
+    const { quantity, averagePrice, alertThreshold, alertEnabled, alertNotificationType } = body
 
     // Check of item bestaat en van de gebruiker is
     const existing = await prisma.portfolioItem.findFirst({
@@ -44,6 +44,7 @@ export async function PUT(
         ...(averagePrice !== undefined && { averagePrice: averagePrice ? parseFloat(averagePrice) : null }),
         ...(alertThreshold !== undefined && { alertThreshold: alertThreshold ? parseFloat(alertThreshold) : null }),
         ...(alertEnabled !== undefined && { alertEnabled: alertEnabled }),
+        ...(alertNotificationType !== undefined && { alertNotificationType: alertNotificationType }),
       },
     })
 

@@ -10,6 +10,12 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/check-alerts",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
 

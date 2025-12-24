@@ -18,6 +18,7 @@ model User {
   tier            UserTier  @default(FREE)
   trialEndsAt     DateTime? // Wanneer de gratis proefmaand eindigt
   isTrialActive   Boolean   @default(false) // Of de gebruiker momenteel in trial periode is
+  whatsappNumber  String? // WhatsApp nummer voor notificaties (optioneel)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -269,20 +270,21 @@ model DeepResearchReport {
 }
 
 model PortfolioItem {
-  id             String    @id @default(cuid())
-  userId         String
-  symbol         String // Bijv. "AAPL", "ASML.AS"
-  name           String // Volledige naam van het aandeel/ETF
-  exchange       String? // Bijv. "NASDAQ", "AMS"
-  type           String? // "STOCK" of "ETF"
-  quantity       Float // Aantal stuks
-  averagePrice   Float? // Gemiddelde aankoopprijs (optioneel)
-  alertThreshold Float? // Percentage voor stijging/daling meldingen (bijv. 5.0 voor 5%)
-  lastPrice      Float? // Laatst bekende prijs voor alert berekening
-  lastAlertAt    DateTime? // Wanneer de laatste alert is getriggerd
-  alertEnabled   Boolean   @default(true) // Of alerts actief zijn
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                    String              @id @default(cuid())
+  userId                String
+  symbol                String // Bijv. "AAPL", "ASML.AS"
+  name                  String // Volledige naam van het aandeel/ETF
+  exchange              String? // Bijv. "NASDAQ", "AMS"
+  type                  String? // "STOCK" of "ETF"
+  quantity              Float // Aantal stuks
+  averagePrice          Float? // Gemiddelde aankoopprijs (optioneel)
+  alertThreshold        Float? // Percentage voor stijging/daling meldingen (bijv. 5.0 voor 5%)
+  lastPrice             Float? // Laatst bekende prijs voor alert berekening
+  lastAlertAt           DateTime? // Wanneer de laatste alert is getriggerd
+  alertEnabled          Boolean             @default(true) // Of alerts actief zijn
+  alertNotificationType AlertNotificationType @default(EMAIL) // Type notificatie (EMAIL, WHATSAPP, BOTH)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -397,4 +399,10 @@ enum DeepResearchStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum AlertNotificationType {
+  EMAIL
+  WHATSAPP
+  BOTH
 }

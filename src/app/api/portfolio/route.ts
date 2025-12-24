@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { symbol, name, exchange, type, quantity, averagePrice, alertThreshold } = body
+    const { symbol, name, exchange, type, quantity, averagePrice, alertThreshold, alertNotificationType } = body
 
     if (!symbol || !name || !quantity || quantity <= 0) {
       return NextResponse.json(
@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
         averagePrice: averagePrice ? parseFloat(averagePrice) : null,
         alertThreshold: alertThreshold ? parseFloat(alertThreshold) : null,
         alertEnabled: alertThreshold !== null && alertThreshold !== undefined,
+        alertNotificationType: alertNotificationType || 'EMAIL',
       },
     })
 
