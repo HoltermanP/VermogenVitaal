@@ -587,6 +587,7 @@ export function PortfolioPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <Card>

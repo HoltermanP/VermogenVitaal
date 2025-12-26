@@ -35,3 +35,7 @@ ALTER TABLE "ai_calls" ADD CONSTRAINT "ai_calls_userId_fkey" FOREIGN KEY ("userI
 
 
 
+
+
+
+
