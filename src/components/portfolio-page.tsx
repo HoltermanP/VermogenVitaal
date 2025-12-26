@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2 } from "lucide-react"
+import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2, Bell } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
 import { SignInDialog } from "@/components/auth-dialog"
 import { toast } from "sonner"
@@ -74,6 +74,7 @@ export function PortfolioPage() {
   const [userWhatsappNumber, setUserWhatsappNumber] = useState<string | null>(null)
   const [showWhatsappDialog, setShowWhatsappDialog] = useState(false)
   const [whatsappInput, setWhatsappInput] = useState("")
+  const [checkingAlerts, setCheckingAlerts] = useState(false)
 
   // Haal portfolio items op
   const fetchPortfolio = async () => {
@@ -172,6 +173,33 @@ export function PortfolioPage() {
     } catch (error) {
       console.error("Error saving WhatsApp number:", error)
       toast.error("Fout bij opslaan WhatsApp nummer")
+    }
+  }
+
+  // Check alerts handmatig
+  const handleCheckAlerts = async () => {
+    setCheckingAlerts(true)
+    try {
+      const response = await fetch("/api/portfolio/check-alerts", {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.alerts && data.alerts.length > 0) {
+          toast.success(`${data.alerts.length} alert(s) gevonden en notificaties verzonden`)
+        } else {
+          toast.info("Geen nieuwe alerts gevonden")
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || "Fout bij controleren alerts")
+      }
+    } catch (error) {
+      console.error("Error checking alerts:", error)
+      toast.error("Fout bij controleren alerts")
+    } finally {
+      setCheckingAlerts(false)
     }
   }
 
@@ -347,7 +375,25 @@ export function PortfolioPage() {
               Beheer je beleggingen en volg je rendement
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCheckAlerts}
+              disabled={checkingAlerts || portfolio.length === 0}
+            >
+              {checkingAlerts ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Controleren...
+                </>
+              ) : (
+                <>
+                  <Bell className="h-4 w-4 mr-2" />
+                  Check Alerts
+                </>
+              )}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleAddClick}>
                 <Plus className="h-4 w-4 mr-2" />
