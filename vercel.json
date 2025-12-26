@@ -7,10 +7,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "outputDirectory": ".next",
   "crons": [
     {
       "path": "/api/cron/check-alerts",
