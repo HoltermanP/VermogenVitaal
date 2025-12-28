@@ -1035,12 +1035,44 @@ async function generateReport(
 
     await updateProgress(reportId, 30, "Financiële data aggregeren en analyseren...")
 
-    // Aggregeer financiële data van alle bronnen
-    const aggregatedFinancialData = aggregateFinancialData(fundamentals, enhancedFinancialData)
-    console.log(`[DeepResearch] Data kwaliteit:`, aggregatedFinancialData.dataQuality)
+    // Aggregeer financiële data van alle bronnen met error handling
+    let aggregatedFinancialData
+    try {
+      // Zorg dat fundamentals een object is (kan null zijn)
+      const safeFundamentals = fundamentals || {}
+      aggregatedFinancialData = aggregateFinancialData(safeFundamentals, enhancedFinancialData)
+      console.log(`[DeepResearch] Data kwaliteit:`, aggregatedFinancialData.dataQuality)
+      // Update progress om te bevestigen dat aggregatie voltooid is
+      await updateProgress(reportId, 32, "Financiële data geaggregeerd, verwerken...")
+    } catch (error) {
+      console.error("[DeepResearch] Error aggregating financial data:", error)
+      // Maak een fallback aggregated data object
+      aggregatedFinancialData = {
+        symbol: symbol,
+        companyName: name,
+        incomeStatements: [],
+        balanceSheets: [],
+        cashFlowStatements: [],
+        quarterlyIncome: [],
+        quarterlyBalance: [],
+        quarterlyCashFlow: [],
+        earningsHistory: [],
+        earningsTrend: [],
+        dataQuality: {
+          hasIncomeStatements: false,
+          hasBalanceSheets: false,
+          hasCashFlow: false,
+          hasQuarterlyData: false,
+          hasEarningsData: false,
+          sources: []
+        }
+      }
+      await updateProgress(reportId, 32, "Financiële data verwerking voltooid (met beperkte data)...")
+    }
 
     // Bereken technische indicatoren
     const calculateSMA = (data: Array<{ close: number }>, period: number) => {
+      if (!data || data.length === 0) return []
       const sma: number[] = []
       for (let i = 0; i < data.length; i++) {
         if (i < period - 1) {
@@ -1141,7 +1173,13 @@ Jaar ${year}:
     }
 
     // Gebruik geaggregeerde financiële data (combineert alle bronnen) - dit bevat GEDETAILLEERDE statements
-    const aggregatedFinancialText = formatAggregatedFinancialData(aggregatedFinancialData)
+    let aggregatedFinancialText
+    try {
+      aggregatedFinancialText = formatAggregatedFinancialData(aggregatedFinancialData)
+    } catch (error) {
+      console.error("[DeepResearch] Error formatting aggregated financial data:", error)
+      aggregatedFinancialText = "\n=== FINANCIËLE DATA ===\nData kon niet worden geformatteerd. Basis informatie beschikbaar.\n"
+    }
     
     // Voeg ook aanvullende Yahoo Finance fundamentals toe voor extra context
     // (de gedetailleerde statements zitten al in aggregatedFinancialText)
