@@ -51,8 +51,33 @@ async function findRelevantKnowledgeArticles(message: string) {
   }
 }
 
+// Check of de vraag daadwerkelijk over belastingen gaat
+function isTaxRelatedQuestion(message: string): boolean {
+  const lowerMessage = message.toLowerCase()
+  
+  // Expliciete belastingtermen die aangeven dat het over belastingen gaat
+  const explicitTaxTerms = [
+    'belasting', 'fiscaal', 'aftrek', 'korting', 'inkomstenbelasting',
+    'vennootschapsbelasting', 'btw', 'dividendbelasting', 'box 1', 'box 2', 'box 3',
+    'hypotheekrenteaftrek', 'heffingskorting', 'arbeidskorting', 'vennootschap',
+    'zelfstandigenaftrek', 'winstvrijstelling', 'eigenwoningforfait', 'vermogensrendementsheffing',
+    'belastingaangifte', 'belastingdienst', 'belastingtarief', 'belastingschijf'
+  ]
+  
+  // Check of er expliciete belastingtermen in de vraag staan
+  const hasExplicitTaxTerm = explicitTaxTerms.some(term => lowerMessage.includes(term))
+  
+  // Als er geen expliciete belastingtermen zijn, is het waarschijnlijk geen belastingvraag
+  return hasExplicitTaxTerm
+}
+
 // Functie om te zoeken in tax-info-2025
 function findRelevantTaxInfo(message: string): TaxTopic[] {
+  // Alleen zoeken als de vraag daadwerkelijk over belastingen gaat
+  if (!isTaxRelatedQuestion(message)) {
+    return []
+  }
+  
   const lowerMessage = message.toLowerCase()
   const relevantTopics: TaxTopic[] = []
 
@@ -60,24 +85,27 @@ function findRelevantTaxInfo(message: string): TaxTopic[] {
   for (const topic of taxTopics2025) {
     const topicText = (topic.title + " " + topic.shortDescription + " " + topic.category).toLowerCase()
     
-    // Check of de vraag relevante termen bevat
+    // Check of de vraag relevante termen bevat - alleen volledige woorden matchen
     const keywords = [
       topic.id,
-      ...topic.title.toLowerCase().split(" "),
-      ...topic.category.toLowerCase().split(" ")
+      ...topic.title.toLowerCase().split(" ").filter(w => w.length > 3),
+      ...topic.category.toLowerCase().split(" ").filter(w => w.length > 3)
     ]
     
+    // Gebruik woordgrenzen voor betere matching (voorkomt false positives)
     const hasRelevantKeyword = keywords.some(keyword => {
       if (keyword.length <= 3) return false
-      return lowerMessage.includes(keyword) || 
-             (keyword.length > 4 && lowerMessage.includes(keyword.substring(0, 4)))
+      // Match alleen volledige woorden, niet delen van woorden
+      const wordBoundaryRegex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+      return wordBoundaryRegex.test(lowerMessage)
     })
     
-    // Check ook op specifieke termen in de vraag
-    const questionWords = lowerMessage.split(/\s+/).filter(w => w.length > 3)
-    const hasMatchingWord = questionWords.some(word => 
-      topicText.includes(word) || topic.title.toLowerCase().includes(word)
-    )
+    // Check ook op specifieke termen in de vraag, maar alleen als het expliciete belastingtermen zijn
+    const questionWords = lowerMessage.split(/\s+/).filter(w => w.length > 4)
+    const hasMatchingWord = questionWords.some(word => {
+      // Alleen matchen als het woord voorkomt in de titel (niet alleen in description)
+      return topic.title.toLowerCase().includes(word)
+    })
     
     if (hasRelevantKeyword || hasMatchingWord) {
       relevantTopics.push(topic)
@@ -219,30 +247,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // STAP 1: Probeer eerst antwoord te geven zonder AI
+    // STAP 1: Zoek eerst op de eigen site (knowledge base en tax info)
     const knowledgeArticles = await findRelevantKnowledgeArticles(message)
     const taxTopics = findRelevantTaxInfo(message)
-    const knowledgeAnswer = generateAnswerFromKnowledge(message, knowledgeArticles, taxTopics)
-
-    // Als we een goed antwoord hebben zonder AI, gebruik dat
-    if (knowledgeAnswer && knowledgeAnswer.length > 100) {
-      const jsonResponse = NextResponse.json({
-        message: knowledgeAnswer,
-        timestamp: new Date().toISOString(),
-        source: "knowledge_base"
-      })
-
-      // Stel cookie in voor anonieme gebruikers
-      if (sessionId && !userId) {
-        jsonResponse.cookies.set("anonymous_session_id", sessionId, {
-          path: "/",
-          maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
-          sameSite: "lax",
-          httpOnly: true
-        })
+    
+    // Bouw context op van gevonden informatie
+    let siteContext = ""
+    if (knowledgeArticles.length > 0 || taxTopics.length > 0) {
+      siteContext = "Relevante informatie gevonden op de site:\n\n"
+      
+      // Voeg tax topics toe (alleen als echt relevant)
+      if (taxTopics.length > 0) {
+        for (const topic of taxTopics) {
+          siteContext += `**${topic.title}**\n`
+          siteContext += `${topic.shortDescription}\n\n`
+          
+          for (const section of topic.sections) {
+            siteContext += `### ${section.title}\n${section.content}\n\n`
+            
+            if (section.subsections) {
+              for (const subsection of section.subsections) {
+                siteContext += `**${subsection.title}**: ${subsection.content}\n\n`
+              }
+            }
+          }
+          
+          if (topic.importantNotes && topic.importantNotes.length > 0) {
+            siteContext += `**Belangrijk**: ${topic.importantNotes.join(", ")}\n\n`
+          }
+        }
       }
-
-      return jsonResponse
+      
+      // Voeg knowledge artikelen toe
+      if (knowledgeArticles.length > 0) {
+        for (const article of knowledgeArticles) {
+          siteContext += `**${article.title}**\n${article.body}\n\n`
+        }
+      }
+      
+      siteContext += "\nGebruik deze informatie ALLEEN als het relevant is voor de vraag. Als de vraag niet over belastingen gaat, negeer dan belastinginformatie. Beantwoord de vraag direct en accuraat."
     }
 
     // STAP 2: Als geen antwoord zonder AI mogelijk is, check AI limieten
@@ -342,11 +385,8 @@ export async function POST(request: NextRequest) {
 
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
-    // Bouw conversation history op voor context
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      {
-        role: "system",
-        content: `Je bent Finn, een ervaren Nederlandse AI-assistent gespecialiseerd in financiën en belastingen voor 2025. Je helpt gebruikers met:
+    // Bouw system message op met context van eigen site indien beschikbaar
+    let systemContent = `Je bent Finn, een ervaren Nederlandse AI-assistent gespecialiseerd in financiën en belastingen voor 2025. Je helpt gebruikers met:
 
 FINANCIËLE INFORMATIE EN IDEEËN:
 - Investeringsstrategieën en portfolio-optimalisatie (algemene informatie, geen persoonlijk advies)
@@ -355,6 +395,7 @@ FINANCIËLE INFORMATIE EN IDEEËN:
 - Investeringsideeën en informatie over verschillende beleggingscategorieën (aandelen, ETF's, crypto, vastgoed) - GEEN beleggingsadvies
 - Risicobeheer en diversificatie (educatieve informatie)
 - Marktanalyses en trends (informatief)
+- Vragen over aandelen, koersen, marktprestaties, en bedrijfsinformatie
 
 BELASTINGINFORMATIE:
 - Belastingondersteuning en tips voor 2025 (algemene informatie)
@@ -365,6 +406,8 @@ BELASTINGINFORMATIE:
 - Box 3 belasting en vermogensrendementsheffing
 
 BELANGRIJKE RICHTLIJNEN:
+- Beantwoord de vraag DIRECT en ACCURAAT. Als de vraag over aandelen/beleggingen gaat, geef dan informatie over aandelen/beleggingen, NIET over belastingen (tenzij expliciet gevraagd)
+- Gebruik ALLEEN belastinginformatie als de vraag expliciet over belastingen gaat
 - Je geeft GEEN investeringsadvies zoals bedoeld in de Wet op het financieel toezicht (Wft)
 - Je geeft algemene informatie, ideeën en educatieve content
 - Gebruik actuele informatie uit internetbronnen waar mogelijk
@@ -377,6 +420,17 @@ BELANGRIJKE RICHTLIJNEN:
 - Houd antwoorden beknopt maar compleet
 - Combineer kennis van belastingen met financiële inzichten voor complete informatie
 - Vermeld waar nodig dat dit geen persoonlijk financieel of beleggingsadvies is`
+
+    // Voeg site context toe aan system message als er informatie gevonden is
+    if (siteContext) {
+      systemContent += `\n\n${siteContext}`
+    }
+
+    // Bouw conversation history op voor context
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: systemContent
       },
       ...conversationHistory.map((msg: { role: string; content: string }) => ({
         role: msg.role as "user" | "assistant",
@@ -392,15 +446,18 @@ BELANGRIJKE RICHTLIJNEN:
       model: "gpt-4o-mini",
       messages,
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 1500
     })
 
     const assistantMessage = response.choices[0]?.message?.content || "Sorry, ik kon geen antwoord genereren."
 
+    // Bepaal source: "ai_with_context" als er site context was, anders "ai"
+    const source = siteContext ? "ai_with_context" : "ai"
+
     const jsonResponse = NextResponse.json({
       message: assistantMessage,
       timestamp: new Date().toISOString(),
-      source: "ai"
+      source: source
     })
 
     // Stel cookie in voor anonieme gebruikers
