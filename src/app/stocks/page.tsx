@@ -153,7 +153,7 @@ function StocksPageContent() {
   const [analysisHistory, setAnalysisHistory] = useState<StockHistory[]>([])
   const [loading, setLoading] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [aiAnalyses, setAiAnalyses] = useState<Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean, scoreExplanation?: string }>>({})
+  const [aiAnalyses, setAiAnalyses] = useState<Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean, scoreExplanation?: string, score?: number }>>({})
   const [fundamentals, setFundamentals] = useState<Record<string, unknown> | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [favorites, setFavorites] = useState<StockFavorite[]>([])
@@ -1439,7 +1439,7 @@ function StocksPageContent() {
       // Update cache met nieuwe object reference om re-render te forceren
       setAiAnalyses(prev => {
         // Maak een volledig nieuwe object structuur om re-render te garanderen
-        const newState: Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean, scoreExplanation?: string }> = {}
+        const newState: Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean, scoreExplanation?: string, score?: number }> = {}
         Object.keys(prev).forEach(key => {
           newState[key] = { ...prev[key] }
         })
@@ -1447,12 +1447,14 @@ function StocksPageContent() {
           analysis: data.analysis || baseAnalysis, 
           loading: false, 
           aiEnhanced: data.aiEnhanced === true, // Zorg ervoor dat dit een boolean is
-          scoreExplanation: data.scoreExplanation || undefined
+          scoreExplanation: data.scoreExplanation || undefined,
+          score: data.score !== undefined ? data.score : undefined // Nieuwe score als beschikbaar
         }
         console.log('AI analysis updated for', cacheKey, {
           aiEnhanced: newState[cacheKey].aiEnhanced,
           hasAnalysis: !!newState[cacheKey].analysis,
-          analysisLength: newState[cacheKey].analysis?.length
+          analysisLength: newState[cacheKey].analysis?.length,
+          newScore: newState[cacheKey].score
         })
         return newState
       })
@@ -1462,7 +1464,7 @@ function StocksPageContent() {
       // Fallback naar basis analyse
       setAiAnalyses(prev => {
         // Maak een volledig nieuwe object structuur om re-render te garanderen
-        const newState: Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean }> = {}
+        const newState: Record<string, { analysis: string, loading: boolean, aiEnhanced: boolean, score?: number }> = {}
         Object.keys(prev).forEach(key => {
           newState[key] = { ...prev[key] }
         })
@@ -3870,7 +3872,34 @@ function StocksPageContent() {
 
                         {/* Overall Ondersteuning */}
                         {(() => {
-                          const overallAdvice = getAdvice(analysis.overallScore)
+                          // Bereken overall score op basis van AI-scores als beschikbaar
+                          const veryShortTermScore = (aiAnalyses[`${selectedStock}-veryShortTerm`]?.aiEnhanced && aiAnalyses[`${selectedStock}-veryShortTerm`]?.score !== undefined)
+                            ? aiAnalyses[`${selectedStock}-veryShortTerm`].score!
+                            : analysis.veryShortTermScore
+                          const shortTermScore = (aiAnalyses[`${selectedStock}-shortTerm`]?.aiEnhanced && aiAnalyses[`${selectedStock}-shortTerm`]?.score !== undefined)
+                            ? aiAnalyses[`${selectedStock}-shortTerm`].score!
+                            : analysis.shortTermScore
+                          const mediumTermScore = (aiAnalyses[`${selectedStock}-mediumTerm`]?.aiEnhanced && aiAnalyses[`${selectedStock}-mediumTerm`]?.score !== undefined)
+                            ? aiAnalyses[`${selectedStock}-mediumTerm`].score!
+                            : analysis.mediumTermScore
+                          const longTermScore = (aiAnalyses[`${selectedStock}-longTerm`]?.aiEnhanced && aiAnalyses[`${selectedStock}-longTerm`]?.score !== undefined)
+                            ? aiAnalyses[`${selectedStock}-longTerm`].score!
+                            : analysis.longTermScore
+                          const veryLongTermScore = (aiAnalyses[`${selectedStock}-veryLongTerm`]?.aiEnhanced && aiAnalyses[`${selectedStock}-veryLongTerm`]?.score !== undefined)
+                            ? aiAnalyses[`${selectedStock}-veryLongTerm`].score!
+                            : analysis.veryLongTermScore
+                          
+                          // Bereken overall score: gewogen gemiddelde (meer gewicht op korte termijn)
+                          const calculatedOverallScore = (
+                            veryShortTermScore * 0.15 +
+                            shortTermScore * 0.25 +
+                            mediumTermScore * 0.25 +
+                            longTermScore * 0.20 +
+                            veryLongTermScore * 0.15
+                          )
+                          const displayOverallScore = Math.round(calculatedOverallScore * 10) / 10
+                          
+                          const overallAdvice = getAdvice(displayOverallScore)
                           const AdviceIcon = overallAdvice.icon
                           return (
                             <div className="p-6 bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg border-2 border-border">
@@ -3889,18 +3918,18 @@ function StocksPageContent() {
                                 <div className="text-right">
                                   <div className="text-sm text-muted-foreground">Score</div>
                                   <div className={`text-3xl font-bold ${overallAdvice.color}`}>
-                                    {analysis.overallScore.toFixed(1)}/10
+                                    {displayOverallScore.toFixed(1)}/10
                                   </div>
                                 </div>
                               </div>
                               <div className="w-full bg-background/50 rounded-full h-2.5 mb-2">
                                 <div 
                                   className={`h-2.5 rounded-full transition-all ${
-                                    analysis.overallScore >= 7 ? 'bg-green-500' :
-                                    analysis.overallScore >= 4 ? 'bg-yellow-500' :
+                                    displayOverallScore >= 7 ? 'bg-green-500' :
+                                    displayOverallScore >= 4 ? 'bg-yellow-500' :
                                     'bg-red-500'
                                   }`}
-                                  style={{ width: `${(analysis.overallScore / 10) * 100}%` }}
+                                  style={{ width: `${(displayOverallScore / 10) * 100}%` }}
                                 />
                               </div>
                             </div>
@@ -3972,7 +4001,11 @@ function StocksPageContent() {
                                 : analysis.veryShortTerm
                               const isAILoading = aiData?.loading || false
                               
-                              const advice = getAdvice(analysis.veryShortTermScore)
+                              // Gebruik AI score als beschikbaar, anders basis score
+                              const displayScore = (aiData?.aiEnhanced && aiData?.score !== undefined) 
+                                ? aiData.score 
+                                : analysis.veryShortTermScore
+                              const advice = getAdvice(displayScore)
                               const AdviceIcon = advice.icon
                               return (
                                 <div key={`veryShortTerm-${aiData?.aiEnhanced ? 'ai' : 'base'}-${aiData?.loading ? 'loading' : 'done'}`} className="p-4 bg-accent/10 rounded-lg border border-border">
@@ -3983,7 +4016,7 @@ function StocksPageContent() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-sm font-bold ${advice.color}`}>
-                                        {analysis.veryShortTermScore.toFixed(1)}/10
+                                        {displayScore.toFixed(1)}/10
                                       </span>
                                       <Badge variant="outline" className={advice.color}>
                                         {advice.text}
@@ -4056,7 +4089,7 @@ function StocksPageContent() {
                                       </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
-                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.veryShortTermScore.toFixed(1)}/10):</div>
+                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({displayScore.toFixed(1)}/10):</div>
                                           <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
                                             <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
                                           </div>
@@ -4077,7 +4110,11 @@ function StocksPageContent() {
                                 : analysis.shortTerm
                               const isAILoading = aiData?.loading || false
                               
-                              const advice = getAdvice(analysis.shortTermScore)
+                              // Gebruik AI score als beschikbaar, anders basis score
+                              const displayScore = (aiData?.aiEnhanced && aiData?.score !== undefined) 
+                                ? aiData.score 
+                                : analysis.shortTermScore
+                              const advice = getAdvice(displayScore)
                               const AdviceIcon = advice.icon
                               return (
                                 <div className="p-4 bg-accent/10 rounded-lg border border-border">
@@ -4088,7 +4125,7 @@ function StocksPageContent() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-sm font-bold ${advice.color}`}>
-                                        {analysis.shortTermScore.toFixed(1)}/10
+                                        {displayScore.toFixed(1)}/10
                                       </span>
                                       <Badge variant="outline" className={advice.color}>
                                         {advice.text}
@@ -4161,7 +4198,7 @@ function StocksPageContent() {
                                       </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
-                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.shortTermScore.toFixed(1)}/10):</div>
+                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({displayScore.toFixed(1)}/10):</div>
                                           <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
                                             <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
                                           </div>
@@ -4182,7 +4219,11 @@ function StocksPageContent() {
                                 : analysis.mediumTerm
                               const isAILoading = aiData?.loading || false
                               
-                              const advice = getAdvice(analysis.mediumTermScore)
+                              // Gebruik AI score als beschikbaar, anders basis score
+                              const displayScore = (aiData?.aiEnhanced && aiData?.score !== undefined) 
+                                ? aiData.score 
+                                : analysis.mediumTermScore
+                              const advice = getAdvice(displayScore)
                               const AdviceIcon = advice.icon
                               return (
                                 <div className="p-4 bg-accent/10 rounded-lg border border-border">
@@ -4193,7 +4234,7 @@ function StocksPageContent() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-sm font-bold ${advice.color}`}>
-                                        {analysis.mediumTermScore.toFixed(1)}/10
+                                        {displayScore.toFixed(1)}/10
                                       </span>
                                       <Badge variant="outline" className={advice.color}>
                                         {advice.text}
@@ -4266,7 +4307,7 @@ function StocksPageContent() {
                                       </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
-                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.mediumTermScore.toFixed(1)}/10):</div>
+                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({displayScore.toFixed(1)}/10):</div>
                                           <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
                                             <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
                                           </div>
@@ -4287,7 +4328,11 @@ function StocksPageContent() {
                                 : analysis.longTerm
                               const isAILoading = aiData?.loading || false
                               
-                              const advice = getAdvice(analysis.longTermScore)
+                              // Gebruik AI score als beschikbaar, anders basis score
+                              const displayScore = (aiData?.aiEnhanced && aiData?.score !== undefined) 
+                                ? aiData.score 
+                                : analysis.longTermScore
+                              const advice = getAdvice(displayScore)
                               const AdviceIcon = advice.icon
                               return (
                                 <div className="p-4 bg-accent/10 rounded-lg border border-border">
@@ -4298,7 +4343,7 @@ function StocksPageContent() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-sm font-bold ${advice.color}`}>
-                                        {analysis.longTermScore.toFixed(1)}/10
+                                        {displayScore.toFixed(1)}/10
                                       </span>
                                       <Badge variant="outline" className={advice.color}>
                                         {advice.text}
@@ -4371,7 +4416,7 @@ function StocksPageContent() {
                                       </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
-                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.longTermScore.toFixed(1)}/10):</div>
+                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({displayScore.toFixed(1)}/10):</div>
                                           <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
                                             <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
                                           </div>
@@ -4392,7 +4437,11 @@ function StocksPageContent() {
                                 : analysis.veryLongTerm
                               const isAILoading = aiData?.loading || false
                               
-                              const advice = getAdvice(analysis.veryLongTermScore)
+                              // Gebruik AI score als beschikbaar, anders basis score
+                              const displayScore = (aiData?.aiEnhanced && aiData?.score !== undefined) 
+                                ? aiData.score 
+                                : analysis.veryLongTermScore
+                              const advice = getAdvice(displayScore)
                               const AdviceIcon = advice.icon
                               return (
                                 <div className="p-4 bg-accent/10 rounded-lg border border-border">
@@ -4403,7 +4452,7 @@ function StocksPageContent() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-sm font-bold ${advice.color}`}>
-                                        {analysis.veryLongTermScore.toFixed(1)}/10
+                                        {displayScore.toFixed(1)}/10
                                       </span>
                                       <Badge variant="outline" className={advice.color}>
                                         {advice.text}
@@ -4476,7 +4525,7 @@ function StocksPageContent() {
                                       </div>
                                       {aiData?.scoreExplanation && (
                                         <div className="mt-3 p-3 bg-accent/20 rounded-lg border-l-2 border-primary">
-                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({analysis.veryLongTermScore.toFixed(1)}/10):</div>
+                                          <div className="text-xs font-semibold text-foreground mb-1">Score Toelichting ({displayScore.toFixed(1)}/10):</div>
                                           <div className="prose prose-xs dark:prose-invert max-w-none prose-p:text-xs prose-p:text-muted-foreground prose-p:leading-relaxed">
                                             <ReactMarkdown>{aiData.scoreExplanation}</ReactMarkdown>
                                           </div>

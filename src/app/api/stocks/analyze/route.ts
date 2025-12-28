@@ -414,7 +414,8 @@ KRITIEKE ANALYSE-OPDRACHT - DIEPGAAND ONDERZOEK:
 6. SCORE EVALUATIE EN TOELICHTING:
    De huidige score is ${score?.toFixed(1) || 'N/A'}/10. Je moet:
    - Evalueer of deze score ACCURAAT is op basis van alle beschikbare data
-   - Als de score te hoog/laag lijkt, leg uit waarom en wat een meer accurate score zou zijn
+   - Bepaal een NIEUWE SCORE (0-10) op basis van je volledige analyse - dit is KRITIEK
+   - Als de score te hoog/laag lijkt, leg uit waarom en geef een meer accurate score
    - Geef een GEDETAILLEERDE toelichting die minimaal 200 woorden bevat
    - Benoem minimaal 3-5 specifieke POSITIEVE factoren die de score ondersteunen
    - Benoem minimaal 3-5 specifieke NEGATIEVE factoren of risico's die de score beperken
@@ -468,10 +469,12 @@ Je antwoord MOET exact deze structuur volgen:
 
 ## SCORE TOELICHTING
 
+### NIEUWE SCORE: [Geef hier een expliciete score tussen 0.0 en 10.0, bijvoorbeeld: 7.5/10]
+
 ### HUIDIGE SCORE: ${score?.toFixed(1) || 'N/A'}/10
 
 ### SCORE EVALUATIE
-[Evalueer of de score accuraat is en leg uit waarom]
+[Evalueer of de huidige score accuraat is en leg uit waarom. Geef duidelijk aan wat de nieuwe score is en waarom deze verschilt van de huidige score.]
 
 ### POSITIEVE FACTOREN (${termFocus.timeframe})
 [Minimaal 3-5 specifieke positieve factoren met uitleg waarom ze belangrijk zijn voor deze termijn]
@@ -566,9 +569,47 @@ Geef een uitgebreide, professionele analyse die alle beschikbare data integreert
       }
     }
 
+    // Extraheer nieuwe score uit de response
+    let newScore: number | undefined = undefined
+    
+    // Zoek naar "NIEUWE SCORE:" of "NIEUWE SCORE" gevolgd door een getal
+    const newScorePatterns = [
+      /NIEUWE\s+SCORE:\s*(\d+\.?\d*)\/10/i,
+      /NIEUWE\s+SCORE:\s*(\d+\.?\d*)/i,
+      /score:\s*(\d+\.?\d*)\/10/i,
+      /score\s+(\d+\.?\d*)\/10/i,
+      /(\d+\.?\d*)\/10.*nieuwe/i,
+    ]
+    
+    // Zoek eerst in de score toelichting sectie
+    const searchText = scoreExplanation || aiResponse
+    for (const pattern of newScorePatterns) {
+      const match = searchText.match(pattern)
+      if (match && match[1]) {
+        const parsedScore = parseFloat(match[1])
+        if (!isNaN(parsedScore) && parsedScore >= 0 && parsedScore <= 10) {
+          newScore = parsedScore
+          break
+        }
+      }
+    }
+    
+    // Als we geen expliciete nieuwe score vinden, probeer dan een score te extraheren uit de conclusie
+    if (newScore === undefined) {
+      // Zoek naar patronen zoals "score van X", "X/10", etc. in de conclusie
+      const conclusionMatch = searchText.match(/(?:conclusie|samenvatting|beoordeling).*?(\d+\.?\d*)\/10/i)
+      if (conclusionMatch && conclusionMatch[1]) {
+        const parsedScore = parseFloat(conclusionMatch[1])
+        if (!isNaN(parsedScore) && parsedScore >= 0 && parsedScore <= 10) {
+          newScore = parsedScore
+        }
+      }
+    }
+
     return NextResponse.json({
       analysis: aiAnalysis,
       scoreExplanation: scoreExplanation || undefined,
+      score: newScore, // Nieuwe score als deze is gevonden
       aiEnhanced: true
     })
   } catch (error) {
