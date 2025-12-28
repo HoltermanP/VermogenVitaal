@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2, Bell } from "lucide-react"
+import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2, Bell, Search } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
 import { SignInDialog } from "@/components/auth-dialog"
 import { toast } from "sonner"
@@ -49,6 +49,28 @@ interface PortfolioItem {
   createdAt: string
   updatedAt: string
 }
+
+interface StockSearchResult {
+  symbol: string
+  name: string
+  exchange: string
+  type: string
+  market?: string
+}
+
+const EXCHANGES = [
+  { value: "ALL", label: "Alle Beurzen" },
+  { value: "AMS", label: "Amsterdam (AEX)" },
+  { value: "NYQ", label: "New York Stock Exchange (NYSE)" },
+  { value: "NMS", label: "NASDAQ" },
+  { value: "LON", label: "London Stock Exchange (LSE)" },
+  { value: "FRA", label: "Frankfurt (XETR)" },
+  { value: "PAR", label: "Paris (Euronext)" },
+  { value: "BRU", label: "Brussels (Euronext)" },
+  { value: "TSE", label: "Tokyo Stock Exchange" },
+  { value: "HKG", label: "Hong Kong Stock Exchange" },
+  { value: "SIX", label: "Swiss Exchange (SIX)" },
+]
 
 export function PortfolioPage() {
   const { isLoaded, isSignedIn, user } = useUser()
@@ -75,6 +97,13 @@ export function PortfolioPage() {
   const [showWhatsappDialog, setShowWhatsappDialog] = useState(false)
   const [whatsappInput, setWhatsappInput] = useState("")
   const [checkingAlerts, setCheckingAlerts] = useState(false)
+
+  // Stock search state
+  const [selectedExchange, setSelectedExchange] = useState<string>("ALL")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showSearchResults, setShowSearchResults] = useState(false)
 
   // Haal portfolio items op
   const fetchPortfolio = async () => {
@@ -114,6 +143,21 @@ export function PortfolioPage() {
     }
   }, [isLoaded, isSignedIn, user])
 
+  // Sluit zoekresultaten wanneer er buiten wordt geklikt
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.stock-search-container')) {
+        setShowSearchResults(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   // Reset form
   const resetForm = () => {
     setFormData({
@@ -127,6 +171,63 @@ export function PortfolioPage() {
       alertNotificationType: "EMAIL",
     })
     setEditingItem(null)
+    setSearchQuery("")
+    setSearchResults([])
+    setShowSearchResults(false)
+    setSelectedExchange("ALL")
+  }
+
+  // Zoek aandelen
+  const searchStocks = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([])
+      setShowSearchResults(false)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`)
+      if (response.ok) {
+        const data = await response.json()
+        let results = data.results || []
+        
+        // Filter op beurs als er een geselecteerd is
+        if (selectedExchange !== "ALL") {
+          results = results.filter((result: StockSearchResult) => 
+            result.exchange === selectedExchange
+          )
+        }
+        
+        setSearchResults(results)
+        setShowSearchResults(results.length > 0)
+      }
+    } catch (error) {
+      console.error("Error searching stocks:", error)
+      toast.error("Fout bij zoeken")
+    } finally {
+      setIsSearching(false)
+    }
+  }, [selectedExchange])
+
+  // Filter zoekresultaten wanneer beurs verandert
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      searchStocks(searchQuery)
+    }
+  }, [selectedExchange, searchQuery, searchStocks])
+
+  // Selecteer een aandeel uit de zoekresultaten
+  const selectStock = (stock: StockSearchResult) => {
+    setFormData({
+      ...formData,
+      symbol: stock.symbol,
+      name: stock.name,
+      exchange: stock.exchange || "",
+      type: stock.type || "STOCK",
+    })
+    setSearchQuery(stock.name)
+    setShowSearchResults(false)
   }
 
   // Open dialog voor toevoegen
@@ -230,6 +331,13 @@ export function PortfolioPage() {
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validatie: bij nieuw item moet er een aandeel geselecteerd zijn
+    if (!editingItem && (!formData.symbol || !formData.name)) {
+      toast.error("Selecteer eerst een aandeel uit de zoekresultaten")
+      return
+    }
+    
     setSubmitting(true)
 
     try {
@@ -411,6 +519,80 @@ export function PortfolioPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
+                  {!editingItem && (
+                    <>
+                      <div className="grid gap-2">
+                        <Label htmlFor="exchange-select">Beurs (optioneel)</Label>
+                        <Select
+                          value={selectedExchange}
+                          onValueChange={(value) => {
+                            setSelectedExchange(value)
+                            if (searchQuery.length >= 2) {
+                              searchStocks(searchQuery)
+                            }
+                          }}
+                        >
+                          <SelectTrigger id="exchange-select">
+                            <SelectValue placeholder="Selecteer beurs" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EXCHANGES.map((exchange) => (
+                              <SelectItem key={exchange.value} value={exchange.value}>
+                                {exchange.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Filter aandelen op beurs (optioneel)
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="stock-search">Zoek aandeel *</Label>
+                        <div className="relative stock-search-container">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="stock-search"
+                            placeholder="Zoek op naam of symbool (bijv. Apple, AAPL, ASML)"
+                            value={searchQuery}
+                            onChange={(e) => {
+                              const query = e.target.value
+                              setSearchQuery(query)
+                              searchStocks(query)
+                            }}
+                            onFocus={() => {
+                              if (searchResults.length > 0) {
+                                setShowSearchResults(true)
+                              }
+                            }}
+                            className="pl-10"
+                          />
+                          {isSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                          {showSearchResults && searchResults.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                              {searchResults.map((result) => (
+                                <div
+                                  key={result.symbol}
+                                  className="px-4 py-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
+                                  onClick={() => selectStock(result)}
+                                >
+                                  <div className="font-medium">{result.name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {result.symbol} • {result.exchange} • {result.type}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Begin met typen om aandelen te zoeken. Selecteer een aandeel om automatisch in te vullen.
+                        </p>
+                      </div>
+                    </>
+                  )}
                   <div className="grid gap-2">
                     <Label htmlFor="symbol">Symbool *</Label>
                     <Input
