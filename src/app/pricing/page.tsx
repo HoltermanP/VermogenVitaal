@@ -46,6 +46,7 @@ export default function PricingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           priceId: 'premium',
         }),

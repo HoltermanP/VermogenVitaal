@@ -43,15 +43,37 @@ export async function POST(request: NextRequest) {
       priceId = PRICING.PREMIUM.priceId
     }
 
+    // Log request info voor debugging
+    const cookieHeader = request.headers.get('cookie') || ''
+    const hasClerkCookie = cookieHeader.includes('__clerk') || cookieHeader.includes('__session')
+    
+    console.log("Checkout API: Request info", {
+      hasCookies: !!cookieHeader,
+      hasClerkCookie,
+      url: request.url,
+      method: request.method,
+      cookieCount: cookieHeader ? cookieHeader.split(';').length : 0,
+    })
+    
     // Haal gebruiker op
     const user = await getClerkUser(request)
     
     if (!user) {
+      console.error("Checkout API: Unauthorized - getClerkUser returned null", {
+        hasClerkCookie,
+        cookieHeader: cookieHeader.substring(0, 100) + '...', // Log eerste 100 chars voor debugging
+      })
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
+    
+    console.log("Checkout API: User authenticated", {
+      userId: user.id,
+      email: user.email,
+      tier: user.tier,
+    })
 
     // Check of dit een Premium subscription is
     const isPremiumSubscription = priceId === PRICING.PREMIUM.priceId
