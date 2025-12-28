@@ -53,6 +53,14 @@ export function TaxChatbot() {
     setInput("")
     setIsLoading(true)
 
+    // Maak een placeholder bericht voor streaming
+    const assistantMessage: Message = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString()
+    }
+    setMessages(prev => [...prev, assistantMessage])
+
     try {
       // Bouw conversation history op (laatste 10 berichten voor context)
       const conversationHistory = messages
@@ -62,7 +70,7 @@ export function TaxChatbot() {
           content: msg.content
         }))
 
-      const response = await fetch("/api/tips/chat", {
+      const response = await fetch("/api/tips/chat?stream=true", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,45 +81,115 @@ export function TaxChatbot() {
         }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
+        // Probeer error data te lezen
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          errorData = { error: "Onbekende fout" }
+        }
+
+        // Verwijder placeholder bericht
+        setMessages(prev => prev.filter((_, idx) => idx !== prev.length - 1 || prev[prev.length - 1].content !== ""))
+
         // Check of het een limiet error is
-        if (response.status === 403 && data.error === "AI_LIMIT_REACHED") {
+        if (response.status === 403 && errorData.error === "AI_LIMIT_REACHED") {
           setLimitReached(true)
           const errorMessage: Message = {
             role: "assistant",
-            content: data.message || "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
+            content: errorData.message || "Je hebt je limiet van 10 gratis AI aanroepen bereikt. Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen.",
             timestamp: new Date().toISOString()
           }
           setMessages(prev => [...prev, errorMessage])
           toast.error("Limiet bereikt", {
-            description: data.message || "Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen."
+            description: errorData.message || "Maak een account aan en upgrade naar Premium voor onbeperkte AI aanroepen."
           })
           return
         }
         
-        throw new Error(data.error || "Fout bij het ophalen van antwoord")
+        throw new Error(errorData.error || "Fout bij het ophalen van antwoord")
       }
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.message,
-        timestamp: data.timestamp || new Date().toISOString()
-      }
+      // Handle streaming response
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedContent = ""
 
-      setMessages(prev => [...prev, assistantMessage])
+      if (reader) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value, { stream: true })
+            const lines = chunk.split("\n")
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.slice(6))
+                  if (data.done) {
+                    // Update timestamp when done
+                    setMessages(prev => {
+                      const newMessages = [...prev]
+                      const lastMessage = newMessages[newMessages.length - 1]
+                      if (lastMessage && lastMessage.role === "assistant") {
+                        lastMessage.timestamp = data.timestamp || new Date().toISOString()
+                      }
+                      return newMessages
+                    })
+                    setIsLoading(false)
+                  } else if (data.content) {
+                    accumulatedContent += data.content
+                    // Update the last message with accumulated content
+                    setMessages(prev => {
+                      const newMessages = [...prev]
+                      const lastMessage = newMessages[newMessages.length - 1]
+                      if (lastMessage && lastMessage.role === "assistant") {
+                        lastMessage.content = accumulatedContent
+                      }
+                      return newMessages
+                    })
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+          }
+        } finally {
+          setIsLoading(false)
+        }
+      } else {
+        // Fallback: non-streaming response
+        const data = await response.json()
+        setMessages(prev => {
+          const newMessages = [...prev]
+          const lastMessage = newMessages[newMessages.length - 1]
+          if (lastMessage && lastMessage.role === "assistant") {
+            lastMessage.content = data.message
+            lastMessage.timestamp = data.timestamp || new Date().toISOString()
+          }
+          return newMessages
+        })
+        setIsLoading(false)
+      }
     } catch (error) {
       console.error("Chat error:", error)
-      toast.error("Er is een fout opgetreden. Probeer het opnieuw.")
       
-      const errorMessage: Message = {
-        role: "assistant",
-        content: "Sorry, er is een fout opgetreden bij het ophalen van een antwoord. Probeer het later opnieuw of stel je vraag anders.",
-        timestamp: new Date().toISOString()
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
+      // Verwijder placeholder bericht en voeg error toe
+      setMessages(prev => {
+        const newMessages = prev.filter((_, idx) => idx !== prev.length - 1 || prev[prev.length - 1].content !== "")
+        const errorMessage: Message = {
+          role: "assistant",
+          content: "Sorry, er is een fout opgetreden bij het ophalen van een antwoord. Probeer het later opnieuw of stel je vraag anders.",
+          timestamp: new Date().toISOString()
+        }
+        return [...newMessages, errorMessage]
+      })
+      
+      toast.error("Er is een fout opgetreden. Probeer het opnieuw.")
       setIsLoading(false)
     }
   }
@@ -192,8 +270,11 @@ export function TaxChatbot() {
                 </AvatarFallback>
               </Avatar>
               <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <p className="text-sm text-muted-foreground">AI is bezig met het genereren van een reactie...</p>
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <div className="flex flex-col">
+                  <p className="text-sm font-medium text-foreground">AI genereert antwoord...</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Dit kan even duren</p>
+                </div>
               </div>
             </div>
           )}

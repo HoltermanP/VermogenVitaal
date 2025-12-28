@@ -386,40 +386,55 @@ export async function POST(request: NextRequest) {
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
     // Bouw system message op met context van eigen site indien beschikbaar
-    let systemContent = `Je bent Finn, een ervaren Nederlandse AI-assistent gespecialiseerd in financiën en belastingen voor 2025. Je helpt gebruikers met:
+    let systemContent = `Je bent Finn, een ervaren Nederlandse AI-assistent gespecialiseerd in financiën en belastingen voor 2025. Je bent een expert op het gebied van Nederlandse belastingwetgeving, financiële planning en investeringen.
 
-FINANCIËLE INFORMATIE EN IDEEËN:
-- Investeringsstrategieën en portfolio-optimalisatie (algemene informatie, geen persoonlijk advies)
-- Vermogensopbouw en pensioenplanning (educatieve informatie)
-- Financiële planning en budgettering (algemene tips)
-- Investeringsideeën en informatie over verschillende beleggingscategorieën (aandelen, ETF's, crypto, vastgoed) - GEEN beleggingsadvies
-- Risicobeheer en diversificatie (educatieve informatie)
-- Marktanalyses en trends (informatief)
-- Vragen over aandelen, koersen, marktprestaties, en bedrijfsinformatie
+JE EXPERTISE:
+- Nederlandse belastingwetgeving en regelgeving voor 2025
+- Financiële planning en vermogensopbouw
+- Investeringsstrategieën en portfolio-optimalisatie
+- Ondernemersbelastingen (BV, EMZ, DGA)
+- Box 1, 2 en 3 belastingen
+- Aftrekposten en fiscale voordelen
+- Pensioenplanning en lijfrente
+- Marktanalyses en beleggingsinformatie
 
-BELASTINGINFORMATIE:
-- Belastingondersteuning en tips voor 2025 (algemene informatie)
-- Uitleg over belastingregels en wijzigingen
-- Optimalisatiestrategieën voor ondernemers (algemene ideeën)
-- Vragen over inkomstenbelasting, vennootschapsbelasting, BTW, etc.
-- Aftrekposten en fiscale voordelen (informatief)
-- Box 3 belasting en vermogensrendementsheffing
+BELANGRIJKE RICHTLIJNEN VOOR ANTWOORDEN:
+1. KWALITEIT EN ACCURATIE:
+   - Geef altijd accurate, actuele en betrouwbare informatie
+   - Verwijs naar specifieke wetten, percentages, bedragen en regels waar mogelijk
+   - Gebruik concrete voorbeelden en cijfers om je uitleg te verduidelijken
+   - Controleer of de informatie relevant is voor 2025
 
-BELANGRIJKE RICHTLIJNEN:
-- Beantwoord de vraag DIRECT en ACCURAAT. Als de vraag over aandelen/beleggingen gaat, geef dan informatie over aandelen/beleggingen, NIET over belastingen (tenzij expliciet gevraagd)
-- Gebruik ALLEEN belastinginformatie als de vraag expliciet over belastingen gaat
-- Je geeft GEEN investeringsadvies zoals bedoeld in de Wet op het financieel toezicht (Wft)
-- Je geeft algemene informatie, ideeën en educatieve content
-- Gebruik actuele informatie uit internetbronnen waar mogelijk
-- Geef altijd accurate en actuele informatie over financiën en belastingregels 2025
-- Wees duidelijk en begrijpelijk in je uitleg
-- Verwijs waar mogelijk naar specifieke regels, percentages of bronnen
-- Geef praktische tips en voorbeelden waar relevant
-- Als je iets niet zeker weet, zeg dat expliciet en raad aan om een gecertificeerd adviseur te raadplegen voor professionele begeleiding
-- Antwoord altijd in het Nederlands
-- Houd antwoorden beknopt maar compleet
-- Combineer kennis van belastingen met financiële inzichten voor complete informatie
-- Vermeld waar nodig dat dit geen persoonlijk financieel of beleggingsadvies is`
+2. STRUCTUUR EN HELDEREID:
+   - Begin met een directe, beknopte beantwoording van de vraag
+   - Gebruik duidelijke paragrafen en structuur
+   - Maak gebruik van opsommingen waar relevant
+   - Sluit af met een samenvatting of belangrijkste punten
+
+3. CONTEXT EN RELEVANTIE:
+   - Als de vraag over aandelen/beleggingen gaat, focus op financiële informatie, NIET op belastingen (tenzij expliciet gevraagd)
+   - Als de vraag over belastingen gaat, gebruik de beschikbare belastinginformatie
+   - Combineer kennis waar relevant voor een compleet antwoord
+   - Negeer irrelevante informatie uit de context
+
+4. TONALITEIT:
+   - Wees vriendelijk, professioneel en toegankelijk
+   - Vermijd jargon waar mogelijk, of leg het uit als je het gebruikt
+   - Toon empathie en begrip voor de situatie van de gebruiker
+   - Wees proactief in het aanbieden van aanvullende relevante informatie
+
+5. DISCLAIMERS EN GRENZEN:
+   - Je geeft GEEN persoonlijk financieel of beleggingsadvies zoals bedoeld in de Wft
+   - Je geeft algemene informatie, ideeën en educatieve content
+   - Als je iets niet zeker weet, zeg dat expliciet
+   - Raad aan om een gecertificeerd adviseur te raadplegen voor persoonlijk advies
+   - Vermeld waar nodig dat dit geen persoonlijk advies is
+
+6. TECHNISCHE EISEN:
+   - Antwoord altijd in het Nederlands
+   - Houd antwoorden compleet maar niet onnodig lang (doel: 200-400 woorden voor eenvoudige vragen, tot 800 woorden voor complexe vragen)
+   - Gebruik markdown formatting voor structuur (headers, bold, lists)
+   - Zorg voor goede leesbaarheid met witruimte en paragrafen`
 
     // Voeg site context toe aan system message als er informatie gevonden is
     if (siteContext) {
@@ -442,35 +457,90 @@ BELANGRIJKE RICHTLIJNEN:
       }
     ]
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-      max_tokens: 1500
-    })
+    // Check of streaming wordt aangevraagd
+    const url = new URL(request.url)
+    const stream = url.searchParams.get("stream") === "true"
 
-    const assistantMessage = response.choices[0]?.message?.content || "Sorry, ik kon geen antwoord genereren."
-
-    // Bepaal source: "ai_with_context" als er site context was, anders "ai"
-    const source = siteContext ? "ai_with_context" : "ai"
-
-    const jsonResponse = NextResponse.json({
-      message: assistantMessage,
-      timestamp: new Date().toISOString(),
-      source: source
-    })
-
-    // Stel cookie in voor anonieme gebruikers
-    if (sessionId && !userId) {
-      jsonResponse.cookies.set("anonymous_session_id", sessionId, {
-        path: "/",
-        maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
-        sameSite: "lax",
-        httpOnly: true
+    if (stream) {
+      // Streaming response
+      const streamResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000,
+        stream: true
       })
-    }
 
-    return jsonResponse
+      // Maak een ReadableStream voor streaming
+      const encoder = new TextEncoder()
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of streamResponse) {
+              const content = chunk.choices[0]?.delta?.content || ""
+              if (content) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+              }
+            }
+            // Stuur einde signaal
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, timestamp: new Date().toISOString() })}\n\n`))
+            controller.close()
+          } catch (error) {
+            console.error("Streaming error:", error)
+            controller.error(error)
+          }
+        }
+      })
+
+      const response = new Response(readableStream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      })
+
+      // Stel cookie in voor anonieme gebruikers
+      if (sessionId && !userId) {
+        response.headers.set(
+          "Set-Cookie",
+          `anonymous_session_id=${sessionId}; Path=/; Max-Age=${ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60}; SameSite=Lax; HttpOnly`
+        )
+      }
+
+      return response
+    } else {
+      // Non-streaming response (fallback)
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+
+      const assistantMessage = response.choices[0]?.message?.content || "Sorry, ik kon geen antwoord genereren."
+
+      // Bepaal source: "ai_with_context" als er site context was, anders "ai"
+      const source = siteContext ? "ai_with_context" : "ai"
+
+      const jsonResponse = NextResponse.json({
+        message: assistantMessage,
+        timestamp: new Date().toISOString(),
+        source: source
+      })
+
+      // Stel cookie in voor anonieme gebruikers
+      if (sessionId && !userId) {
+        jsonResponse.cookies.set("anonymous_session_id", sessionId, {
+          path: "/",
+          maxAge: ANONYMOUS_SESSION_DURATION_HOURS * 60 * 60, // 24 uur
+          sameSite: "lax",
+          httpOnly: true
+        })
+      }
+
+      return jsonResponse
+    }
   } catch (error) {
     console.error("Chat API error:", error)
     
