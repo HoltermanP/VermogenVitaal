@@ -191,8 +191,9 @@ export function TaxChatbot() {
                   <Bot className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="bg-muted rounded-lg p-3">
+              <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
+                <p className="text-sm text-muted-foreground">AI is bezig met het genereren van een reactie...</p>
               </div>
             </div>
           )}
