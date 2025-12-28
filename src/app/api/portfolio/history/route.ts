@@ -77,7 +77,7 @@ async function getStockHistory(symbol: string, period: string = "1Y") {
 // GET - Haal historische portfolio waarden op
 export async function GET(request: NextRequest) {
   try {
-    const user = await getClerkUser()
+    const user = await getClerkUser(request)
     
     if (!user || !user.id) {
       return NextResponse.json(

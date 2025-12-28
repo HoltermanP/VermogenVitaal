@@ -52,10 +52,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Haal gebruiker op voor email en whatsapp nummer
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { email: true, name: true, whatsappNumber: true },
-    })
+    let dbUser
+    try {
+      dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { email: true, name: true, whatsappNumber: true },
+      })
+    } catch (error) {
+      // Fallback als whatsappNumber kolom nog niet bestaat
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('whatsappNumber')) {
+        dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { email: true, name: true },
+        })
+        if (dbUser) {
+          // Voeg null toe voor whatsappNumber
+          dbUser = { ...dbUser, whatsappNumber: null }
+        }
+      } else {
+        throw error
+      }
+    }
 
     if (!dbUser) {
       return NextResponse.json(
@@ -73,7 +91,11 @@ export async function POST(request: NextRequest) {
       },
       include: {
         user: {
-          select: { email: true, name: true, whatsappNumber: true },
+          select: { 
+            email: true, 
+            name: true, 
+            whatsappNumber: true,
+          },
         },
       },
     })

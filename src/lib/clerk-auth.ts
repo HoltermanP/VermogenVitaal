@@ -115,15 +115,52 @@ export async function getClerkUser(request?: NextRequest) {
     }
 
     // Zoek of maak gebruiker in database met error handling
+    // Gebruik select om alleen bestaande kolommen op te halen
     let user
     try {
       user = await prisma.user.findUnique({
         where: { email },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tier: true,
+          role: true,
+          trialEndsAt: true,
+          isTrialActive: true,
+          whatsappNumber: true, // Probeer whatsappNumber, maar als het niet bestaat wordt het null
+          createdAt: true,
+          updatedAt: true,
+        },
       })
     } catch (dbError) {
-      console.error("getClerkUser: Database error finding user:", dbError)
-      // Als database niet beschikbaar is, return null
-      return null
+      // Als whatsappNumber kolom niet bestaat, probeer zonder
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+      if (errorMessage.includes('whatsappNumber')) {
+        console.warn("getClerkUser: whatsappNumber kolom bestaat nog niet, probeer zonder")
+        try {
+          user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              tier: true,
+              role: true,
+              trialEndsAt: true,
+              isTrialActive: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          })
+        } catch (fallbackError) {
+          console.error("getClerkUser: Database error finding user (fallback):", fallbackError)
+          return null
+        }
+      } else {
+        console.error("getClerkUser: Database error finding user:", dbError)
+        return null
+      }
     }
 
     if (!user) {
@@ -174,12 +211,47 @@ export async function getClerkUser(request?: NextRequest) {
           try {
             user = await prisma.user.findUnique({
               where: { email },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                tier: true,
+                role: true,
+                trialEndsAt: true,
+                isTrialActive: true,
+                whatsappNumber: true,
+                createdAt: true,
+                updatedAt: true,
+              },
             })
             if (user) {
               console.log("getClerkUser: User found after duplicate error", { userId: user.id })
             }
           } catch (findError) {
-            console.error("getClerkUser: Error finding user after duplicate:", findError)
+            // Probeer zonder whatsappNumber als het niet bestaat
+            const findErrorMessage = findError instanceof Error ? findError.message : String(findError)
+            if (findErrorMessage.includes('whatsappNumber')) {
+              try {
+                user = await prisma.user.findUnique({
+                  where: { email },
+                  select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    tier: true,
+                    role: true,
+                    trialEndsAt: true,
+                    isTrialActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                })
+              } catch (fallbackError) {
+                console.error("getClerkUser: Error finding user after duplicate (fallback):", fallbackError)
+              }
+            } else {
+              console.error("getClerkUser: Error finding user after duplicate:", findError)
+            }
           }
         }
         

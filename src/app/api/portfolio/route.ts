@@ -3,9 +3,9 @@ import { getClerkUser } from "@/lib/clerk-auth"
 import { prisma } from "@/lib/prisma"
 
 // GET - Haal alle portfolio items op voor de gebruiker
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getClerkUser()
+    const user = await getClerkUser(request)
     
     if (!user || !user.id) {
       return NextResponse.json({ portfolio: [] })
@@ -18,9 +18,18 @@ export async function GET() {
 
     return NextResponse.json({ portfolio })
   } catch (error) {
-    console.error("Error fetching portfolio:", error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error("Error fetching portfolio:", {
+      message: errorMessage,
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json(
-      { error: "Fout bij ophalen portefeuille" },
+      { 
+        error: "Fout bij ophalen portefeuille",
+        ...(process.env.NODE_ENV === 'development' && { details: errorMessage })
+      },
       { status: 500 }
     )
   }

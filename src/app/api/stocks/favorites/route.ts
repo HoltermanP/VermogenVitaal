@@ -4,13 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@clerk/nextjs/server"
 
 // GET - Haal alle favorieten op voor de gebruiker
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Probeer gebruiker op te halen, maar vang alle errors op
     let user = null
     try {
-      // Voor GET requests hebben we geen request object, maar auth() werkt zonder
-      user = await getClerkUser()
+      user = await getClerkUser(request)
     } catch (authError) {
       console.warn("Auth error (non-critical):", authError)
       // Als auth faalt, behandel als niet ingelogd

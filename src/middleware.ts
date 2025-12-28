@@ -66,21 +66,8 @@ export default isClerkConfigured && clerkMiddleware
       // Debug logging (ook in productie voor troubleshooting)
       console.log(`[Middleware] ${request.method} ${pathname} - userId: ${auth.userId || 'null'} - Public: ${isPublic} - SessionId: ${auth.sessionId || 'null'} - HasClerkCookie: ${hasClerkCookie} - ClerkCookies: ${clerkCookies.length}`)
       
-      // Als auth.userId null is maar er zijn Clerk cookies, probeer auth() direct aan te roepen
-      let actualUserId = auth.userId
-      if (!actualUserId && hasClerkCookie) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { auth: authFunction } = require("@clerk/nextjs/server")
-          const authResult = await authFunction()
-          if (authResult?.userId) {
-            actualUserId = authResult.userId
-            console.log(`[Middleware] ⚠️  auth.userId was null but auth() returned userId: ${actualUserId}`)
-          }
-        } catch (error) {
-          console.error(`[Middleware] Error calling auth() directly:`, error)
-        }
-      }
+      // Gebruik auth.userId direct - deze is al beschikbaar via clerkMiddleware
+      const actualUserId = auth.userId
 
       // API routes handelen authenticatie zelf af - laat altijd door
       // Dit voorkomt dat API routes worden geblokkeerd door de middleware
