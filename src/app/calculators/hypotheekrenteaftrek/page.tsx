@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { NewsTicker } from "@/components/news-ticker"
 import { calculateMortgageInterest, type MortgageInterestResult } from "@/lib/calculators/mortgage-interest"
+import type { TaxYear } from "@/lib/tax-rates"
 
 export default function MortgageInterestCalculatorPage() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,8 @@ export default function MortgageInterestCalculatorPage() {
     mortgageType: 'annuity' as 'annuity' | 'linear' | 'other',
     mortgageYear: 2020,
     hasPartner: false,
-    income: 50000
+    income: 50000,
+    year: 2025 as TaxYear
   })
 
   const [results, setResults] = useState<MortgageInterestResult | null>(null)
@@ -62,6 +64,22 @@ export default function MortgageInterestCalculatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="year">Belastingjaar</Label>
+                  <Select
+                    value={formData.year.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, year: parseInt(value) as TaxYear })}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecteer jaar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2025">2025</SelectItem>
+                      <SelectItem value="2026">2026</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="mortgageAmount">Hypotheekbedrag</Label>
                   <Input

@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calculator, Download, ArrowRight, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { NewsTicker } from "@/components/news-ticker"
 import { calculateIncomeTax, type IncomeTaxResult } from "@/lib/calculators/income-tax"
+import type { TaxYear } from "@/lib/tax-rates"
 
 export default function IncomeTaxCalculatorPage() {
   const [formData, setFormData] = useState({
@@ -21,7 +23,8 @@ export default function IncomeTaxCalculatorPage() {
     pensionPremiums: undefined as number | undefined,
     age: 35,
     hasPartner: false,
-    bothWorking: false
+    bothWorking: false,
+    year: 2025 as TaxYear
   })
 
   const [results, setResults] = useState<IncomeTaxResult | null>(null)
@@ -65,6 +68,22 @@ export default function IncomeTaxCalculatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="year">Belastingjaar</Label>
+                  <Select
+                    value={formData.year.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, year: parseInt(value) as TaxYear })}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecteer jaar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2025">2025</SelectItem>
+                      <SelectItem value="2026">2026</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="income">Jaarlijks Inkomen</Label>
                   <Input

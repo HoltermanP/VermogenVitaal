@@ -1,9 +1,12 @@
+import { getTaxRates, type TaxYear } from "../tax-rates"
+
 export interface Box3Input {
   bankSavings: number
   investments: number
   otherAssets?: number
   debts?: number
   hasPartner?: boolean
+  year?: TaxYear
 }
 
 export interface Box3Result {
@@ -33,12 +36,15 @@ export function calculateBox3(input: Box3Input): Box3Result {
     investments = 0,
     otherAssets = 0,
     debts = 0,
-    hasPartner = false
+    hasPartner = false,
+    year = 2025
   } = {
     ...input,
     otherAssets: input.otherAssets ?? 0,
     debts: input.debts ?? 0
   }
+
+  const rates = getTaxRates(year).box3
 
   // Bezittingen
   const assets = {
@@ -51,28 +57,23 @@ export function calculateBox3(input: Box3Input): Box3Result {
   // Netto vermogen
   const netAssets = Math.max(0, assets.total - debts)
 
-  // Heffingsvrije voet 2025
-  const taxFreeAmount = hasPartner ? 114000 : 57000
+  // Heffingsvrije voet (jaar-specifiek)
+  const taxFreeAmount = hasPartner ? rates.taxFreeAmount.partner : rates.taxFreeAmount.single
 
   // Belastbaar vermogen
   const taxableAssets = Math.max(0, netAssets - taxFreeAmount)
 
-  // Forfaitair rendement 2025
-  const bankReturnRate = 0.0036 // 0.36%
-  const investmentReturnRate = 0.0617 // 6.17%
-  const debtReturnRate = 0.0257 // 2.57%
-
+  // Forfaitair rendement (jaar-specifiek)
   const assumedReturns = {
-    bankSavings: bankSavings * bankReturnRate,
-    investments: investments * investmentReturnRate,
-    debts: debts * debtReturnRate,
+    bankSavings: bankSavings * rates.assumedReturns.bankSavings,
+    investments: investments * rates.assumedReturns.investments,
+    debts: debts * rates.assumedReturns.debts,
     total: 0
   }
   assumedReturns.total = assumedReturns.bankSavings + assumedReturns.investments - assumedReturns.debts
 
-  // Box 3 belasting (36% over forfaitair rendement)
-  // Alleen belasting berekenen als er belastbaar vermogen is
-  const box3Tax = taxableAssets > 0 ? Math.max(0, assumedReturns.total * 0.36) : 0
+  // Box 3 belasting (jaar-specifiek tarief)
+  const box3Tax = taxableAssets > 0 ? Math.max(0, assumedReturns.total * rates.taxRate) : 0
 
   // Effectief tarief
   const effectiveRate = netAssets > 0 ? (box3Tax / netAssets) * 100 : 0

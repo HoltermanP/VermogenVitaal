@@ -1,3 +1,5 @@
+import { getTaxRates, type TaxYear } from "../tax-rates"
+
 export interface MortgageInterestInput {
   mortgageAmount: number
   interestRate: number
@@ -5,6 +7,7 @@ export interface MortgageInterestInput {
   mortgageYear: number
   hasPartner?: boolean
   income: number
+  year?: TaxYear
 }
 
 export interface MortgageInterestResult {
@@ -24,9 +27,14 @@ export function calculateMortgageInterest(input: MortgageInterestInput): Mortgag
     interestRate,
     mortgageType,
     mortgageYear,
-    income
+    income,
+    year = 2025
   } = input
   // hasPartner is voor toekomstig gebruik maar wordt nu nog niet gebruikt
+
+  const rates = getTaxRates(year)
+  const mortgageRates = rates.mortgage
+  const incomeTaxRates = rates.incomeTax
 
   // Jaarlijkse rente
   const annualInterest = mortgageAmount * (interestRate / 100)
@@ -36,28 +44,30 @@ export function calculateMortgageInterest(input: MortgageInterestInput): Mortgag
   if (mortgageYear >= 2013) {
     // Nieuwe regels vanaf 2013
     if (mortgageType === 'annuity' || mortgageType === 'linear') {
-      deductiblePercentage = 0.3705 // 37.05% in 2025 (afbouw)
+      deductiblePercentage = mortgageRates.deductiblePercentage
     } else {
       deductiblePercentage = 0 // Andere hypotheken niet aftrekbaar
     }
   } else {
     // Oude regels (volledig aftrekbaar)
-    deductiblePercentage = 0.3705
+    deductiblePercentage = mortgageRates.deductiblePercentage
   }
 
   const deductibleInterest = annualInterest * deductiblePercentage
 
-  // Belastingbesparing (inkomstenbelasting)
-  const incomeTaxRate = income > 75518 ? 0.495 : 0.3697
+  // Belastingbesparing (inkomstenbelasting - jaar-specifiek)
+  const incomeTaxRate = income > incomeTaxRates.bracket1Limit 
+    ? incomeTaxRates.bracket2Rate 
+    : incomeTaxRates.bracket1Rate
   const taxSavings = deductibleInterest * incomeTaxRate
 
   // Maandelijkse betalingen
   const monthlyInterest = annualInterest / 12
   const grossMonthlyPayment = monthlyInterest // Vereenvoudigd
 
-  // Eigenwoningforfait (0.35% van WOZ, geschat op 80% van aankoopprijs)
+  // Eigenwoningforfait (jaar-specifiek)
   const estimatedWOZ = mortgageAmount / 0.8
-  const ownHomeForfait = estimatedWOZ * 0.0035
+  const ownHomeForfait = estimatedWOZ * mortgageRates.ownHomeForfaitRate
 
   // Netto voordeel
   const netBenefit = taxSavings - (ownHomeForfait * incomeTaxRate)

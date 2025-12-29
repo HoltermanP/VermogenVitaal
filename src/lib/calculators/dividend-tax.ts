@@ -1,8 +1,11 @@
+import { getTaxRates, type TaxYear } from "../tax-rates"
+
 export interface DividendTaxInput {
   dividend: number
   isDGA?: boolean
   salary?: number
   corporateProfit?: number
+  year?: TaxYear
 }
 
 export interface DividendTaxResult {
@@ -25,15 +28,19 @@ export function calculateDividendTax(input: DividendTaxInput): DividendTaxResult
     dividend,
     isDGA = false,
     salary = 0,
-    corporateProfit = 0
+    corporateProfit = 0,
+    year = 2025
   } = input
 
-  // Dividendbelasting 2025: 26.5%
-  const dividendTaxRate = 0.265
+  const rates = getTaxRates(year)
+  const dividendTaxRate = rates.dividendTax.rate
+  const corporateRates = rates.corporateTax
+  const incomeTaxRates = rates.incomeTax
+
   const dividendTax = dividend * dividendTaxRate
   const netDividend = dividend - dividendTax
 
-  // Box 2 belasting (ook 26.5%)
+  // Box 2 belasting (ook zelfde tarief)
   const box2Tax = dividend * dividendTaxRate
 
   // Totale belasting (dividendbelasting is definitief)
@@ -46,17 +53,20 @@ export function calculateDividendTax(input: DividendTaxInput): DividendTaxResult
   let optimization: { recommendedSalary: number; recommendedDividend: number; taxSavings: number } | undefined = undefined
 
   if (isDGA && corporateProfit > 0) {
-    // Minimum DGA-salaris
-    const minSalary = corporateProfit <= 200000 ? 51000 : 75000
+    // Minimum DGA-salaris (jaar-specifiek)
+    const minSalary = corporateProfit <= corporateRates.dgaMinSalary.threshold 
+      ? corporateRates.dgaMinSalary.low 
+      : corporateRates.dgaMinSalary.high
     const availableForDividend = Math.max(0, corporateProfit - minSalary)
 
     // Bereken optimale verhouding
     const recommendedSalary = minSalary
     const recommendedDividend = Math.min(availableForDividend, corporateProfit - recommendedSalary)
 
-    // Belastingbesparing
-    const currentTotalTax = (salary * 0.37) + (dividend * dividendTaxRate)
-    const optimizedTotalTax = (recommendedSalary * 0.37) + (recommendedDividend * dividendTaxRate)
+    // Belastingbesparing (gebruik gemiddeld inkomstenbelastingtarief)
+    const avgIncomeTaxRate = (incomeTaxRates.bracket1Rate + incomeTaxRates.bracket2Rate) / 2
+    const currentTotalTax = (salary * avgIncomeTaxRate) + (dividend * dividendTaxRate)
+    const optimizedTotalTax = (recommendedSalary * avgIncomeTaxRate) + (recommendedDividend * dividendTaxRate)
     const taxSavings = currentTotalTax - optimizedTotalTax
 
     optimization = {
@@ -68,7 +78,7 @@ export function calculateDividendTax(input: DividendTaxInput): DividendTaxResult
 
   // Advies
   const advice: string[] = []
-  advice.push(`Dividendbelasting: €${Math.round(dividendTax).toLocaleString('nl-NL')} (26.5%)`)
+  advice.push(`Dividendbelasting: €${Math.round(dividendTax).toLocaleString('nl-NL')} (${(dividendTaxRate * 100).toFixed(1)}%)`)
   advice.push(`Netto dividend: €${Math.round(netDividend).toLocaleString('nl-NL')}`)
 
   if (isDGA && optimization) {

@@ -1,3 +1,5 @@
+import { getTaxRates, calculateLaborCredit, calculateCombinationCredit, type TaxYear } from "../tax-rates"
+
 export interface IncomeTaxInput {
   income: number
   partnerIncome?: number
@@ -8,6 +10,7 @@ export interface IncomeTaxInput {
   age?: number
   hasPartner?: boolean
   bothWorking?: boolean
+  year?: TaxYear
 }
 
 export interface IncomeTaxResult {
@@ -46,8 +49,11 @@ export function calculateIncomeTax(input: IncomeTaxInput): IncomeTaxResult {
     pensionPremiums = 0,
     age = 30,
     hasPartner = false,
-    bothWorking = false
+    bothWorking = false,
+    year = 2025
   } = input
+
+  const rates = getTaxRates(year).incomeTax
 
   // Aftrekposten
   const deductions = {
@@ -62,27 +68,40 @@ export function calculateIncomeTax(input: IncomeTaxInput): IncomeTaxResult {
   // Belastbaar inkomen
   const taxableIncome = Math.max(0, income - deductions.total)
 
-  // Inkomstenbelasting tarieven 2025
-  const bracket1Limit = 75518
-  const bracket1Rate = 0.3697
-  const bracket2Rate = 0.4950
-
+  // Inkomstenbelasting tarieven (jaar-specifiek)
   let bracket1 = 0
   let bracket2 = 0
 
-  if (taxableIncome <= bracket1Limit) {
-    bracket1 = taxableIncome * bracket1Rate
+  if (year === 2026) {
+    // 2026 heeft 3 schijven
+    const bracket2Limit = 79137
+    if (taxableIncome <= rates.bracket1Limit) {
+      bracket1 = taxableIncome * rates.bracket1Rate
+    } else if (taxableIncome <= bracket2Limit) {
+      bracket1 = rates.bracket1Limit * rates.bracket1Rate
+      bracket2 = (taxableIncome - rates.bracket1Limit) * rates.bracket2Rate
+    } else {
+      bracket1 = rates.bracket1Limit * rates.bracket1Rate
+      bracket2 = (bracket2Limit - rates.bracket1Limit) * rates.bracket2Rate
+      // Schijf 3: 49.50%
+      bracket2 += (taxableIncome - bracket2Limit) * 0.4950
+    }
   } else {
-    bracket1 = bracket1Limit * bracket1Rate
-    bracket2 = (taxableIncome - bracket1Limit) * bracket2Rate
+    // 2025 heeft 2 schijven
+    if (taxableIncome <= rates.bracket1Limit) {
+      bracket1 = taxableIncome * rates.bracket1Rate
+    } else {
+      bracket1 = rates.bracket1Limit * rates.bracket1Rate
+      bracket2 = (taxableIncome - rates.bracket1Limit) * rates.bracket2Rate
+    }
   }
 
   const incomeTaxTotal = bracket1 + bracket2
 
-  // Heffingskortingen
-  const generalCredit = age < 65 ? 3070 : 1535
-  const laborCredit = calculateLaborCredit(income)
-  const combinationCredit = hasPartner && bothWorking ? calculateCombinationCredit(income, partnerIncome) : 0
+  // Heffingskortingen (jaar-specifiek)
+  const generalCredit = age < 65 ? rates.generalCredit.under65 : rates.generalCredit.over65
+  const laborCredit = calculateLaborCredit(income, year)
+  const combinationCredit = hasPartner && bothWorking ? calculateCombinationCredit(income, partnerIncome, year) : 0
 
   const taxCredits = {
     general: generalCredit,
@@ -97,7 +116,11 @@ export function calculateIncomeTax(input: IncomeTaxInput): IncomeTaxResult {
 
   // Effectief en marginaal tarief
   const effectiveRate = income > 0 ? (netTax / income) * 100 : 0
-  const marginalRate = taxableIncome > bracket1Limit ? bracket2Rate * 100 : bracket1Rate * 100
+  const marginalRate = year === 2026 && taxableIncome > 79137 
+    ? 49.50 
+    : taxableIncome > rates.bracket1Limit 
+      ? rates.bracket2Rate * 100 
+      : rates.bracket1Rate * 100
 
   return {
     grossIncome: income,
@@ -115,25 +138,4 @@ export function calculateIncomeTax(input: IncomeTaxInput): IncomeTaxResult {
   }
 }
 
-function calculateLaborCredit(income: number): number {
-  // Arbeidskorting 2025
-  if (income <= 11403) {
-    return income * 0.443
-  } else if (income <= 75518) {
-    return 5052 - (income - 11403) * 0.0641
-  } else if (income <= 120000) {
-    return 5052 - (75518 - 11403) * 0.0641 - (income - 75518) * 0.1135
-  } else {
-    return 0
-  }
-}
-
-function calculateCombinationCredit(income: number, partnerIncome: number): number {
-  const combinedIncome = income + partnerIncome
-  if (combinedIncome <= 28888) {
-    return combinedIncome * 0.1
-  } else {
-    return 2888 - (combinedIncome - 28888) * 0.065
-  }
-}
 

@@ -1,9 +1,12 @@
+import { getTaxRates, type TaxYear } from "../tax-rates"
+
 export interface SelfEmployedInput {
   profit: number
   hoursWorked: number
   partnerHours?: number
   isStarter?: boolean
   yearsActive?: number
+  year?: TaxYear
 }
 
 export interface SelfEmployedResult {
@@ -31,8 +34,11 @@ export function calculateSelfEmployed(input: SelfEmployedInput): SelfEmployedRes
     hoursWorked,
     partnerHours = 0,
     isStarter = false,
-    yearsActive = 0
+    yearsActive = 0,
+    year = 2025
   } = input
+
+  const rates = getTaxRates(year).selfEmployed
 
   // Urencriterium
   const requiredHours = 1225
@@ -40,14 +46,14 @@ export function calculateSelfEmployed(input: SelfEmployedInput): SelfEmployedRes
   const totalHours = hoursWorked + (partnerHours >= partnerRequiredHours ? partnerHours : 0)
   const qualifies = totalHours >= requiredHours
 
-  // Zelfstandigenaftrek 2025
-  const selfEmployedDeduction = qualifies ? 5030 : 0
+  // Zelfstandigenaftrek (jaar-specifiek)
+  const selfEmployedDeduction = qualifies ? rates.selfEmployedDeduction : 0
 
   // Startersaftrek (eerste 5 jaar)
-  const starterDeduction = (isStarter && yearsActive <= 5 && qualifies) ? 2123 : 0
+  const starterDeduction = (isStarter && yearsActive <= 5 && qualifies) ? rates.starterDeduction : 0
 
-  // MKB-winstvrijstelling (14% tot max €14.000)
-  const mkbProfitExemption = qualifies ? Math.min(profit * 0.14, 14000) : 0
+  // MKB-winstvrijstelling (jaar-specifiek)
+  const mkbProfitExemption = qualifies ? Math.min(profit * rates.mkbProfitExemptionRate, rates.mkbProfitExemptionMax) : 0
 
   const deductions = {
     selfEmployed: selfEmployedDeduction,

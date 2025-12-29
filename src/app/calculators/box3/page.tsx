@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calculator, ArrowRight, PiggyBank } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { NewsTicker } from "@/components/news-ticker"
 import { calculateBox3, type Box3Result } from "@/lib/calculators/box3"
+import type { TaxYear } from "@/lib/tax-rates"
 
 export default function Box3CalculatorPage() {
   const [formData, setFormData] = useState({
@@ -17,7 +19,8 @@ export default function Box3CalculatorPage() {
     investments: 30000,
     otherAssets: undefined as number | undefined,
     debts: undefined as number | undefined,
-    hasPartner: false
+    hasPartner: false,
+    year: 2025 as TaxYear
   })
 
   const [results, setResults] = useState<Box3Result | null>(null)
@@ -61,6 +64,22 @@ export default function Box3CalculatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="year">Belastingjaar</Label>
+                  <Select
+                    value={formData.year.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, year: parseInt(value) as TaxYear })}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecteer jaar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2025">2025</SelectItem>
+                      <SelectItem value="2026">2026</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="bankSavings">Spaargeld</Label>
                   <Input

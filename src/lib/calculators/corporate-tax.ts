@@ -1,8 +1,11 @@
+import { getTaxRates, type TaxYear } from "../tax-rates"
+
 export interface CorporateTaxInput {
   profit: number
   useMKBExemption?: boolean
   useInnovationBox?: boolean
   innovationProfit?: number
+  year?: TaxYear
 }
 
 export interface CorporateTaxResult {
@@ -25,28 +28,25 @@ export function calculateCorporateTax(input: CorporateTaxInput): CorporateTaxRes
     profit,
     useMKBExemption = false,
     useInnovationBox = false,
-    innovationProfit = 0
+    innovationProfit = 0,
+    year = 2025
   } = input
 
-  // Vennootschapsbelasting tarieven 2025
-  const bracket1Limit = 200000
-  const bracket1Rate = 0.19 // 19%
-  const bracket2Rate = 0.258 // 25.8%
+  const rates = getTaxRates(year).corporateTax
 
   let taxableProfit = profit
 
-  // MKB-winstvrijstelling (14% tot €200.000)
-  const mkbExemption = useMKBExemption && profit <= bracket1Limit 
-    ? Math.min(profit * 0.14, 28000) 
+  // MKB-winstvrijstelling
+  const mkbExemption = useMKBExemption && profit <= rates.bracket1Limit 
+    ? Math.min(profit * rates.mkbExemptionRate, rates.mkbExemptionMax) 
     : 0
 
-  // Innovatiebox (9% tarief tot €350.000)
-  const maxInnovationBox = 350000
+  // Innovatiebox
   const innovationBoxProfit = useInnovationBox 
-    ? Math.min(innovationProfit, maxInnovationBox) 
+    ? Math.min(innovationProfit, rates.innovationBoxMax) 
     : 0
   const innovationBoxExemption = innovationBoxProfit > 0 
-    ? innovationBoxProfit * (bracket1Rate - 0.09) // Verschil tussen normaal en 9%
+    ? innovationBoxProfit * (rates.bracket1Rate - rates.innovationBoxRate)
     : 0
 
   // Belastbare winst
@@ -56,16 +56,16 @@ export function calculateCorporateTax(input: CorporateTaxInput): CorporateTaxRes
   let bracket1 = 0
   let bracket2 = 0
 
-  if (taxableProfit <= bracket1Limit) {
-    bracket1 = taxableProfit * bracket1Rate
+  if (taxableProfit <= rates.bracket1Limit) {
+    bracket1 = taxableProfit * rates.bracket1Rate
   } else {
-    bracket1 = bracket1Limit * bracket1Rate
-    bracket2 = (taxableProfit - bracket1Limit) * bracket2Rate
+    bracket1 = rates.bracket1Limit * rates.bracket1Rate
+    bracket2 = (taxableProfit - rates.bracket1Limit) * rates.bracket2Rate
   }
 
   // Innovatiebox korting
   const innovationBoxTax = innovationBoxProfit > 0 
-    ? innovationBoxProfit * 0.09 
+    ? innovationBoxProfit * rates.innovationBoxRate 
     : 0
 
   const totalCorporateTax = bracket1 + bracket2 - innovationBoxExemption + innovationBoxTax
@@ -80,15 +80,15 @@ export function calculateCorporateTax(input: CorporateTaxInput): CorporateTaxRes
   const advice: string[] = []
   if (mkbExemption > 0) {
     advice.push(`MKB-winstvrijstelling: €${Math.round(mkbExemption).toLocaleString('nl-NL')}`)
-    advice.push(`Effectief tarief eerste €200k: ${((bracket1Rate * 0.86) * 100).toFixed(2)}%`)
+    advice.push(`Effectief tarief eerste €200k: ${((rates.bracket1Rate * 0.86) * 100).toFixed(2)}%`)
   }
 
   if (innovationBoxExemption > 0) {
-    advice.push(`Innovatiebox: €${Math.round(innovationBoxProfit).toLocaleString('nl-NL')} tegen 9%`)
+    advice.push(`Innovatiebox: €${Math.round(innovationBoxProfit).toLocaleString('nl-NL')} tegen ${(rates.innovationBoxRate * 100).toFixed(0)}%`)
     advice.push(`Belastingbesparing: €${Math.round(innovationBoxExemption).toLocaleString('nl-NL')}`)
   }
 
-  if (profit > bracket1Limit && !useMKBExemption) {
+  if (profit > rates.bracket1Limit && !useMKBExemption) {
     advice.push("Overweeg MKB-winstvrijstelling voor winst tot €200.000")
   }
 
