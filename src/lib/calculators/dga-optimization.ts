@@ -1,8 +1,11 @@
+import { getTaxRates, type TaxYear } from "@/lib/tax-rates"
+
 export interface DGAOptimizationInput {
   corporateProfit: number
   currentSalary: number
   currentDividend: number
   hasPartner?: boolean
+  year?: TaxYear
 }
 
 export interface DGAOptimizationResult {
@@ -36,31 +39,42 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
   const {
     corporateProfit,
     currentSalary,
-    currentDividend
+    currentDividend,
+    year = 2025
   } = input
   // hasPartner is voor toekomstig gebruik maar wordt nu nog niet gebruikt
 
-  // Minimum DGA-salaris 2025
-  const minSalary = corporateProfit <= 200000 ? 51000 : 75000
+  const rates = getTaxRates(year)
+  const minSalary = corporateProfit <= rates.corporateTax.dgaMinSalary.threshold 
+    ? rates.corporateTax.dgaMinSalary.low 
+    : rates.corporateTax.dgaMinSalary.high
 
   // Huidige situatie
-  const currentCorporateTax = calculateCorporateTaxAmount(corporateProfit)
-  const currentAfterCorporateTax = corporateProfit - currentCorporateTax
+  // Salaris is een kostenpost, dus vennootschapsbelasting wordt berekend over (winst - salaris)
+  const currentProfitAfterSalary = Math.max(0, corporateProfit - currentSalary)
+  const currentCorporateTax = calculateCorporateTaxAmount(currentProfitAfterSalary, year)
+  const currentAfterCorporateTax = currentProfitAfterSalary - currentCorporateTax
   const availableForDistribution = currentAfterCorporateTax
 
   // Huidige belastingen
-  const currentSalaryTax = calculateIncomeTax(currentSalary)
-  const currentDividendTax = currentDividend * 0.265
+  const currentSalaryTax = calculateIncomeTax(currentSalary, year)
+  const currentDividendTax = currentDividend * rates.dividendTax.rate
   const currentTotalTax = currentCorporateTax + currentSalaryTax + currentDividendTax
   const currentNetIncome = currentSalary + currentDividend - currentSalaryTax - currentDividendTax
 
   // Geoptimaliseerde situatie
-  const optimizedSalary = Math.max(minSalary, currentSalary)
-  const optimizedDividend = Math.max(0, availableForDistribution - optimizedSalary)
+  // Optimaal salaris is altijd het minimum DGA salaris (als er genoeg winst is)
+  const optimizedSalary = Math.min(minSalary, corporateProfit)
+  // Winst na salaris
+  const optimizedProfitAfterSalary = Math.max(0, corporateProfit - optimizedSalary)
+  // Vennootschapsbelasting over winst na salaris
+  const optimizedCorporateTax = calculateCorporateTaxAmount(optimizedProfitAfterSalary, year)
+  // Beschikbaar voor dividend na vennootschapsbelasting
+  const optimizedAfterCorporateTax = optimizedProfitAfterSalary - optimizedCorporateTax
+  const optimizedDividend = Math.max(0, optimizedAfterCorporateTax)
 
-  const optimizedCorporateTax = calculateCorporateTaxAmount(corporateProfit)
-  const optimizedSalaryTax = calculateIncomeTax(optimizedSalary)
-  const optimizedDividendTax = optimizedDividend * 0.265
+  const optimizedSalaryTax = calculateIncomeTax(optimizedSalary, year)
+  const optimizedDividendTax = optimizedDividend * rates.dividendTax.rate
   const optimizedTotalTax = optimizedCorporateTax + optimizedSalaryTax + optimizedDividendTax
   const optimizedNetIncome = optimizedSalary + optimizedDividend - optimizedSalaryTax - optimizedDividendTax
 
@@ -115,10 +129,11 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
   }
 }
 
-function calculateCorporateTaxAmount(profit: number): number {
-  const bracket1Limit = 200000
-  const bracket1Rate = 0.19
-  const bracket2Rate = 0.258
+function calculateCorporateTaxAmount(profit: number, year: TaxYear = 2025): number {
+  const rates = getTaxRates(year)
+  const bracket1Limit = rates.corporateTax.bracket1Limit
+  const bracket1Rate = rates.corporateTax.bracket1Rate
+  const bracket2Rate = rates.corporateTax.bracket2Rate
 
   if (profit <= bracket1Limit) {
     return profit * bracket1Rate
@@ -127,10 +142,11 @@ function calculateCorporateTaxAmount(profit: number): number {
   }
 }
 
-function calculateIncomeTax(income: number): number {
-  const bracket1Limit = 75518
-  const bracket1Rate = 0.3697
-  const bracket2Rate = 0.495
+function calculateIncomeTax(income: number, year: TaxYear = 2025): number {
+  const rates = getTaxRates(year)
+  const bracket1Limit = rates.incomeTax.bracket1Limit
+  const bracket1Rate = rates.incomeTax.bracket1Rate
+  const bracket2Rate = rates.incomeTax.bracket2Rate
 
   if (income <= bracket1Limit) {
     return income * bracket1Rate
