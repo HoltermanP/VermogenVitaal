@@ -11,21 +11,30 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { getTaxTopicById, getRelatedTopics } from "@/lib/tax-info-2025"
+import { getTaxTopicById2026, getRelatedTopics2026 } from "@/lib/tax-info-2026"
 import { notFound } from "next/navigation"
 
 interface TaxTopicPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ year?: string }>
 }
 
-export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
+export default async function TaxTopicPage({ params, searchParams }: TaxTopicPageProps) {
   const { id } = await params
-  const topic = getTaxTopicById(id)
+  const { year } = await searchParams
+  const selectedYear = year === "2026" ? "2026" : "2025"
+  
+  const topic = selectedYear === "2026" 
+    ? getTaxTopicById2026(id)
+    : getTaxTopicById(id)
   
   if (!topic) {
     notFound()
   }
 
-  const relatedTopics = getRelatedTopics(id)
+  const relatedTopics = selectedYear === "2026"
+    ? getRelatedTopics2026(id)
+    : getRelatedTopics(id)
   const IconComponent = topic.icon
 
   const colorMap: Record<string, string> = {
@@ -55,7 +64,7 @@ export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
           {/* Back button */}
           <div className="mb-6">
             <Button variant="ghost" asChild>
-              <Link href="/tips" className="flex items-center gap-2">
+              <Link href={`/tips${selectedYear === "2026" ? "?year=2026" : ""}`} className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Terug naar overzicht
               </Link>
@@ -164,7 +173,7 @@ export default async function TaxTopicPage({ params }: TaxTopicPageProps) {
                     const RelatedIcon = relatedTopic.icon
                     const relatedColorClass = colorMap[relatedTopic.color] || colorMap.blue
                     return (
-                      <Link key={relatedTopic.id} href={`/tips/${relatedTopic.id}`}>
+                      <Link key={relatedTopic.id} href={`/tips/${relatedTopic.id}?year=${selectedYear}`}>
                         <Card className="bg-muted/50 hover:bg-muted border-border transition-all duration-300 cursor-pointer group">
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3">

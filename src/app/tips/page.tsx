@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   AlertCircle,
@@ -10,11 +12,44 @@ import {
   BookOpen
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { taxTopics2025 } from "@/lib/tax-info-2025"
+import { taxTopics2026 } from "@/lib/tax-info-2026"
 import { NewsTicker } from "@/components/news-ticker"
 
 export default function AdviesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const yearParam = searchParams.get("year")
+  const [selectedYear, setSelectedYear] = useState<"2025" | "2026">(
+    yearParam === "2026" ? "2026" : "2025"
+  )
+  const taxTopics = selectedYear === "2025" ? taxTopics2025 : taxTopics2026
+
+  // Update selectedYear when URL parameter changes
+  useEffect(() => {
+    if (yearParam === "2026") {
+      setSelectedYear("2026")
+    } else {
+      setSelectedYear("2025")
+    }
+  }, [yearParam])
+
+  const handleYearChange = (value: string) => {
+    const newYear = value as "2025" | "2026"
+    setSelectedYear(newYear)
+    // Update URL without reloading
+    const params = new URLSearchParams(searchParams.toString())
+    if (newYear === "2026") {
+      params.set("year", "2026")
+    } else {
+      params.delete("year")
+    }
+    router.push(`/tips?${params.toString()}`, { scroll: false })
+  }
   const belangrijkeWijzigingen = [
     {
       title: "Aanpassing belastingtarieven",
@@ -61,8 +96,16 @@ export default function AdviesPage() {
               <span className="text-gradient-financial">Financiële & Belastingondersteuning</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in delay-200">
-              Actuele ondersteuning, tips en optimalisatiestrategieën voor financiën en belastingen in 2025
+              Actuele ondersteuning, tips en optimalisatiestrategieën voor financiën en belastingen
             </p>
+            <div className="mt-6 flex items-center justify-center">
+              <Tabs value={selectedYear} onValueChange={handleYearChange}>
+                <TabsList className="bg-card/80 backdrop-blur-sm border border-border">
+                  <TabsTrigger value="2025">Belastingregels 2025</TabsTrigger>
+                  <TabsTrigger value="2026">Belastingregels 2026</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4 text-primary" />
               <span>Vraag Finn rechtsonder voor persoonlijke informatie</span>
@@ -162,18 +205,18 @@ export default function AdviesPage() {
             <div>
               <div className="text-center mb-8">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                  Alle Belastingonderwerpen 2025
+                  Alle Belastingonderwerpen {selectedYear}
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   Klik op een onderwerp om uitgebreide informatie te bekijken. Gebruik Finn rechtsonder voor persoonlijke informatie.
                 </p>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {taxTopics2025.map((topic) => {
+                  {taxTopics.map((topic) => {
                     const IconComponent = topic.icon
                     const colorClass = colorMap[topic.color] || colorMap.blue
                     return (
-                      <Link key={topic.id} href={`/tips/${topic.id}`}>
+                      <Link key={topic.id} href={`/tips/${topic.id}?year=${selectedYear}`}>
                         <Card className="bg-card/80 backdrop-blur-sm border-border shadow-xl hover:shadow-financial-lg hover:border-primary/50 transition-all duration-500 h-full cursor-pointer group">
                           <CardHeader>
                             <div className="flex items-start gap-4">

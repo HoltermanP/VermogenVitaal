@@ -108,7 +108,9 @@ export function PortfolioPage() {
   // Haal portfolio items op
   const fetchPortfolio = async () => {
     try {
-      const response = await fetch("/api/portfolio")
+      const response = await fetch("/api/portfolio", {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
       const data = await response.json()
       if (response.ok) {
         setPortfolio(data.portfolio || [])
@@ -124,7 +126,9 @@ export function PortfolioPage() {
   // Haal gebruiker data op
   const fetchUserData = async () => {
     try {
-      const response = await fetch("/api/user")
+      const response = await fetch("/api/user", {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
       if (response.ok) {
         const data = await response.json()
         setUserWhatsappNumber(data.whatsappNumber || null)
@@ -187,7 +191,9 @@ export function PortfolioPage() {
 
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`)
+      const response = await fetch(`/api/stocks/search?q=${encodeURIComponent(query)}`, {
+        credentials: "include", // Zorg dat cookies worden meegestuurd
+      })
       if (response.ok) {
         const data = await response.json()
         let results = data.results || []
@@ -258,6 +264,7 @@ export function PortfolioPage() {
       const response = await fetch("/api/user", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Zorg dat cookies worden meegestuurd
         body: JSON.stringify({ whatsappNumber: whatsappInput || null }),
       })
 
@@ -283,6 +290,7 @@ export function PortfolioPage() {
     try {
       const response = await fetch("/api/portfolio/check-alerts", {
         method: "POST",
+        credentials: "include", // Zorg dat cookies worden meegestuurd
       })
 
       if (response.ok) {
@@ -313,6 +321,7 @@ export function PortfolioPage() {
     try {
       const response = await fetch(`/api/portfolio/${id}`, {
         method: "DELETE",
+        credentials: "include", // Zorg dat cookies worden meegestuurd
       })
 
       if (response.ok) {
@@ -357,6 +366,7 @@ export function PortfolioPage() {
         const response = await fetch(`/api/portfolio/${editingItem.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
+          credentials: "include", // Zorg dat cookies worden meegestuurd
           body: JSON.stringify({
             quantity: payload.quantity,
             averagePrice: payload.averagePrice,
@@ -380,6 +390,7 @@ export function PortfolioPage() {
         const response = await fetch("/api/portfolio", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include", // Zorg dat cookies worden meegestuurd
           body: JSON.stringify(payload),
         })
 
