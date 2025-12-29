@@ -106,8 +106,8 @@ export const taxRates2025: TaxRates = {
     innovationBoxRate: 0.09,
     innovationBoxMax: 350000,
     dgaMinSalary: {
-      low: 51000,
-      high: 75000,
+      low: 56000,
+      high: 56000,
       threshold: 200000
     }
   },
@@ -170,8 +170,8 @@ export const taxRates2026: TaxRates = {
     innovationBoxRate: 0.09,
     innovationBoxMax: 350000,
     dgaMinSalary: {
-      low: 51000,
-      high: 75000,
+      low: 56000,
+      high: 56000,
       threshold: 200000
     }
   },

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Calculator, ArrowRight, Briefcase } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -12,10 +13,10 @@ import { calculateDGAOptimization, type DGAOptimizationResult } from "@/lib/calc
 
 export default function DGAOptimizationCalculatorPage() {
   const [formData, setFormData] = useState({
-    corporateProfit: 200000,
-    currentSalary: 50000,
-    currentDividend: 50000,
-    hasPartner: false
+    corporateProfit: 100000,
+    desiredNetIncome: 50000,
+    hasHolding: false,
+    year: 2025 as 2025 | 2026
   })
 
   const [results, setResults] = useState<DGAOptimizationResult | null>(null)
@@ -40,7 +41,7 @@ export default function DGAOptimizationCalculatorPage() {
               <span className="text-gradient-financial">DGA Salaris Optimalisatie Calculator</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Optimaliseer de verhouding tussen salaris en dividend voor DGA&apos;s
+              Bereken de meest gunstige verdeling tussen salaris en dividend op basis van je gewenste netto inkomen
             </p>
           </div>
 
@@ -55,7 +56,7 @@ export default function DGAOptimizationCalculatorPage() {
                   <div className="w-10 h-10 gradient-financial rounded-lg flex items-center justify-center mr-3">
                     <Briefcase className="h-5 w-5 text-white" />
                   </div>
-                  Huidige Situatie
+                  Input
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -71,30 +72,46 @@ export default function DGAOptimizationCalculatorPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="currentSalary">Huidig Salaris</Label>
+                  <Label htmlFor="desiredNetIncome">Gewenst Netto Inkomen Privé</Label>
                   <Input
-                    id="currentSalary"
+                    id="desiredNetIncome"
                     type="number"
-                    value={formData.currentSalary}
-                    onChange={(e) => setFormData({ ...formData, currentSalary: parseFloat(e.target.value) || 0 })}
+                    value={formData.desiredNetIncome}
+                    onChange={(e) => setFormData({ ...formData, desiredNetIncome: parseFloat(e.target.value) || 0 })}
                     className="mt-1"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hoeveel wil je netto privé ontvangen?
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hasHolding"
+                    checked={formData.hasHolding}
+                    onCheckedChange={(checked) => setFormData({ ...formData, hasHolding: checked === true })}
+                  />
+                  <Label htmlFor="hasHolding" className="cursor-pointer">
+                    Ik heb een holding BV
+                  </Label>
                 </div>
 
                 <div>
-                  <Label htmlFor="currentDividend">Huidig Dividend</Label>
-                  <Input
-                    id="currentDividend"
-                    type="number"
-                    value={formData.currentDividend}
-                    onChange={(e) => setFormData({ ...formData, currentDividend: parseFloat(e.target.value) || 0 })}
-                    className="mt-1"
-                  />
+                  <Label htmlFor="year">Jaar</Label>
+                  <select
+                    id="year"
+                    value={formData.year}
+                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) as 2025 | 2026 })}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value={2025}>2025</option>
+                    <option value={2026}>2026</option>
+                  </select>
                 </div>
 
                 <Button className="w-full gradient-financial text-white" size="lg" onClick={handleCalculate}>
                   <Calculator className="h-4 w-4 mr-2" />
-                  Optimaliseer
+                  Bereken Optimalisatie
                 </Button>
               </CardContent>
             </Card>
@@ -106,73 +123,107 @@ export default function DGAOptimizationCalculatorPage() {
               <CardContent>
                 {results ? (
                   <div className="space-y-6">
-                    <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                      <h3 className="font-semibold mb-3">Huidige Situatie</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Salaris:</span>
-                          <span className="font-medium">€{Math.round(results.current.salary).toLocaleString('nl-NL')}</span>
+                    {results.bestStrategy ? (
+                      <>
+                        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                          <h3 className="font-semibold mb-3 text-green-600">Aanbevolen Strategie</h3>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Strategie:</span>
+                              <span className="font-medium">{results.bestStrategy.name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Salaris:</span>
+                              <span className="font-medium">€{Math.round(results.bestStrategy.salary).toLocaleString('nl-NL')}</span>
+                            </div>
+                            {results.bestStrategy.dividendToPrivate > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Dividend naar privé:</span>
+                                <span className="font-medium">€{Math.round(results.bestStrategy.dividendToPrivate).toLocaleString('nl-NL')}</span>
+                              </div>
+                            )}
+                            {results.bestStrategy.dividendToHolding > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Dividend naar holding:</span>
+                                <span className="font-medium">€{Math.round(results.bestStrategy.dividendToHolding).toLocaleString('nl-NL')}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Vennootschapsbelasting:</span>
+                              <span className="font-medium">€{Math.round(results.bestStrategy.corporateTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Inkomstenbelasting:</span>
+                              <span className="font-medium">€{Math.round(results.bestStrategy.salaryTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            {results.bestStrategy.dividendTax > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Dividendbelasting:</span>
+                                <span className="font-medium">€{Math.round(results.bestStrategy.dividendTax).toLocaleString('nl-NL')}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between border-t pt-2">
+                              <span className="font-semibold">Totaal Belasting:</span>
+                              <span className="font-semibold">€{Math.round(results.bestStrategy.totalTax).toLocaleString('nl-NL')}</span>
+                            </div>
+                            <div className="flex justify-between border-t pt-2">
+                              <span className="font-semibold">Netto Inkomen:</span>
+                              <span className="font-semibold text-green-600">€{Math.round(results.bestStrategy.netIncome).toLocaleString('nl-NL')}</span>
+                            </div>
+                            {results.bestStrategy.remainingInBV > 0 && (
+                              <div className="flex justify-between border-t pt-2">
+                                <span className="text-muted-foreground">Resterend in BV:</span>
+                                <span className="font-medium">€{Math.round(results.bestStrategy.remainingInBV).toLocaleString('nl-NL')}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Dividend:</span>
-                          <span className="font-medium">€{Math.round(results.current.dividend).toLocaleString('nl-NL')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Totaal Belasting:</span>
-                          <span className="font-medium">€{Math.round(results.current.totalTax).toLocaleString('nl-NL')}</span>
-                        </div>
-                        <div className="flex justify-between border-t pt-2">
-                          <span className="font-semibold">Netto Inkomen:</span>
-                          <span className="font-semibold">€{Math.round(results.current.netIncome).toLocaleString('nl-NL')}</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                      <h3 className="font-semibold mb-3 text-green-600">Geoptimaliseerde Situatie</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Optimaal Salaris:</span>
-                          <span className="font-medium">€{Math.round(results.optimized.salary).toLocaleString('nl-NL')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Optimaal Dividend:</span>
-                          <span className="font-medium">€{Math.round(results.optimized.dividend).toLocaleString('nl-NL')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Totaal Belasting:</span>
-                          <span className="font-medium">€{Math.round(results.optimized.totalTax).toLocaleString('nl-NL')}</span>
-                        </div>
-                        <div className="flex justify-between border-t pt-2">
-                          <span className="font-semibold">Netto Inkomen:</span>
-                          <span className="font-semibold text-green-600">€{Math.round(results.optimized.netIncome).toLocaleString('nl-NL')}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {results.savings.taxSavings > 0 && (
-                      <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                        <h3 className="font-semibold mb-3">Besparingen</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Belastingbesparing:</span>
-                            <span className="font-semibold text-green-600">€{Math.round(results.savings.taxSavings).toLocaleString('nl-NL')}</span>
+                        {results.strategies.length > 1 && (
+                          <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
+                            <h3 className="font-semibold mb-3">Andere Strategieën</h3>
+                            <div className="space-y-3">
+                              {results.strategies
+                                .filter(s => s !== results.bestStrategy)
+                                .map((strategy, idx) => (
+                                  <div key={idx} className="p-3 bg-background/50 rounded-lg border border-border">
+                                    <div className="font-medium text-sm mb-2">{strategy.name}</div>
+                                    <div className="text-xs space-y-1 text-muted-foreground">
+                                      <div className="flex justify-between">
+                                        <span>Salaris:</span>
+                                        <span>€{Math.round(strategy.salary).toLocaleString('nl-NL')}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Totaal belasting:</span>
+                                        <span>€{Math.round(strategy.totalTax).toLocaleString('nl-NL')}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Netto inkomen:</span>
+                                        <span>€{Math.round(strategy.netIncome).toLocaleString('nl-NL')}</span>
+                                      </div>
+                                      {!strategy.isFeasible && (
+                                        <div className="text-orange-500 text-xs mt-1">
+                                          Niet haalbaar met gewenst netto inkomen
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Netto Inkomen Stijging:</span>
-                            <span className="font-semibold text-green-600">€{Math.round(results.savings.netIncomeIncrease).toLocaleString('nl-NL')}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Percentage:</span>
-                            <span className="font-semibold text-green-600">{results.savings.percentage.toFixed(2)}%</span>
-                          </div>
-                        </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                        <p className="text-orange-600 font-semibold">
+                          Het gewenste netto inkomen is niet haalbaar met de huidige winst.
+                        </p>
                       </div>
                     )}
 
                     {results.advice.length > 0 && (
                       <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                        <h3 className="font-semibold mb-2">Inzichten</h3>
+                        <h3 className="font-semibold mb-2">Inzichten & Advies</h3>
                         <ul className="space-y-1 text-sm">
                           {results.advice.map((item, idx) => (
                             <li key={idx} className="text-muted-foreground">• {item}</li>
@@ -183,7 +234,7 @@ export default function DGAOptimizationCalculatorPage() {
                   </div>
                 ) : (
                   <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-                    <p className="text-muted-foreground text-center">Klik op &quot;Optimaliseer&quot; om resultaten te zien</p>
+                    <p className="text-muted-foreground text-center">Klik op &quot;Bereken Optimalisatie&quot; om resultaten te zien</p>
                   </div>
                 )}
 
@@ -203,4 +254,3 @@ export default function DGAOptimizationCalculatorPage() {
     </div>
   )
 }
-
