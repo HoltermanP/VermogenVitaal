@@ -36,7 +36,6 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
     year = 2025
   } = input
 
-  const rates = getTaxRates(year)
   const minSalary = 56000 // Minimum DGA salaris 2025 en 2026
 
   const strategies: OptimizationStrategy[] = []
@@ -82,7 +81,7 @@ function calculateStrategy1(
   const rates = getTaxRates(year)
   
   // Start met minimum salaris
-  let salary = Math.min(minSalary, corporateProfit)
+  const salary = Math.min(minSalary, corporateProfit)
   let netIncome = 0
   let dividendToPrivate = 0
   let isFeasible = false
@@ -146,10 +145,8 @@ function calculateStrategy2(
   minSalary: number,
   year: TaxYear
 ): OptimizationStrategy {
-  const rates = getTaxRates(year)
-  
   // Start met minimum salaris
-  let salary = Math.min(minSalary, corporateProfit)
+  const salary = Math.min(minSalary, corporateProfit)
   let netIncome = 0
   let dividendToHolding = 0
   let isFeasible = false
@@ -187,7 +184,6 @@ function calculateStrategy2(
   const corporateTaxFinal = calculateCorporateTaxAmount(profitAfterSalaryFinal, year)
   const dividendTax = 0 // Geen dividendbelasting bij uitkering naar holding
   const totalTax = corporateTaxFinal + salaryTax + dividendTax
-  const availableAfterTaxFinal = profitAfterSalaryFinal - corporateTaxFinal
   const remainingInBV = 0 // Alles gaat naar holding
 
   return {
@@ -212,8 +208,6 @@ function calculateStrategy3(
   minSalary: number,
   year: TaxYear
 ): OptimizationStrategy {
-  const rates = getTaxRates(year)
-  
   // Bereken hoeveel bruto salaris nodig is voor gewenst netto inkomen
   // Dit is een iteratieve benadering
   let salary = minSalary
