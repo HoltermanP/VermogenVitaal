@@ -172,8 +172,14 @@ export default function DGAOptimizationCalculatorPage() {
                             </div>
                             {results.bestStrategy.remainingInBV > 0 && (
                               <div className="flex justify-between border-t pt-2">
-                                <span className="text-muted-foreground">Resterend in BV:</span>
+                                <span className="text-muted-foreground">Resterend in werkmaatschappij:</span>
                                 <span className="font-medium">€{Math.round(results.bestStrategy.remainingInBV).toLocaleString('nl-NL')}</span>
+                              </div>
+                            )}
+                            {results.bestStrategy.remainingInHolding > 0 && (
+                              <div className="flex justify-between border-t pt-2">
+                                <span className="text-muted-foreground">Resterend in holding:</span>
+                                <span className="font-medium">€{Math.round(results.bestStrategy.remainingInHolding).toLocaleString('nl-NL')}</span>
                               </div>
                             )}
                           </div>

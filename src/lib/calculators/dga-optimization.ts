@@ -19,6 +19,7 @@ export interface OptimizationStrategy {
   totalTax: number
   netIncome: number
   remainingInBV: number
+  remainingInHolding: number
   isFeasible: boolean
 }
 
@@ -40,18 +41,18 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
 
   const strategies: OptimizationStrategy[] = []
 
-  // Strategie 1: Minimum salaris + rest als dividend direct naar privé
-  const strategy1 = calculateStrategy1(corporateProfit, desiredNetIncome, minSalary, year)
-  strategies.push(strategy1)
-
-  // Strategie 2: Minimum salaris + rest als dividend naar holding (geen dividendbelasting)
+  // Strategie 1: Minimum salaris + rest als dividend naar holding (meest gunstig met holding)
   if (hasHolding) {
-    const strategy2 = calculateStrategy2(corporateProfit, desiredNetIncome, minSalary, year)
-    strategies.push(strategy2)
+    const strategy1 = calculateStrategyWithHolding(corporateProfit, desiredNetIncome, minSalary, year)
+    strategies.push(strategy1)
   }
 
+  // Strategie 2: Minimum salaris + rest als dividend direct naar privé
+  const strategy2 = calculateStrategyDirectDividend(corporateProfit, desiredNetIncome, minSalary, year)
+  strategies.push(strategy2)
+
   // Strategie 3: Meer salaris als nodig voor gewenst netto inkomen
-  const strategy3 = calculateStrategy3(corporateProfit, desiredNetIncome, minSalary, year)
+  const strategy3 = calculateStrategyMoreSalary(corporateProfit, desiredNetIncome, minSalary, year)
   strategies.push(strategy3)
 
   // Vind de beste strategie (laagste belasting die het gewenste netto inkomen levert)
@@ -72,7 +73,13 @@ export function calculateDGAOptimization(input: DGAOptimizationInput): DGAOptimi
   }
 }
 
-function calculateStrategy1(
+/**
+ * Strategie met holding: Minimum salaris + rest naar holding
+ * - Salaris wordt betaald via management fee vanuit holding
+ * - Dividend van werkmaatschappij naar holding = deelnemingsvrijstelling (geen dividendbelasting)
+ * - VPB wordt betaald over winst na management fee
+ */
+function calculateStrategyWithHolding(
   corporateProfit: number,
   desiredNetIncome: number,
   minSalary: number,
@@ -80,47 +87,128 @@ function calculateStrategy1(
 ): OptimizationStrategy {
   const rates = getTaxRates(year)
   
-  // Start met minimum salaris
+  // Minimum DGA salaris (altijd minimum)
   const salary = Math.min(minSalary, corporateProfit)
-  let netIncome = 0
-  let dividendToPrivate = 0
-  let isFeasible = false
-
-  // Bereken netto inkomen met alleen minimum salaris
+  
+  // Management fee = salaris (kostenpost voor werkmaatschappij)
+  const managementFee = salary
+  
+  // Winst werkmaatschappij na management fee
+  const profitAfterManagementFee = Math.max(0, corporateProfit - managementFee)
+  
+  // VPB over winst na management fee
+  const corporateTax = calculateCorporateTaxAmount(profitAfterManagementFee, year)
+  
+  // Beschikbaar voor dividend naar holding (deelnemingsvrijstelling, geen dividendbelasting)
+  const availableForHolding = profitAfterManagementFee - corporateTax
+  
+  // Netto inkomen van salaris
   const salaryTax = calculateIncomeTax(salary, year)
   const netFromSalary = salary - salaryTax
+  
+  let dividendToPrivate = 0
+  let dividendTax = 0
+  let netIncome = netFromSalary
+  let remainingInHolding = availableForHolding
+  let isFeasible = false
 
   if (netFromSalary >= desiredNetIncome) {
     // Alleen salaris is genoeg
     isFeasible = true
-    netIncome = netFromSalary
+  } else {
+    // We hebben meer nodig - kan dividend van holding naar privé
+    const neededNetFromDividend = desiredNetIncome - netFromSalary
+    // Netto dividend = bruto dividend * (1 - dividendbelasting)
+    dividendToPrivate = neededNetFromDividend / (1 - rates.dividendTax.rate)
+    
+    if (dividendToPrivate <= availableForHolding) {
+      // Haalbaar
+      isFeasible = true
+      dividendTax = dividendToPrivate * rates.dividendTax.rate
+      netIncome = netFromSalary + neededNetFromDividend
+      remainingInHolding = availableForHolding - dividendToPrivate
+    } else {
+      // Niet haalbaar met deze strategie
+      dividendToPrivate = availableForHolding
+      dividendTax = dividendToPrivate * rates.dividendTax.rate
+      netIncome = netFromSalary + (dividendToPrivate - dividendTax)
+      remainingInHolding = 0
+    }
+  }
+
+  const totalTax = corporateTax + salaryTax + dividendTax
+
+  return {
+    name: "Minimum salaris + dividend naar holding",
+    description: "Minimum DGA salaris via holding, rest als dividend naar holding (deelnemingsvrijstelling)",
+    salary,
+    dividendToPrivate,
+    dividendToHolding: availableForHolding - dividendToPrivate,
+    salaryTax,
+    dividendTax,
+    corporateTax,
+    totalTax,
+    netIncome,
+    remainingInBV: 0, // Alles gaat naar holding
+    remainingInHolding,
+    isFeasible
+  }
+}
+
+/**
+ * Strategie zonder holding: Minimum salaris + dividend direct naar privé
+ */
+function calculateStrategyDirectDividend(
+  corporateProfit: number,
+  desiredNetIncome: number,
+  minSalary: number,
+  year: TaxYear
+): OptimizationStrategy {
+  const rates = getTaxRates(year)
+  
+  // Minimum DGA salaris
+  const salary = Math.min(minSalary, corporateProfit)
+  
+  // Winst na salaris (salaris is kostenpost)
+  const profitAfterSalary = Math.max(0, corporateProfit - salary)
+  
+  // VPB over winst na salaris
+  const corporateTax = calculateCorporateTaxAmount(profitAfterSalary, year)
+  
+  // Beschikbaar voor dividend na VPB
+  const availableAfterTax = profitAfterSalary - corporateTax
+  
+  // Netto inkomen van salaris
+  const salaryTax = calculateIncomeTax(salary, year)
+  const netFromSalary = salary - salaryTax
+  
+  let dividendToPrivate = 0
+  let dividendTax = 0
+  let netIncome = netFromSalary
+  let isFeasible = false
+
+  if (netFromSalary >= desiredNetIncome) {
+    // Alleen salaris is genoeg
+    isFeasible = true
   } else {
     // We hebben dividend nodig
     const neededNetFromDividend = desiredNetIncome - netFromSalary
     // Netto dividend = bruto dividend * (1 - dividendbelasting)
     dividendToPrivate = neededNetFromDividend / (1 - rates.dividendTax.rate)
     
-    // Check of er genoeg winst is
-    const profitAfterSalary = Math.max(0, corporateProfit - salary)
-    const corporateTax = calculateCorporateTaxAmount(profitAfterSalary, year)
-    const availableAfterTax = profitAfterSalary - corporateTax
-
     if (dividendToPrivate <= availableAfterTax) {
       isFeasible = true
+      dividendTax = dividendToPrivate * rates.dividendTax.rate
       netIncome = netFromSalary + neededNetFromDividend
     } else {
-      // Niet haalbaar met deze strategie
+      // Niet haalbaar
       dividendToPrivate = availableAfterTax
-      const dividendTax = dividendToPrivate * rates.dividendTax.rate
+      dividendTax = dividendToPrivate * rates.dividendTax.rate
       netIncome = netFromSalary + (dividendToPrivate - dividendTax)
     }
   }
 
-  const profitAfterSalary = Math.max(0, corporateProfit - salary)
-  const corporateTax = calculateCorporateTaxAmount(profitAfterSalary, year)
-  const dividendTax = dividendToPrivate * rates.dividendTax.rate
   const totalTax = corporateTax + salaryTax + dividendTax
-  const availableAfterTax = profitAfterSalary - corporateTax
   const remainingInBV = Math.max(0, availableAfterTax - dividendToPrivate)
 
   return {
@@ -135,81 +223,21 @@ function calculateStrategy1(
     totalTax,
     netIncome,
     remainingInBV,
+    remainingInHolding: 0,
     isFeasible
   }
 }
 
-function calculateStrategy2(
-  corporateProfit: number,
-  desiredNetIncome: number,
-  minSalary: number,
-  year: TaxYear
-): OptimizationStrategy {
-  // Start met minimum salaris
-  const salary = Math.min(minSalary, corporateProfit)
-  let netIncome = 0
-  let dividendToHolding = 0
-  let isFeasible = false
-
-  // Bereken netto inkomen met alleen minimum salaris
-  const salaryTax = calculateIncomeTax(salary, year)
-  const netFromSalary = salary - salaryTax
-
-  if (netFromSalary >= desiredNetIncome) {
-    // Alleen salaris is genoeg
-    isFeasible = true
-    netIncome = netFromSalary
-  } else {
-    // We hebben meer nodig, maar kunnen dividend naar holding sturen (geen dividendbelasting)
-    // Voor nu houden we het bij minimum salaris en rest naar holding
-    // De gebruiker kan later uit de holding halen zonder dividendbelasting
-    const profitAfterSalary = Math.max(0, corporateProfit - salary)
-    const corporateTax = calculateCorporateTaxAmount(profitAfterSalary, year)
-    const availableAfterTax = profitAfterSalary - corporateTax
-    dividendToHolding = availableAfterTax
-    
-    // Netto inkomen is alleen van salaris (dividend blijft in holding)
-    netIncome = netFromSalary
-    
-    // Als het gewenste netto inkomen alleen met salaris niet haalbaar is,
-    // moeten we meer salaris uitkeren (zie strategie 3)
-    if (netFromSalary < desiredNetIncome) {
-      isFeasible = false
-    } else {
-      isFeasible = true
-    }
-  }
-
-  const profitAfterSalaryFinal = Math.max(0, corporateProfit - salary)
-  const corporateTaxFinal = calculateCorporateTaxAmount(profitAfterSalaryFinal, year)
-  const dividendTax = 0 // Geen dividendbelasting bij uitkering naar holding
-  const totalTax = corporateTaxFinal + salaryTax + dividendTax
-  const remainingInBV = 0 // Alles gaat naar holding
-
-  return {
-    name: "Minimum salaris + dividend naar holding",
-    description: "Minimum DGA salaris met rest als dividend naar holding (geen dividendbelasting)",
-    salary,
-    dividendToPrivate: 0,
-    dividendToHolding,
-    salaryTax,
-    dividendTax,
-    corporateTax: corporateTaxFinal,
-    totalTax,
-    netIncome,
-    remainingInBV,
-    isFeasible
-  }
-}
-
-function calculateStrategy3(
+/**
+ * Strategie: Meer salaris als nodig voor gewenst netto inkomen
+ */
+function calculateStrategyMoreSalary(
   corporateProfit: number,
   desiredNetIncome: number,
   minSalary: number,
   year: TaxYear
 ): OptimizationStrategy {
   // Bereken hoeveel bruto salaris nodig is voor gewenst netto inkomen
-  // Dit is een iteratieve benadering
   let salary = minSalary
   let netIncome = 0
   let isFeasible = false
@@ -228,19 +256,20 @@ function calculateStrategy3(
   }
 
   // Als we het gewenste netto inkomen niet kunnen halen met alleen salaris
-  let finalSalaryTax = calculateIncomeTax(salary, year)
+  let salaryTax = calculateIncomeTax(salary, year)
   if (!isFeasible) {
     // Gebruik maximum mogelijk salaris
     salary = corporateProfit
-    finalSalaryTax = calculateIncomeTax(salary, year)
-    netIncome = salary - finalSalaryTax
+    salaryTax = calculateIncomeTax(salary, year)
+    netIncome = salary - salaryTax
     isFeasible = netIncome >= desiredNetIncome
   }
 
+  // Winst na salaris
   const profitAfterSalary = Math.max(0, corporateProfit - salary)
   const corporateTax = calculateCorporateTaxAmount(profitAfterSalary, year)
   const dividendTax = 0
-  const totalTax = corporateTax + finalSalaryTax + dividendTax
+  const totalTax = corporateTax + salaryTax + dividendTax
   const availableAfterTax = profitAfterSalary - corporateTax
   const remainingInBV = availableAfterTax
 
@@ -250,12 +279,13 @@ function calculateStrategy3(
     salary,
     dividendToPrivate: 0,
     dividendToHolding: 0,
-    salaryTax: finalSalaryTax,
+    salaryTax,
     dividendTax,
     corporateTax,
     totalTax,
     netIncome,
     remainingInBV,
+    remainingInHolding: 0,
     isFeasible
   }
 }
@@ -287,11 +317,15 @@ function generateAdvice(
   }
 
   if (bestStrategy.dividendToHolding > 0) {
-    advice.push(`Dividend naar holding: €${Math.round(bestStrategy.dividendToHolding).toLocaleString('nl-NL')} (geen dividendbelasting)`)
+    advice.push(`Dividend naar holding: €${Math.round(bestStrategy.dividendToHolding).toLocaleString('nl-NL')} (deelnemingsvrijstelling, geen dividendbelasting)`)
   }
 
   if (bestStrategy.remainingInBV > 0) {
-    advice.push(`Resterend in BV: €${Math.round(bestStrategy.remainingInBV).toLocaleString('nl-NL')}`)
+    advice.push(`Resterend in werkmaatschappij: €${Math.round(bestStrategy.remainingInBV).toLocaleString('nl-NL')}`)
+  }
+
+  if (bestStrategy.remainingInHolding > 0) {
+    advice.push(`Resterend in holding: €${Math.round(bestStrategy.remainingInHolding).toLocaleString('nl-NL')} (kan worden belegd)`)
   }
 
   advice.push(`Totaal belasting: €${Math.round(bestStrategy.totalTax).toLocaleString('nl-NL')}`)
@@ -308,8 +342,8 @@ function generateAdvice(
     })
   }
 
-  if (hasHolding && bestStrategy.dividendToHolding === 0) {
-    advice.push("Tip: Overweeg dividend naar holding uit te keren voor belastinguitstel")
+  if (hasHolding && bestStrategy.dividendToHolding === 0 && bestStrategy.name !== "Minimum salaris + dividend naar holding") {
+    advice.push("Tip: Met een holding kan dividend naar holding worden uitgekeerd met deelnemingsvrijstelling (geen dividendbelasting)")
   }
 
   return advice
