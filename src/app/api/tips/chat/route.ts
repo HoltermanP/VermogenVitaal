@@ -18,7 +18,7 @@ async function findRelevantKnowledgeArticles(message: string) {
       return []
     }
     
-    // Zoek in knowledge base
+    // Zoek in knowledge base met verbeterde matching
     const articles = await prisma.knowledge.findMany({
       where: {
         AND: [
@@ -41,7 +41,7 @@ async function findRelevantKnowledgeArticles(message: string) {
         ]
       },
       orderBy: { effectiveFrom: 'desc' },
-      take: 3
+      take: 5 // Verhoogd van 3 naar 5 voor betere coverage
     })
 
     return articles
@@ -83,8 +83,6 @@ function findRelevantTaxInfo(message: string): TaxTopic[] {
 
   // Zoek op keywords
   for (const topic of taxTopics2025) {
-    const topicText = (topic.title + " " + topic.shortDescription + " " + topic.category).toLowerCase()
-    
     // Check of de vraag relevante termen bevat - alleen volledige woorden matchen
     const keywords = [
       topic.id,
@@ -115,7 +113,7 @@ function findRelevantTaxInfo(message: string): TaxTopic[] {
   return relevantTopics.slice(0, 2) // Maximaal 2 relevante topics
 }
 
-// Extract zoektermen uit bericht
+// Extract zoektermen uit bericht - verbeterd om ook functionaliteiten te vinden
 function extractSearchTermsFromMessage(message: string): string[] {
   const lowerMessage = message.toLowerCase()
   const terms: string[] = []
@@ -135,64 +133,302 @@ function extractSearchTermsFromMessage(message: string): string[] {
     }
   })
 
-  // Voeg belangrijke woorden toe (minimaal 4 karakters)
-  const words = message.toLowerCase().split(/\s+/).filter(w => w.length > 4)
-  terms.push(...words.slice(0, 5))
+  // Functionaliteit gerelateerde termen
+  const featureKeywords = [
+    'deep research', 'deepresearch', 'onderzoek', 'research', 'rapport',
+    'portfolio', 'belegging', 'tracking', 'alert',
+    'calculator', 'bereken', 'reken', 'simulator',
+    'audit', 'document', 'boekhouding', 'xaf',
+    'aandeel', 'stock', 'beurs', 'pelosi',
+    'community', 'vraag', 'antwoord', 'q&a',
+    'tip', 'artikel', 'kennis', 'knowledge'
+  ]
+
+  featureKeywords.forEach(keyword => {
+    if (lowerMessage.includes(keyword)) {
+      terms.push(keyword)
+    }
+  })
+
+  // Voeg belangrijke woorden toe (minimaal 4 karakters, maar ook kortere relevante woorden)
+  const words = message.toLowerCase().split(/\s+/).filter(w => w.length >= 3)
+  terms.push(...words.slice(0, 8)) // Verhoogd van 5 naar 8
 
   return [...new Set(terms)]
 }
 
-// Genereer antwoord op basis van knowledge artikelen en tax info
-function generateAnswerFromKnowledge(
-  message: string,
-  articles: Array<{ title: string; body: string; slug: string }>,
-  taxTopics: TaxTopic[]
-): string | null {
-  // Als er geen relevante informatie is, return null
-  if (articles.length === 0 && taxTopics.length === 0) {
-    return null
-  }
+// Functie die alle site-functionaliteiten documenteert
+function getSiteFeaturesInfo(): string {
+  return `BESCHIKBARE FUNCTIONALITEITEN OP DE SITE:
 
-  let answer = ""
+1. DEEP RESEARCH RAPPORTEN
+   - Locatie: /stocks/deep-research
+   - Functionaliteit: AI-powered diepgaande analyses van aandelen en andere financiële instrumenten
+   - Beschrijving: Genereert uitgebreide onderzoeksrapporten met fundamentele analyse, technische analyse, nieuws, sentiment en meer
+   - Gebruik: Gebruikers kunnen een aandeel zoeken en een Deep Research rapport genereren dat real-time data combineert met AI-analyse
+   - Vereisten: Account vereist (niet beschikbaar voor anonieme gebruikers)
+   - Status tracking: Rapporten hebben status (GENERATING, COMPLETED, FAILED, CANCELLED) met progress tracking
+   - PDF export: Rapporten kunnen worden gedownload als PDF
 
-  // Voeg informatie toe van tax topics
-  if (taxTopics.length > 0) {
-    for (const topic of taxTopics) {
-      answer += `**${topic.title}**\n\n`
-      
-      // Voeg relevante secties toe
-      for (const section of topic.sections.slice(0, 2)) {
-        answer += `### ${section.title}\n${section.content}\n\n`
-        
-        if (section.subsections) {
-          for (const subsection of section.subsections.slice(0, 2)) {
-            answer += `**${subsection.title}**: ${subsection.content}\n\n`
-          }
-        }
-      }
-      
-      if (topic.importantNotes && topic.importantNotes.length > 0) {
-        answer += `**Belangrijk**: ${topic.importantNotes[0]}\n\n`
-      }
-    }
-  }
+2. PORTFOLIO TRACKING
+   - Locatie: /portfolio
+   - Functionaliteit: Portfolio beheer en tracking van beleggingen
+   - Beschrijving: Gebruikers kunnen hun portfolio bijhouden, alerts instellen en historische data bekijken
+   - Features: Portfolio items toevoegen, prijs alerts, historische performance tracking
 
-  // Voeg informatie toe van knowledge artikelen
-  if (articles.length > 0) {
-    answer += "**Aanvullende informatie:**\n\n"
-    for (const article of articles) {
-      const preview = article.body.length > 500 
-        ? article.body.substring(0, 500) + "..." 
-        : article.body
-      answer += `**${article.title}**\n${preview}\n\n`
-    }
-  }
+3. CALCULATORS (30+ verschillende calculators)
+   - Locatie: /calculators
+   - Belasting calculators: BV vs EMZ, BV vs Prive, DGA optimalisatie, Vennootschapsbelasting, Inkomstenbelasting, Box 3, BTW, Dividendbelasting, Hypotheekrenteaftrek, Eigenwoningforfait, Aftrekposten, Arbeidskorting, Zelfstandigenaftrek, Fiscale reserve, Investeringsaftrek
+   - Financiële calculators: ETF groei, Crypto allocatie, Vastgoed cashflow, Compound interest, FIRE calculator, Buffer calculator, Spaarplan, Sparen voor kinderen, Huisdroom sparen
+   - Pensioen calculators: Pensioen, Pensioen optimalisatie, Pensioenbehoefte, Vroegpensioen, AOW simulator
+   - Andere: Inflatie impact, Vermogensmix, Successieplanning, Real estate, DBA opdrachtomschrijving
 
-  // Voeg disclaimer toe
-  answer += "\n\n*Let op: Dit is algemene informatie. Voor persoonlijk advies raad ik aan om een gecertificeerd belastingadviseur te raadplegen.*"
+4. AUDIT / DOCUMENT ANALYSE
+   - Locatie: /audit
+   - Functionaliteit: AI-powered document analyse voor boekhouding en belastingdocumenten
+   - Beschrijving: Gebruikers kunnen documenten uploaden (zoals XAF audit files) voor automatische analyse
+   - Features: Transactie analyse, risico identificatie, aanbevelingen
 
-  return answer.trim()
+5. ACCOUNTING INTEGRATIES
+   - Locatie: /accounting
+   - Functionaliteit: Integratie met boekhoudsoftware
+   - Beschrijving: Connectie met accounting software voor automatische data synchronisatie
+   - Features: API key connectie, callback handling, data sync
+
+6. STOCKS / AANDELEN ANALYSE
+   - Locatie: /stocks
+   - Functionaliteit: Uitgebreide aandelen informatie en analyses
+   - Features: 
+     - Real-time quotes en fundamentals
+     - Technische analyse met patronen
+     - Nieuws en sentiment analyse
+     - Congressional trades tracking (Pelosi trades)
+     - Daily top 3 aandelen
+     - Gainers & losers
+     - Favorieten systeem
+     - Historische data
+
+7. REPORTS
+   - Locatie: /reports
+   - Functionaliteit: PDF rapport generatie
+   - Beschrijving: Genereer professionele PDF rapporten met grafieken en analyses
+   - Features: Customizable rapporten, download functionaliteit
+
+8. COMMUNITY Q&A
+   - Locatie: /community
+   - Functionaliteit: Community platform voor vragen en antwoorden
+   - Beschrijving: Gebruikers kunnen vragen stellen en antwoorden krijgen van experts en andere gebruikers
+   - Features: Categorieën (BV/EMZ, Beleggen, Fiscaal, Vastgoed, Crypto), voting systeem
+
+9. TIPS / KNOWLEDGE BASE
+   - Locatie: /tips
+   - Functionaliteit: Artikelen en tips over belastingen en financiën
+   - Beschrijving: Uitgebreide kennisbank met artikelen over verschillende onderwerpen
+   - Features: Categorieën, tags, effectieve datums, versiebeheer
+
+10. DASHBOARD
+    - Locatie: /dashboard
+    - Functionaliteit: Overzicht van alle gebruikersdata en activiteit
+    - Beschrijving: Centraal dashboard met samenvatting van portfolio, rapporten, en meer
+
+BELANGRIJK: Als gebruikers vragen over deze functionaliteiten, verwijs dan naar de juiste locatie en leg uit wat de functionaliteit doet.`
 }
+
+// Functie om relevante site-functionaliteiten te vinden op basis van de vraag
+function findRelevantSiteFeatures(message: string): string {
+  const lowerMessage = message.toLowerCase()
+  const relevantFeatures: string[] = []
+
+  // Algemene vragen over de site - detecteer deze eerst
+  const generalSiteQuestions = [
+    'wat kan ik', 'welke functionaliteiten', 'wat biedt', 'wat heeft', 'wat is er',
+    'welke features', 'welke mogelijkheden', 'wat doet', 'hoe werkt', 'hoe gebruik ik',
+    'overzicht', 'introductie', 'uitleg', 'informatie over', 'meer over',
+    'help', 'hulp', 'start', 'begin', 'nieuw', 'eerste keer'
+  ]
+  
+  const isGeneralQuestion = generalSiteQuestions.some(q => lowerMessage.includes(q))
+  
+  // Als het een algemene vraag is, geef een overzicht van alle functionaliteiten
+  if (isGeneralQuestion && (lowerMessage.includes('site') || lowerMessage.includes('website') || 
+      lowerMessage.includes('platform') || lowerMessage.includes('app') || 
+      lowerMessage.length < 50)) {
+    return "ALGEMEEN OVERZICHT VAN DE SITE:\n\n" +
+           "Deze site biedt uitgebreide tools voor belastingen, financiën en investeringen:\n\n" +
+           "• Deep Research: AI-powered analyses van aandelen (/stocks/deep-research)\n" +
+           "• Portfolio Tracking: Beleggingen bijhouden (/portfolio)\n" +
+           "• 30+ Calculators: Voor belastingen, financiën en pensioen (/calculators)\n" +
+           "• Audit/Document Analyse: AI analyse van boekhouddocumenten (/audit)\n" +
+           "• Stocks Analyse: Real-time aandelen informatie (/stocks)\n" +
+           "• Reports: PDF rapporten genereren (/reports)\n" +
+           "• Community: Vragen en antwoorden (/community)\n" +
+           "• Tips/Knowledge Base: Artikelen over belastingen (/tips)\n" +
+           "• Dashboard: Overzicht van je data (/dashboard)\n" +
+           "• Accounting: Integratie met boekhoudsoftware (/accounting)\n\n" +
+           "Vraag gerust naar specifieke functionaliteiten voor meer details!"
+  }
+
+  // Deep Research - uitgebreide detectie
+  if (lowerMessage.includes('deep research') || lowerMessage.includes('deepresearch') || 
+      lowerMessage.includes('onderzoeksrapport') || lowerMessage.includes('research rapport') ||
+      lowerMessage.includes('aandeel analyse') || lowerMessage.includes('stock analyse') ||
+      lowerMessage.includes('rapport genereren') || lowerMessage.includes('rapport maken')) {
+    relevantFeatures.push(`DEEP RESEARCH RAPPORTEN:
+- Locatie: /stocks/deep-research
+- Functionaliteit: AI-powered diepgaande analyses van aandelen en andere financiële instrumenten
+- Beschrijving: Genereert uitgebreide onderzoeksrapporten met fundamentele analyse, technische analyse, nieuws, sentiment en meer
+- Gebruik: Zoek een aandeel en genereer een rapport dat real-time data combineert met AI-analyse
+- Vereisten: Account vereist (niet beschikbaar voor anonieme gebruikers)
+- Status tracking: Rapporten hebben status (GENERATING, COMPLETED, FAILED, CANCELLED) met progress tracking
+- PDF export: Rapporten kunnen worden gedownload als PDF
+- Wat je krijgt: Fundamentele analyse, technische patronen, nieuws analyse, sentiment, risico assessment`)
+  }
+
+  // Portfolio - uitgebreide detectie
+  if (lowerMessage.includes('portfolio') || lowerMessage.includes('beleggingen') || 
+      lowerMessage.includes('tracking') || lowerMessage.includes('alerts') ||
+      lowerMessage.includes('mijn beleggingen') || lowerMessage.includes('mijn portfolio') ||
+      lowerMessage.includes('prijs alert') || lowerMessage.includes('prijsalarm')) {
+    relevantFeatures.push(`PORTFOLIO TRACKING:
+- Locatie: /portfolio
+- Functionaliteit: Portfolio beheer en tracking van beleggingen
+- Beschrijving: Gebruikers kunnen hun portfolio bijhouden, alerts instellen en historische data bekijken
+- Features: 
+  * Portfolio items toevoegen en beheren
+  * Prijs alerts instellen
+  * Historische performance tracking
+  * Overzicht van alle beleggingen`)
+  }
+
+  // Calculators - uitgebreide detectie
+  if (lowerMessage.includes('calculator') || lowerMessage.includes('bereken') || 
+      lowerMessage.includes('reken') || lowerMessage.includes('simulator') ||
+      lowerMessage.includes('berekening') || lowerMessage.includes('tool') ||
+      lowerMessage.includes('bv') || lowerMessage.includes('emz') ||
+      lowerMessage.includes('box 3') || lowerMessage.includes('pensioen') ||
+      lowerMessage.includes('etf') || lowerMessage.includes('crypto') ||
+      lowerMessage.includes('vastgoed') || lowerMessage.includes('hypotheek')) {
+    relevantFeatures.push(`CALCULATORS:
+- Locatie: /calculators
+- 30+ verschillende calculators beschikbaar:
+  * Belastingen: BV vs EMZ, BV vs Prive, DGA optimalisatie, Vennootschapsbelasting, Inkomstenbelasting, Box 3, BTW, Dividendbelasting, Hypotheekrenteaftrek, Eigenwoningforfait, Aftrekposten, Arbeidskorting, Zelfstandigenaftrek, Fiscale reserve, Investeringsaftrek
+  * Financiën: ETF groei, Crypto allocatie, Vastgoed cashflow, Compound interest, FIRE calculator, Buffer calculator, Spaarplan, Sparen voor kinderen, Huisdroom sparen
+  * Pensioen: Pensioen, Pensioen optimalisatie, Pensioenbehoefte, Vroegpensioen, AOW simulator
+  * Andere: Inflatie impact, Vermogensmix, Successieplanning, Real estate, DBA opdrachtomschrijving`)
+  }
+
+  // Audit - uitgebreide detectie
+  if (lowerMessage.includes('audit') || lowerMessage.includes('document') || 
+      lowerMessage.includes('boekhouding') || lowerMessage.includes('xaf') ||
+      lowerMessage.includes('transactie') || lowerMessage.includes('analyse') ||
+      lowerMessage.includes('upload') || lowerMessage.includes('bestand')) {
+    relevantFeatures.push(`AUDIT / DOCUMENT ANALYSE:
+- Locatie: /audit
+- Functionaliteit: AI-powered document analyse voor boekhouding en belastingdocumenten
+- Beschrijving: Gebruikers kunnen documenten uploaden (zoals XAF audit files) voor automatische analyse
+- Features: 
+  * Transactie analyse
+  * Risico identificatie
+  * Aanbevelingen
+  * Automatische detectie van afwijkingen`)
+  }
+
+  // Stocks - uitgebreide detectie
+  if (lowerMessage.includes('aandeel') || lowerMessage.includes('stock') || 
+      lowerMessage.includes('beurs') || lowerMessage.includes('pelosi') ||
+      lowerMessage.includes('aandelen') || lowerMessage.includes('quote') ||
+      lowerMessage.includes('fundamental') || lowerMessage.includes('technisch') ||
+      lowerMessage.includes('nieuws') || lowerMessage.includes('sentiment') ||
+      lowerMessage.includes('congressional') || lowerMessage.includes('trade')) {
+    relevantFeatures.push(`STOCKS / AANDELEN ANALYSE:
+- Locatie: /stocks
+- Functionaliteit: Uitgebreide aandelen informatie en analyses
+- Features: 
+  * Real-time quotes en fundamentals
+  * Technische analyse met patronen
+  * Nieuws en sentiment analyse
+  * Congressional trades tracking (Pelosi trades)
+  * Daily top 3 aandelen
+  * Gainers & losers
+  * Favorieten systeem
+  * Historische data`)
+  }
+
+  // Reports - uitgebreide detectie
+  if (lowerMessage.includes('rapport') || lowerMessage.includes('report') || 
+      lowerMessage.includes('pdf') || lowerMessage.includes('download') ||
+      lowerMessage.includes('exporteren') || lowerMessage.includes('genereren')) {
+    relevantFeatures.push(`REPORTS:
+- Locatie: /reports
+- Functionaliteit: PDF rapport generatie
+- Beschrijving: Genereer professionele PDF rapporten met grafieken en analyses
+- Features: 
+  * Customizable rapporten
+  * Download functionaliteit
+  * Grafieken en visualisaties`)
+  }
+
+  // Community - uitgebreide detectie
+  if (lowerMessage.includes('community') || lowerMessage.includes('vraag') || 
+      lowerMessage.includes('antwoord') || lowerMessage.includes('q&a') ||
+      lowerMessage.includes('forum') || lowerMessage.includes('discussie') ||
+      lowerMessage.includes('expert') || lowerMessage.includes('advies')) {
+    relevantFeatures.push(`COMMUNITY Q&A:
+- Locatie: /community
+- Functionaliteit: Community platform voor vragen en antwoorden
+- Beschrijving: Gebruikers kunnen vragen stellen en antwoorden krijgen van experts en andere gebruikers
+- Features: 
+  * Categorieën (BV/EMZ, Beleggen, Fiscaal, Vastgoed, Crypto)
+  * Expert antwoorden
+  * Voting systeem
+  * Discussie mogelijkheden`)
+  }
+
+  // Tips/Knowledge Base - uitgebreide detectie
+  if (lowerMessage.includes('tip') || lowerMessage.includes('artikel') || 
+      lowerMessage.includes('kennis') || lowerMessage.includes('knowledge') ||
+      lowerMessage.includes('uitleg') || lowerMessage.includes('informatie') ||
+      lowerMessage.includes('gids') || lowerMessage.includes('handleiding')) {
+    relevantFeatures.push(`TIPS / KNOWLEDGE BASE:
+- Locatie: /tips
+- Functionaliteit: Artikelen en tips over belastingen en financiën
+- Beschrijving: Uitgebreide kennisbank met artikelen over verschillende onderwerpen
+- Features: 
+  * Categorieën en tags
+  * Effectieve datums
+  * Versiebeheer
+  * Zoekfunctionaliteit`)
+  }
+
+  // Dashboard
+  if (lowerMessage.includes('dashboard') || lowerMessage.includes('overzicht') ||
+      lowerMessage.includes('mijn data') || lowerMessage.includes('mijn account')) {
+    relevantFeatures.push(`DASHBOARD:
+- Locatie: /dashboard
+- Functionaliteit: Overzicht van alle gebruikersdata en activiteit
+- Beschrijving: Centraal dashboard met samenvatting van portfolio, rapporten, en meer
+- Features: 
+  * Overzicht van alle functionaliteiten
+  * Recente activiteit
+  * Quick links`)
+  }
+
+  // Accounting
+  if (lowerMessage.includes('accounting') || lowerMessage.includes('boekhoud') ||
+      lowerMessage.includes('integratie') || lowerMessage.includes('sync')) {
+    relevantFeatures.push(`ACCOUNTING INTEGRATIES:
+- Locatie: /accounting
+- Functionaliteit: Integratie met boekhoudsoftware
+- Beschrijving: Connectie met accounting software voor automatische data synchronisatie
+- Features: 
+  * API key connectie
+  * Callback handling
+  * Data sync`)
+  }
+
+  return relevantFeatures.join('\n\n')
+}
+
 
 export async function POST(request: NextRequest) {
   // Check of database beschikbaar is
@@ -247,46 +483,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // STAP 1: Zoek eerst op de eigen site (knowledge base en tax info)
+    // STAP 1: Zoek eerst op de eigen site (knowledge base, tax info, en site functionaliteiten)
     const knowledgeArticles = await findRelevantKnowledgeArticles(message)
     const taxTopics = findRelevantTaxInfo(message)
+    const relevantSiteFeatures = findRelevantSiteFeatures(message)
     
-    // Bouw context op van gevonden informatie
-    let siteContext = ""
-    if (knowledgeArticles.length > 0 || taxTopics.length > 0) {
-      siteContext = "Relevante informatie gevonden op de site:\n\n"
-      
-      // Voeg tax topics toe (alleen als echt relevant)
-      if (taxTopics.length > 0) {
-        for (const topic of taxTopics) {
-          siteContext += `**${topic.title}**\n`
-          siteContext += `${topic.shortDescription}\n\n`
+    // Bouw context op van gevonden informatie - ALTIJD site functionaliteiten toevoegen
+    let siteContext = "INFORMATIE OVER DE EIGEN SITE:\n\n"
+    
+    // Voeg altijd alle site functionaliteiten toe (gebruikers moeten weten wat beschikbaar is)
+    siteContext += getSiteFeaturesInfo() + "\n\n"
+    
+    // Voeg relevante site functionaliteiten toe als er matches zijn
+    if (relevantSiteFeatures) {
+      siteContext += "RELEVANTE FUNCTIONALITEITEN VOOR DEZE VRAAG:\n\n"
+      siteContext += relevantSiteFeatures + "\n\n"
+    }
+    
+    // Voeg tax topics toe (alleen als echt relevant)
+    if (taxTopics.length > 0) {
+      siteContext += "RELEVANTE BELASTINGINFORMATIE:\n\n"
+      for (const topic of taxTopics) {
+        siteContext += `**${topic.title}**\n`
+        siteContext += `${topic.shortDescription}\n\n`
+        
+        for (const section of topic.sections) {
+          siteContext += `### ${section.title}\n${section.content}\n\n`
           
-          for (const section of topic.sections) {
-            siteContext += `### ${section.title}\n${section.content}\n\n`
-            
-            if (section.subsections) {
-              for (const subsection of section.subsections) {
-                siteContext += `**${subsection.title}**: ${subsection.content}\n\n`
-              }
+          if (section.subsections) {
+            for (const subsection of section.subsections) {
+              siteContext += `**${subsection.title}**: ${subsection.content}\n\n`
             }
           }
-          
-          if (topic.importantNotes && topic.importantNotes.length > 0) {
-            siteContext += `**Belangrijk**: ${topic.importantNotes.join(", ")}\n\n`
-          }
+        }
+        
+        if (topic.importantNotes && topic.importantNotes.length > 0) {
+          siteContext += `**Belangrijk**: ${topic.importantNotes.join(", ")}\n\n`
         }
       }
-      
-      // Voeg knowledge artikelen toe
-      if (knowledgeArticles.length > 0) {
-        for (const article of knowledgeArticles) {
-          siteContext += `**${article.title}**\n${article.body}\n\n`
-        }
-      }
-      
-      siteContext += "\nGebruik deze informatie ALLEEN als het relevant is voor de vraag. Als de vraag niet over belastingen gaat, negeer dan belastinginformatie. Beantwoord de vraag direct en accuraat."
     }
+    
+    // Voeg knowledge artikelen toe
+    if (knowledgeArticles.length > 0) {
+      siteContext += "RELEVANTE ARTIKELEN UIT DE KNOWLEDGE BASE:\n\n"
+      for (const article of knowledgeArticles) {
+        siteContext += `**${article.title}**\n${article.body}\n\n`
+      }
+    }
+    
+    siteContext += "\nBELANGRIJKE INSTRUCTIES:\n"
+    siteContext += "- Gebruik ALLEEN informatie die hierboven staat of die je zeker weet\n"
+    siteContext += "- Verzin GEEN informatie die niet in de context staat\n"
+    siteContext += "- Als je iets niet zeker weet, zeg dat expliciet\n"
+    siteContext += "- Verwijs naar specifieke functionaliteiten op de site als relevant\n"
+    siteContext += "- Als de vraag over functionaliteiten gaat, leg uit wat beschikbaar is en waar deze te vinden zijn\n"
+    siteContext += "- Bij algemene vragen over de site, geef een overzicht van alle beschikbare functionaliteiten\n"
+    siteContext += "- Wees specifiek: noem exacte locaties (zoals /stocks/deep-research) en leg uit wat elke functionaliteit doet"
 
     // STAP 2: Als geen antwoord zonder AI mogelijk is, check AI limieten
     // Check limiet voor FREE tier gebruikers of anonieme gebruikers (alleen als database beschikbaar is)
@@ -385,7 +637,7 @@ export async function POST(request: NextRequest) {
 
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
-    // Bouw system message op met context van eigen site indien beschikbaar
+    // Bouw system message op met context van eigen site - ALTIJD site context toevoegen
     let systemContent = `Je bent Finn, een ervaren Nederlandse AI-assistent gespecialiseerd in financiën en belastingen voor 2025. Je bent een expert op het gebied van Nederlandse belastingwetgeving, financiële planning en investeringen.
 
 JE EXPERTISE:
@@ -397,49 +649,70 @@ JE EXPERTISE:
 - Aftrekposten en fiscale voordelen
 - Pensioenplanning en lijfrente
 - Marktanalyses en beleggingsinformatie
+- Alle functionaliteiten die beschikbaar zijn op deze website
 
-BELANGRIJKE RICHTLIJNEN VOOR ANTWOORDEN:
-1. KWALITEIT EN ACCURATIE:
+KRITIEKE REGELS - LEES DIT ZORGVULDIG:
+1. GEBRUIK ALLEEN ECHTE INFORMATIE:
+   - Gebruik ALLEEN informatie die in de context hieronder staat
+   - Verzin NOOIT informatie die niet in de context staat
+   - Als je iets niet zeker weet, zeg dat EXPLICIET: "Ik weet dit niet zeker" of "Deze informatie staat niet in mijn kennisbank"
+   - Maak GEEN aannames over functionaliteiten die niet in de context staan
+   - Als een functionaliteit niet in de context staat, zeg dat je er geen informatie over hebt
+
+2. SITE FUNCTIONALITEITEN:
+   - Als gebruikers vragen over functionaliteiten op de site, verwijs naar de exacte locatie (bijv. /stocks/deep-research)
+   - Leg uit wat de functionaliteit doet op basis van de informatie in de context
+   - Als je niet zeker weet of een functionaliteit bestaat, zeg dat expliciet
+   - Verzin GEEN nieuwe functionaliteiten die niet in de context staan
+
+3. KWALITEIT EN ACCURATIE:
    - Geef altijd accurate, actuele en betrouwbare informatie
    - Verwijs naar specifieke wetten, percentages, bedragen en regels waar mogelijk
    - Gebruik concrete voorbeelden en cijfers om je uitleg te verduidelijken
    - Controleer of de informatie relevant is voor 2025
+   - Baseer antwoorden op de context, niet op algemene kennis
 
-2. STRUCTUUR EN HELDEREID:
+4. STRUCTUUR EN HELDEREID:
    - Begin met een directe, beknopte beantwoording van de vraag
    - Gebruik duidelijke paragrafen en structuur
    - Maak gebruik van opsommingen waar relevant
    - Sluit af met een samenvatting of belangrijkste punten
 
-3. CONTEXT EN RELEVANTIE:
+5. CONTEXT EN RELEVANTIE:
    - Als de vraag over aandelen/beleggingen gaat, focus op financiële informatie, NIET op belastingen (tenzij expliciet gevraagd)
-   - Als de vraag over belastingen gaat, gebruik de beschikbare belastinginformatie
+   - Als de vraag over belastingen gaat, gebruik de beschikbare belastinginformatie uit de context
+   - Als de vraag algemeen is over de site (zoals "wat kan ik doen", "welke functionaliteiten"), geef een overzicht van alle beschikbare functionaliteiten
    - Combineer kennis waar relevant voor een compleet antwoord
    - Negeer irrelevante informatie uit de context
+   - Verwijs naar relevante site functionaliteiten als die kunnen helpen
+   - Bij vragen over functionaliteiten: leg uit wat het doet, waar het te vinden is (exacte URL), en wat de vereisten zijn
 
-4. TONALITEIT:
+6. TONALITEIT:
    - Wees vriendelijk, professioneel en toegankelijk
    - Vermijd jargon waar mogelijk, of leg het uit als je het gebruikt
    - Toon empathie en begrip voor de situatie van de gebruiker
-   - Wees proactief in het aanbieden van aanvullende relevante informatie
+   - Wees proactief in het aanbieden van aanvullende relevante informatie uit de context
 
-5. DISCLAIMERS EN GRENZEN:
+7. DISCLAIMERS EN GRENZEN:
    - Je geeft GEEN persoonlijk financieel of beleggingsadvies zoals bedoeld in de Wft
    - Je geeft algemene informatie, ideeën en educatieve content
    - Als je iets niet zeker weet, zeg dat expliciet
    - Raad aan om een gecertificeerd adviseur te raadplegen voor persoonlijk advies
    - Vermeld waar nodig dat dit geen persoonlijk advies is
 
-6. TECHNISCHE EISEN:
+8. TECHNISCHE EISEN:
    - Antwoord altijd in het Nederlands
    - Houd antwoorden compleet maar niet onnodig lang (doel: 200-400 woorden voor eenvoudige vragen, tot 800 woorden voor complexe vragen)
    - Gebruik markdown formatting voor structuur (headers, bold, lists)
-   - Zorg voor goede leesbaarheid met witruimte en paragrafen`
+   - Zorg voor goede leesbaarheid met witruimte en paragrafen
 
-    // Voeg site context toe aan system message als er informatie gevonden is
-    if (siteContext) {
-      systemContent += `\n\n${siteContext}`
-    }
+9. HERHALING VAN KRITIEKE REGEL:
+   - VERZIN GEEN INFORMATIE
+   - GEBRUIK ALLEEN WAT IN DE CONTEXT STAAT
+   - ZEG EXPLICIET ALS JE IETS NIET WEET`
+
+    // Voeg ALTIJD site context toe aan system message
+    systemContent += `\n\n${siteContext}`
 
     // Bouw conversation history op voor context
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
