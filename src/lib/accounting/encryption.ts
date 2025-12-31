@@ -1,0 +1,57 @@
+import crypto from "crypto"
+
+const ALGORITHM = "aes-256-gcm"
+const IV_LENGTH = 16
+const SALT_LENGTH = 64
+const TAG_LENGTH = 16
+const TAG_POSITION = SALT_LENGTH + IV_LENGTH
+const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH
+
+function getKey(): Buffer {
+  const secret = process.env.ENCRYPTION_SECRET || process.env.NEXTAUTH_SECRET
+  if (!secret) {
+    throw new Error("ENCRYPTION_SECRET of NEXTAUTH_SECRET moet zijn ingesteld")
+  }
+  return crypto.scryptSync(secret, "salt", 32)
+}
+
+export function encrypt(text: string): string {
+  try {
+    const key = getKey()
+    const iv = crypto.randomBytes(IV_LENGTH)
+    const salt = crypto.randomBytes(SALT_LENGTH)
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+
+    const encrypted = Buffer.concat([
+      cipher.update(text, "utf8"),
+      cipher.final(),
+    ])
+    const tag = cipher.getAuthTag()
+
+    return Buffer.concat([salt, iv, tag, encrypted]).toString("base64")
+  } catch (error) {
+    console.error("Encryptie fout:", error)
+    throw new Error("Kon gegevens niet versleutelen")
+  }
+}
+
+export function decrypt(encryptedData: string): string {
+  try {
+    const key = getKey()
+    const data = Buffer.from(encryptedData, "base64")
+
+    data.subarray(0, SALT_LENGTH) // salt - not used in decryption
+    const iv = data.subarray(SALT_LENGTH, TAG_POSITION)
+    const tag = data.subarray(TAG_POSITION, ENCRYPTED_POSITION)
+    const encrypted = data.subarray(ENCRYPTED_POSITION)
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(tag)
+
+    return decipher.update(encrypted) + decipher.final("utf8")
+  } catch (error) {
+    console.error("Decryptie fout:", error)
+    throw new Error("Kon gegevens niet ontsleutelen")
+  }
+}
+

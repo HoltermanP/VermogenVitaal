@@ -1,0 +1,408 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  role            UserRole  @default(USER)
+  tier            UserTier  @default(FREE)
+  trialEndsAt     DateTime? // Wanneer de gratis proefmaand eindigt
+  isTrialActive   Boolean   @default(false) // Of de gebruiker momenteel in trial periode is
+  whatsappNumber  String? // WhatsApp nummer voor notificaties (optioneel)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  profileFinancials      ProfileFinancials?
+  scenarios              Scenario[]
+  documents              Document[]
+  reports                Report[]
+  payments               Payment[]
+  tickets                Ticket[]
+  auditLogs              AuditLog[]
+  auditChecks            AuditCheck[]
+  accountingIntegrations AccountingIntegration[]
+  stockFavorites         StockFavorite[]
+  deepResearchReports    DeepResearchReport[]
+  portfolioItems         PortfolioItem[]
+  aiCalls               AiCall[]
+
+  @@map("users")
+}
+
+model ProfileFinancials {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  legalForm   LegalForm
+  revenue     Float?
+  salary      Float?
+  assets      Float?
+  goals       String[]
+  riskProfile RiskProfile
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile_financials")
+}
+
+model Scenario {
+  id        String       @id @default(cuid())
+  userId    String
+  type      ScenarioType
+  inputs    Json
+  results   Json
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports Report[]
+
+  @@map("scenarios")
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  userId      String
+  type        DocumentType
+  status      DocumentStatus @default(PENDING)
+  storagePath String
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  userId     String
+  scenarioId String
+  url        String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenario Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model Knowledge {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  tags          String[]
+  jurisdiction  String
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  version       String
+  body          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("knowledge")
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  userId           String
+  stripeCustomerId String?
+  subscriptionId   String?
+  tier             UserTier
+  status           PaymentStatus @default(PENDING)
+  amount           Int?
+  currency         String        @default("eur")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  userId    String
+  subject   String
+  status    TicketStatus @default(OPEN)
+  messages  Json
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  target    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model AuditCheck {
+  id              String      @id @default(cuid())
+  userId          String
+  fileName        String
+  csvData         Json // Opgeslagen mutaties
+  status          AuditStatus @default(UPLOADED)
+  questions       Json? // Aanvullende vragen en antwoorden
+  findings        Json? // Bevindingen van AI analyse
+  recommendations Json? // Concrete aanbevelingen
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_checks")
+}
+
+model AccountingIntegration {
+  id           String             @id @default(cuid())
+  userId       String
+  provider     AccountingProvider
+  name         String // Gebruikersvriendelijke naam
+  accessToken  String? // Versleuteld opgeslagen
+  refreshToken String?
+  expiresAt    DateTime?
+  apiKey       String? // Voor API key gebaseerde auth
+  apiSecret    String? // Versleuteld
+  companyId    String? // Company/division ID voor multi-tenant systemen
+  isActive     Boolean            @default(true)
+  lastSyncAt   DateTime?
+  syncSettings Json? // Custom sync instellingen per provider
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, companyId])
+  @@map("accounting_integrations")
+}
+
+model StockFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String // Bijv. "AAPL", "ASML.AS"
+  name      String // Volledige naam van het aandeel/ETF
+  exchange  String? // Bijv. "NASDAQ", "AMS"
+  type      String? // "STOCK" of "ETF"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@map("stock_favorites")
+}
+
+model LinkedInPost {
+  id             String             @id @default(cuid())
+  title          String
+  content        String
+  status         LinkedInPostStatus @default(DRAFT)
+  scheduledFor   DateTime?
+  postedAt       DateTime?
+  linkedInPostId String?
+  error          String?
+  topic          String // Onderwerp categorie voor variatie
+  metadata       Json? // Extra data (keywords, etc.)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([topic])
+  @@map("linkedin_posts")
+}
+
+model DeepResearchReport {
+  id                 String             @id @default(cuid())
+  userId             String
+  symbol             String // Aandeel/ETF symbool
+  name               String // Volledige naam
+  exchange           String? // Beurs
+  type               String? // "STOCK" of "ETF"
+  report             Json // Volledige AI gegenereerde rapport
+  status             DeepResearchStatus @default(GENERATING)
+  progressPercentage Int? // 0-100, percentage van voortgang
+  progressMessage    String? // Huidige stap beschrijving
+  pdfUrl             String? // URL naar gegenereerde PDF
+  error              String? // Foutmelding indien generatie mislukt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, symbol, createdAt])
+  @@map("deep_research_reports")
+}
+
+model PortfolioItem {
+  id                    String              @id @default(cuid())
+  userId                String
+  symbol                String // Bijv. "AAPL", "ASML.AS"
+  name                  String // Volledige naam van het aandeel/ETF
+  exchange              String? // Bijv. "NASDAQ", "AMS"
+  type                  String? // "STOCK" of "ETF"
+  quantity              Float // Aantal stuks
+  averagePrice          Float? // Gemiddelde aankoopprijs (optioneel)
+  alertThreshold        Float? // Percentage voor stijging/daling meldingen (bijv. 5.0 voor 5%)
+  lastPrice             Float? // Laatst bekende prijs voor alert berekening
+  lastAlertAt           DateTime? // Wanneer de laatste alert is getriggerd
+  alertEnabled          Boolean             @default(true) // Of alerts actief zijn
+  alertNotificationType AlertNotificationType @default(EMAIL) // Type notificatie (EMAIL, WHATSAPP, BOTH)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@index([userId])
+  @@index([alertEnabled, lastAlertAt])
+  @@map("portfolio_items")
+}
+
+model AiCall {
+  id        String   @id @default(cuid())
+  userId    String?  // Optioneel voor anonieme gebruikers
+  sessionId String?  // Voor anonieme gebruikers (unieke sessie identifier)
+  endpoint  String   // Bijv. "chat", "analyze", etc.
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
+  @@map("ai_calls")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserTier {
+  FREE
+  PREMIUM
+}
+
+enum LegalForm {
+  EMZ
+  BV
+  DGA
+}
+
+enum RiskProfile {
+  CONSERVATIVE
+  MODERATE
+  AGGRESSIVE
+}
+
+enum ScenarioType {
+  BV_VS_EMZ
+  ETF_GROWTH
+  REAL_ESTATE
+  CRYPTO_ALLOCATION
+}
+
+enum DocumentType {
+  TAX_RETURN
+  SALARY
+  YEAR_END_STATEMENT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  UNDER_REVIEW
+  REVIEWED
+  SUBMITTED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum AuditStatus {
+  UPLOADED
+  QUESTIONS_PENDING
+  ANALYZING
+  COMPLETED
+  ERROR
+}
+
+enum AccountingProvider {
+  EXACT_ONLINE
+  E_BOEKHOUDEN
+  MONEYBIRD
+  AFAS
+  YUKI
+  JORTT
+  VISMA
+  SNELSTART
+}
+
+enum LinkedInPostStatus {
+  DRAFT
+  SCHEDULED
+  POSTED
+  FAILED
+  CANCELLED
+}
+
+enum DeepResearchStatus {
+  GENERATING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AlertNotificationType {
+  EMAIL
+  WHATSAPP
+  BOTH
+}

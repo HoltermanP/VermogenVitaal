@@ -1,0 +1,7 @@
+Nr	Datum	Soort	Bedrag	Rekening	Tegenrekening	Factuur
+3	05-01-2025	Memoriaal	1.000,00	1010	0410	
+4	10-01-2025	Factuur	5.000,00	8000	1300	FAC-2025-001
+5	15-01-2025	Inkoop	-2.500,50	4000	1500	INK-2025-001
+6	20-01-2025	Betaling	-1.200,00	1000	2000	BET-2025-001
+7	25-01-2025	Ontvangst	3.750,25	1000	8000	
+
