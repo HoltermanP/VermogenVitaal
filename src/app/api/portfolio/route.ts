@@ -6,9 +6,12 @@ import { prisma } from "@/lib/prisma"
 export async function GET(request: NextRequest) {
   try {
     const user = await getClerkUser(request)
-    
+
     if (!user || !user.id) {
-      return NextResponse.json({ portfolio: [] })
+      return NextResponse.json(
+        { error: "Niet geautoriseerd. Log in om je portefeuille te bekijken." },
+        { status: 401 }
+      )
     }
 
     const portfolio = await prisma.portfolioItem.findMany({
