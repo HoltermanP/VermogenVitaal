@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
     console.log('Request body received, length:', body.length)
 
     // Dynamisch importeren van Svix om build problemen te voorkomen
+    // @ts-ignore - svix wordt dynamisch geladen tijdens runtime
     const { Webhook } = await import('svix')
     
     // Verificeer webhook met Svix

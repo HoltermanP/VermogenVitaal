@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: false,
   },
+  serverComponentsExternalPackages: ['svix'],
 };
 
 export default nextConfig;
