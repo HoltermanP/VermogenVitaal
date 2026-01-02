@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
@@ -120,6 +119,9 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
     console.log('Request body received, length:', body.length)
 
+    // Dynamisch importeren van Svix om build problemen te voorkomen
+    const { Webhook } = await import('svix')
+    
     // Verificeer webhook met Svix
     const wh = new Webhook(webhookSecret)
     let evt: WebhookEvent
