@@ -5,6 +5,15 @@ import Stripe from "stripe"
 
 export async function POST(request: NextRequest) {
   try {
+    // Skip Stripe webhooks in development if configured
+    if (process.env.NODE_ENV === 'development' && process.env.SKIP_STRIPE_WEBHOOKS === 'true') {
+      console.log('🟡 Stripe webhooks skipped in development mode')
+      return NextResponse.json({
+        status: 'skipped',
+        message: 'Stripe webhooks disabled for development'
+      })
+    }
+
     const body = await request.text()
     const signature = request.headers.get("stripe-signature")
 
