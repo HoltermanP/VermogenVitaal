@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       stripeCustomerId,
       hasUsedTrial,
       isPremiumSubscription: isPremiumSubscription,
-      successUrl: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+      successUrl: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}`,
       cancelUrl: `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`
     })
 
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     const session = await createCheckoutSession(
       priceId,
       stripeCustomerId,
-      `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
+      `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}`,
       `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
       hasUsedTrial
     )

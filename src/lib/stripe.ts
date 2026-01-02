@@ -100,7 +100,7 @@ export async function createCheckoutSession(
       },
     ],
     customer: customerId,
-    success_url: successUrl || `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
+    success_url: successUrl || `${process.env.NEXTAUTH_URL}`,
     cancel_url: cancelUrl || `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
     metadata: {
       priceId,
