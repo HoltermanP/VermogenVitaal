@@ -122,9 +122,7 @@ class PageContentGuardErrorBoundary extends React.Component<
   constructor(props: { children: ReactNode }) {
     super(props)
     this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError(error: Error) {
+  }  static getDerivedStateFromError(error: Error) {
     // Check of het een Clerk error is
     if (error.message?.includes("ClerkProvider") || error.message?.includes("useUser")) {
       return { hasError: true }
@@ -160,4 +158,3 @@ export function PageContentGuard({ children }: PageContentGuardProps) {
     </PageContentGuardErrorBoundary>
   )
 }
-

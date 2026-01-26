@@ -53,12 +53,21 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
   })
 
   const onSubmit = async (values: SignUpFormValues) => {
-    if (!isLoaded) return
+    if (!isLoaded) {
+      setError("Clerk is nog niet geladen. Probeer het opnieuw.")
+      return
+    }
 
     setIsLoading(true)
     setError(null)
 
     try {
+      console.log("🔵 SignUp: Starting user creation", {
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+      })
+
       const result = await signUp.create({
         firstName: values.firstName,
         lastName: values.lastName,
@@ -66,64 +75,138 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
         password: values.password,
       })
 
+      console.log("🔵 SignUp: Result received", {
+        status: result.status,
+        userId: result.createdUserId,
+        sessionId: result.createdSessionId,
+      })
+
       // Als e-mail verificatie vereist is
       if (result.status === "missing_requirements") {
+        console.log("🔵 SignUp: Email verification required")
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
         setPendingVerification(true)
       } else if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId })
+        console.log("🔵 SignUp: Signup complete, setting active session")
         
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          router.push(redirectUrl || "/onboarding")
-          router.refresh()
+        if (!result.createdSessionId) {
+          console.error("❌ SignUp: No session ID in complete result")
+          setError("Er is een fout opgetreden bij het aanmaken van je sessie. Probeer opnieuw in te loggen.")
+          return
+        }
+
+        try {
+          await setActive({ session: result.createdSessionId })
+          console.log("✅ SignUp: Session activated successfully")
+          
+          if (onSuccess) {
+            onSuccess()
+          } else {
+            router.push(redirectUrl || "/onboarding")
+            router.refresh()
+          }
+        } catch (sessionError) {
+          console.error("❌ SignUp: Error setting active session", sessionError)
+          setError("Er is een fout opgetreden bij het activeren van je sessie. Probeer opnieuw in te loggen.")
         }
       } else {
+        console.error("❌ SignUp: Unexpected status", result.status)
         setError("Er is iets misgegaan. Probeer het opnieuw.")
       }
     } catch (err: unknown) {
+      console.error("❌ SignUp: Error during signup", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      })
+
       const errorMessage = err instanceof Error ? err.message : "Er is een fout opgetreden"
-      setError(
-        errorMessage.includes("form_identifier_exists")
-          ? "Dit e-mailadres is al geregistreerd"
-          : errorMessage.includes("form_password_length_too_short")
-          ? "Wachtwoord moet minimaal 8 tekens lang zijn"
-          : "Er is een fout opgetreden bij het aanmaken van je account"
-      )
+      
+      if (errorMessage.includes("form_identifier_exists")) {
+        setError("Dit e-mailadres is al geregistreerd")
+      } else if (errorMessage.includes("form_password_length_too_short")) {
+        setError("Wachtwoord moet minimaal 8 tekens lang zijn")
+      } else if (errorMessage.includes("form_password_pwned")) {
+        setError("Dit wachtwoord is gecompromitteerd. Gebruik een ander wachtwoord.")
+      } else if (errorMessage.includes("form_password_not_strong_enough")) {
+        setError("Wachtwoord is niet sterk genoeg. Gebruik een combinatie van letters, cijfers en speciale tekens.")
+      } else if (errorMessage.includes("rate_limit")) {
+        setError("Te veel pogingen. Probeer het over een paar minuten opnieuw.")
+      } else {
+        setError(`Er is een fout opgetreden bij het aanmaken van je account: ${errorMessage}`)
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   const onPressVerify = async () => {
-    if (!isLoaded) return
+    if (!isLoaded) {
+      setError("Clerk is nog niet geladen. Probeer het opnieuw.")
+      return
+    }
+
+    if (!code || code.trim().length === 0) {
+      setError("Voer een verificatiecode in")
+      return
+    }
 
     setIsLoading(true)
     setError(null)
 
     try {
+      console.log("🔵 SignUp: Attempting email verification")
+      
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code,
       })
 
+      console.log("🔵 SignUp: Verification result", {
+        status: completeSignUp.status,
+        sessionId: completeSignUp.createdSessionId,
+      })
+
       if (completeSignUp.status === "complete") {
-        await setActive({ session: completeSignUp.createdSessionId })
-        
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          router.push(redirectUrl || "/onboarding")
-          router.refresh()
+        if (!completeSignUp.createdSessionId) {
+          console.error("❌ SignUp: No session ID in verification result")
+          setError("Er is een fout opgetreden bij het aanmaken van je sessie. Probeer opnieuw in te loggen.")
+          return
+        }
+
+        try {
+          await setActive({ session: completeSignUp.createdSessionId })
+          console.log("✅ SignUp: Session activated after verification")
+          
+          if (onSuccess) {
+            onSuccess()
+          } else {
+            router.push(redirectUrl || "/onboarding")
+            router.refresh()
+          }
+        } catch (sessionError) {
+          console.error("❌ SignUp: Error setting active session after verification", sessionError)
+          setError("Er is een fout opgetreden bij het activeren van je sessie. Probeer opnieuw in te loggen.")
         }
       } else {
-        setError("Verificatiecode is onjuist")
+        console.error("❌ SignUp: Verification incomplete", completeSignUp.status)
+        setError("Verificatiecode is onjuist of verlopen")
       }
     } catch (err: unknown) {
+      console.error("❌ SignUp: Error during verification", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      })
+
       const errorMessage = err instanceof Error ? err.message : "Er is een fout opgetreden"
-      setError(errorMessage.includes("form_code_incorrect") 
-        ? "Verificatiecode is onjuist" 
-        : "Er is een fout opgetreden bij de verificatie")
+      
+      if (errorMessage.includes("form_code_incorrect")) {
+        setError("Verificatiecode is onjuist")
+      } else if (errorMessage.includes("form_code_expired")) {
+        setError("Verificatiecode is verlopen. Vraag een nieuwe code aan.")
+      } else if (errorMessage.includes("rate_limit")) {
+        setError("Te veel pogingen. Probeer het over een paar minuten opnieuw.")
+      } else {
+        setError(`Er is een fout opgetreden bij de verificatie: ${errorMessage}`)
+      }
     } finally {
       setIsLoading(false)
     }

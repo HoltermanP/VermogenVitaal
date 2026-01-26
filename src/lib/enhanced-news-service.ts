@@ -16,62 +16,6 @@ interface NewsArticle {
   category?: 'company' | 'sector' | 'market' | 'analyst'
 }
 
-/**
- * Schoon description op: decodeer HTML entities, verwijder HTML tags en vreemde tekens
- */
-function cleanDescription(description: string): string {
-  if (!description) return ""
-  
-  let cleaned = description
-  
-  // Verwijder complete HTML tags (zoals <a href="..."> of <p>)
-  cleaned = cleaned.replace(/<[^>]*>/g, '')
-  
-  // Verwijder incomplete HTML tags (zoals <a... of <p zonder sluitende >)
-  // Dit pakt alle strings die beginnen met < maar niet eindigen met >
-  cleaned = cleaned.replace(/<[^>]*/g, '') // Verwijder alle incomplete tags
-  
-  // Decodeer HTML entities (zoals &lt; &gt; &amp; &quot; etc.)
-  cleaned = cleaned
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&apos;/g, "'")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&hellip;/g, '...')
-    .replace(/&mdash;/g, '—')
-    .replace(/&ndash;/g, '–')
-  
-  // Verwijder eventuele overgebleven incomplete tags na decodering
-  cleaned = cleaned.replace(/<[^>]*/g, '')
-  
-  // Verwijder vreemde tekens aan het begin/einde (zoals &lt;a... of &amp;...)
-  cleaned = cleaned.replace(/^&[a-z0-9#]+;/i, '').trim()
-  cleaned = cleaned.replace(/&[a-z0-9#]+;$/i, '').trim()
-  
-  // Verwijder extra witruimte
-  cleaned = cleaned.replace(/\s+/g, ' ').trim()
-  
-  // Verwijder lege of alleen-witruimte strings
-  if (!cleaned || cleaned.length === 0) return ""
-  
-  // Verwijder strings die alleen HTML entities bevatten
-  if (/^(&[a-z0-9#]+;)+$/i.test(cleaned)) return ""
-  
-  // Verwijder strings die beginnen met < of alleen incomplete HTML tags bevatten
-  if (/^<[^>]*$/i.test(cleaned)) return ""
-  if (cleaned.trim().startsWith('<')) return ""
-  
-  return cleaned
-}
-
 // Financiële nieuwsbronnen met RSS feeds (gratis)
 const FINANCIAL_NEWS_RSS_FEEDS = [
   {
@@ -170,9 +114,9 @@ async function parseRSSFeed(feedUrl: string, sourceName: string, category: 'comp
           }
         }
 
-        const rawDescription = descriptionMatch ? descriptionMatch[1] : ""
-        const description = cleanDescription(rawDescription)
-        const cleanedDescription = description ? description.substring(0, 300) : ""
+        const description = descriptionMatch 
+          ? descriptionMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 300)
+          : ""
         
         let publishedAt = new Date().toISOString()
         if (pubDateMatch) {
@@ -187,7 +131,7 @@ async function parseRSSFeed(feedUrl: string, sourceName: string, category: 'comp
 
         articles.push({
           title,
-          description: cleanedDescription,
+          description,
           url,
           publishedAt,
           source: sourceName,
@@ -254,9 +198,9 @@ async function searchCompanyNews(symbol: string, companyName?: string, limit: nu
           }
         }
 
-        const rawDescription = descriptionMatch ? descriptionMatch[1] : ""
-        const description = cleanDescription(rawDescription)
-        const cleanedDescription = description ? description.substring(0, 300) : ""
+        const description = descriptionMatch 
+          ? descriptionMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 300)
+          : ""
         
         let publishedAt = new Date().toISOString()
         if (pubDateMatch) {
@@ -267,7 +211,7 @@ async function searchCompanyNews(symbol: string, companyName?: string, limit: nu
 
         articles.push({
           title,
-          description: cleanedDescription,
+          description,
           url,
           publishedAt,
           source: sourceMatch ? sourceMatch[1].trim() : "Google News",
@@ -331,13 +275,9 @@ async function searchSectorNews(sector: string, industry?: string, limit: number
           }
         }
 
-        const rawDescription = descriptionMatch ? descriptionMatch[1] : ""
-        const description = cleanDescription(rawDescription)
-        const cleanedDescription = description ? description.substring(0, 300) : ""
-        
         articles.push({
           title,
-          description: cleanedDescription,
+          description: descriptionMatch ? descriptionMatch[1].replace(/<[^>]*>/g, '').trim().substring(0, 300) : "",
           url,
           publishedAt: pubDateMatch ? (() => {
             try { return new Date(pubDateMatch[1]).toISOString() } catch { return new Date().toISOString() }

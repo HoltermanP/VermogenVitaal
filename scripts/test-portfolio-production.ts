@@ -78,3 +78,9 @@ async function testPortfolioAPI() {
 
 // Voer test uit
 testPortfolioAPI();
+
+
+
+
+
+

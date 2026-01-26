@@ -49,3 +49,9 @@ echo ""
 echo "💡 Om volledig te testen: Log in via de UI en voeg een portfolio item toe"
 echo ""
 echo "🔗 Portfolio URL: $PRODUCTION_URL/portfolio"
+
+
+
+
+
+
