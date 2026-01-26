@@ -307,7 +307,10 @@ export default function ETFGrowthCalculatorPage() {
                               borderRadius: '8px',
                               color: 'oklch(0.98 0 0)'
                             }}
-                            formatter={(value: number) => [`€${value.toLocaleString('nl-NL')}`, 'Waarde']}
+                            formatter={(value: number | undefined) => {
+                              if (value === undefined) return ['', '']
+                              return [`€${value.toLocaleString('nl-NL')}`, 'Waarde']
+                            }}
                             labelFormatter={(label) => `Jaar ${label}`}
                           />
                           <Area

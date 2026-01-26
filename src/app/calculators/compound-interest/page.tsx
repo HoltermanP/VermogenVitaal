@@ -330,8 +330,8 @@ export default function CompoundInterestCalculatorPage() {
                         label={{ value: 'Bedrag (€)', angle: -90, position: 'insideLeft' }}
                       />
                       <Tooltip
-                        formatter={(value: number | undefined, name: string) => {
-                          if (value === undefined) return ['', '']
+                        formatter={(value: number | undefined, name: string | undefined) => {
+                          if (value === undefined || name === undefined) return ['', '']
                           return [
                             formatCurrency(value),
                             name === 'contributions' ? 'Jouw Bijdragen' :
