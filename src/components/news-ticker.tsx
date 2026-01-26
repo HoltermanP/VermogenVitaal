@@ -188,17 +188,10 @@ export function NewsTicker({ pagePath, className }: NewsTickerProps) {
                   rel="noopener noreferrer"
                   className="group block"
                 >
-                  <h3 className="text-base font-semibold text-foreground group-hover:text-blue-600 transition-colors line-clamp-1 mb-1">
+                  <h3 className="text-base font-semibold text-foreground group-hover:text-blue-600 transition-colors line-clamp-1">
                     {currentArticle.title}
                   </h3>
                 </a>
-
-                {/* Description - single line */}
-                {currentArticle.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">
-                    {currentArticle.description}
-                  </p>
-                )}
               </div>
 
               {/* Navigation - horizontal dots */}
