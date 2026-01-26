@@ -330,12 +330,15 @@ export default function CompoundInterestCalculatorPage() {
                         label={{ value: 'Bedrag (€)', angle: -90, position: 'insideLeft' }}
                       />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name === 'contributions' ? 'Jouw Bijdragen' :
-                          name === 'interest' ? 'Rente-op-rente' :
-                          'Totaal saldo'
-                        ]}
+                        formatter={(value: number | undefined, name: string) => {
+                          if (value === undefined) return ['', '']
+                          return [
+                            formatCurrency(value),
+                            name === 'contributions' ? 'Jouw Bijdragen' :
+                            name === 'interest' ? 'Rente-op-rente' :
+                            'Totaal saldo'
+                          ]
+                        }}
                         labelFormatter={(label) => `Jaar ${label}`}
                       />
                       <Area
