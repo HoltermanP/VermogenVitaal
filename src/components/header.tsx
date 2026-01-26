@@ -31,17 +31,6 @@ const ClerkUserSection = dynamic(
           <Link href="/auth/signup">Start gratis</Link>
         </Button>
       </div>
-    ),
-    // Fallback als de import faalt
-    onError: () => (
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/signin">Inloggen</Link>
-        </Button>
-        <Button size="sm" asChild>
-          <Link href="/auth/signup">Start gratis</Link>
-        </Button>
-      </div>
     )
   }
 )
