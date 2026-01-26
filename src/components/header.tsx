@@ -160,18 +160,7 @@ export function Header() {
 
         {/* Right side - Auth & User Menu */}
         <div className="flex items-center gap-4">
-          <React.Suspense fallback={
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/auth/signin">Inloggen</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/auth/signup">Start gratis</Link>
-              </Button>
-            </div>
-          }>
-            <ClerkUserSection />
-          </React.Suspense>
+          <ClerkUserSection />
           
           {/* Mobile Menu */}
           <Sheet>
