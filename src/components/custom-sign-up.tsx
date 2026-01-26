@@ -103,7 +103,6 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
             onSuccess()
           } else {
             router.push(redirectUrl || "/onboarding")
-            router.refresh()
           }
         } catch (sessionError) {
           console.error("❌ SignUp: Error setting active session", sessionError)
@@ -180,7 +179,6 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
             onSuccess()
           } else {
             router.push(redirectUrl || "/onboarding")
-            router.refresh()
           }
         } catch (sessionError) {
           console.error("❌ SignUp: Error setting active session after verification", sessionError)

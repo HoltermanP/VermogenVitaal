@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState, ReactNode, cloneElement, isValidElement } from "react"
+import { useRouter } from "next/navigation"
 import { CustomSignIn } from "@/components/custom-sign-in"
 import { CustomSignUp } from "@/components/custom-sign-up"
 
@@ -15,14 +16,14 @@ interface SignInDialogProps {
 
 export function SignInDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: SignInDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
+  const router = useRouter()
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = controlledOnOpenChange || setInternalOpen
 
   const handleSuccess = () => {
     setOpen(false)
-    if (typeof window !== 'undefined') {
-      window.location.reload()
-    }
+    // Gebruik router.refresh() in plaats van window.location.reload()
+    router.refresh()
   }
 
   const handleOpen = () => setOpen(true)
@@ -80,6 +81,7 @@ interface AuthDialogProps {
 export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, defaultMode = "signup", onSuccess }: AuthDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [mode, setMode] = useState<"signin" | "signup">(defaultMode)
+  const router = useRouter()
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = controlledOnOpenChange || setInternalOpen
 
@@ -90,8 +92,9 @@ export function AuthDialog({ trigger, open: controlledOpen, onOpenChange: contro
       setTimeout(() => {
         onSuccess()
       }, 300)
-    } else if (typeof window !== 'undefined') {
-      window.location.reload()
+    } else {
+      // Gebruik router.refresh() in plaats van window.location.reload()
+      router.refresh()
     }
   }
 

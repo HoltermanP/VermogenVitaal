@@ -63,8 +63,8 @@ export function CustomSignIn({ redirectUrl, onSuccess }: CustomSignInProps) {
         if (onSuccess) {
           onSuccess()
         } else {
+          // Gebruik alleen router.push, refresh gebeurt automatisch
           router.push(redirectUrl || "/dashboard")
-          router.refresh()
         }
       } else {
         setError("Er is iets misgegaan. Probeer het opnieuw.")
