@@ -1384,7 +1384,10 @@ function DeepResearchDetailPage({ user: propUser, isLoaded: propIsLoaded }: { us
                           <XAxis dataKey="jaar" tick={{ fontSize: 12 }} />
                           <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value.toFixed(0)}M`} />
                           <Tooltip 
-                            formatter={(value: number) => [`$${value.toFixed(2)}M`, ""]}
+                            formatter={(value: number | undefined) => {
+                              if (value === undefined) return ['', '']
+                              return [`$${value.toFixed(2)}M`, ""]
+                            }}
                             labelStyle={{ color: 'hsl(var(--foreground))' }}
                             contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                           />
