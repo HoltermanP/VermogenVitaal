@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Home, FileText, TrendingUp, Linkedin, LogOut, CreditCard } from "lucide-react"
 import Link from "next/link"
 import * as React from "react"
@@ -123,12 +122,18 @@ function ClerkUserContent() {
 
   // Clerk is beschikbaar (gecheckt in parent component)
   
-  if (!isMounted) {
-    return <Skeleton className="h-10 w-20" />
-  }
-  
-  if (!isLoaded) {
-    return <Skeleton className="h-10 w-20" />
+  // Toon altijd knoppen tijdens het laden of als niet ingelogd
+  if (!isMounted || !isLoaded) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/auth/signin">Inloggen</Link>
+        </Button>
+        <Button size="sm" asChild>
+          <Link href="/auth/signup">Start gratis</Link>
+        </Button>
+      </div>
+    )
   }
   
   if (!isAuthenticated) {
