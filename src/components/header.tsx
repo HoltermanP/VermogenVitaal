@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import dynamic from "next/dynamic"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -22,6 +23,17 @@ const ClerkUserSection = dynamic(
   { 
     ssr: false,
     loading: () => (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/auth/signin">Inloggen</Link>
+        </Button>
+        <Button size="sm" asChild>
+          <Link href="/auth/signup">Start gratis</Link>
+        </Button>
+      </div>
+    ),
+    // Fallback als de import faalt
+    onError: () => (
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/auth/signin">Inloggen</Link>
@@ -159,7 +171,18 @@ export function Header() {
 
         {/* Right side - Auth & User Menu */}
         <div className="flex items-center gap-4">
-          <ClerkUserSection />
+          <React.Suspense fallback={
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/auth/signin">Inloggen</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/auth/signup">Start gratis</Link>
+              </Button>
+            </div>
+          }>
+            <ClerkUserSection />
+          </React.Suspense>
           
           {/* Mobile Menu */}
           <Sheet>
