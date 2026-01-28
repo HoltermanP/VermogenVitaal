@@ -1059,7 +1059,16 @@ export function PortfolioPage({
                               return v.toString()
                             }
                           }} />
-                          <RechartTooltip formatter={(value: any, name: any) => [formatCurrency(Number(value || 0)), name || "Waarde"]} labelFormatter={(label) => label} />
+                          <RechartTooltip
+                            formatter={(value: unknown, name?: string) => {
+                              let numeric = 0
+                              if (typeof value === "number") numeric = value
+                              else if (Array.isArray(value) && typeof value[0] === "number") numeric = value[0]
+                              else if (typeof value === "string" && value.trim() !== "") numeric = Number(value)
+                              return [formatCurrency(Number(numeric)), name || "Waarde"]
+                            }}
+                            labelFormatter={(label) => label}
+                          />
                           <Legend />
                           {chartMode === "AGGREGATED" ? (
                             <Area type="monotone" dataKey="total" name="Totaal" stroke="#3b82f6" fill="rgba(59,130,246,0.12)" />
