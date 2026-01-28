@@ -142,9 +142,7 @@ class PageContentGuardErrorBoundary extends React.Component<
     }
     return this.props.children
   }
-}
-
-// Hoofdcomponent die checkt of Clerk beschikbaar is
+}// Hoofdcomponent die checkt of Clerk beschikbaar is
 export function PageContentGuard({ children }: PageContentGuardProps) {
   // Als Clerk niet beschikbaar is, render children direct zonder authenticatie checks
   if (!isClerkAvailable()) {

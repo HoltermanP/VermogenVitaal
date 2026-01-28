@@ -29,7 +29,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2, Bell, Search } from "lucide-react"
+import { AlertCircle, Wallet, Plus, Edit, Trash2, Loader2, Bell, Search, RefreshCw } from "lucide-react"
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartTooltip,
+  Legend,
+} from "recharts"
 import { useUser } from "@clerk/nextjs"
 import { SignInDialog } from "@/components/auth-dialog"
 import { toast } from "sonner"
@@ -143,6 +153,12 @@ export function PortfolioPage({
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("1M")
+  const [chartData, setChartData] = useState<Array<Record<string, unknown>>>([])
+  const [chartLoading, setChartLoading] = useState(false)
+  const [refreshingPrices, setRefreshingPrices] = useState(false)
+  const [chartMode, setChartMode] = useState<"AGGREGATED" | "PER_SYMBOL">("AGGREGATED")
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
 
   // Haal portfolio items op
   const fetchPortfolio = async () => {
@@ -152,13 +168,42 @@ export function PortfolioPage({
       })
       const data = await response.json()
       if (response.ok) {
-        setPortfolio(data.portfolio || [])
+        const items = data.portfolio || []
+        setPortfolio(items)
+        // Haal direct de actuele koersen op voor de opgehaalde items
+        fetchLatestPrices(items)
       }
     } catch (error) {
       console.error("Error fetching portfolio:", error)
       toast.error("Fout bij ophalen portefeuille")
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Haal actuele prijzen op voor alle portfolio items en update lastPrice veld
+  const fetchLatestPrices = async (items: PortfolioItem[]) => {
+    if (!items || items.length === 0) return
+    try {
+      const updated = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const resp = await fetch(`/api/stocks/quote?symbol=${encodeURIComponent(item.symbol)}`)
+            if (!resp.ok) return item
+            const q = await resp.json()
+            return {
+              ...item,
+              lastPrice: typeof q.price === "number" ? q.price : item.lastPrice,
+            }
+          } catch (e) {
+            console.error("Error fetching quote for", item.symbol, e)
+            return item
+          }
+        })
+      )
+      setPortfolio(updated)
+    } catch (e) {
+      console.error("Error fetching latest prices:", e)
     }
   }
 
@@ -185,6 +230,85 @@ export function PortfolioPage({
       setLoading(false)
     }
   }, [isLoaded, isSignedIn, user])
+
+  // Fetch en aggregeer historische data voor trendgrafiek (ondersteunt geaggregeerd en per-aandeel)
+  const fetchAggregatedHistory = async (items: PortfolioItem[], period: string) => {
+    if (!items || items.length === 0) {
+      setChartData([])
+      return
+    }
+
+    setChartLoading(true)
+    try {
+      // Map symbol -> quantity (in case duplicates)
+      const symbolToQuantity: Record<string, number> = {}
+      items.forEach((it) => {
+        const sym = it.symbol
+        symbolToQuantity[sym] = (symbolToQuantity[sym] || 0) + (it.quantity || 0)
+      })
+
+      const symbols = Object.keys(symbolToQuantity)
+
+      const responses = await Promise.all(
+        symbols.map((sym) =>
+          fetch(`/api/stocks/history?symbol=${encodeURIComponent(sym)}&period=${encodeURIComponent(period)}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .catch((_) => null)
+        )
+      )
+
+      // date -> { total, sym1: val, sym2: val, ... }
+      const dateMap: Record<string, Record<string, number>> = {}
+      responses.forEach((res, idx) => {
+        if (!res || !res.data) return
+        const sym = symbols[idx]
+        const qty = symbolToQuantity[sym] || 0
+        res.data.forEach((point: { date: string; close: number }) => {
+          if (point.close == null) return
+          const dateKey = point.date.split("T")[0]
+          if (!dateMap[dateKey]) dateMap[dateKey] = {}
+          const value = (point.close || 0) * qty
+          dateMap[dateKey][sym] = (dateMap[dateKey][sym] || 0) + value
+          dateMap[dateKey]["total"] = (dateMap[dateKey]["total"] || 0) + value
+        })
+      })
+
+      const aggregated = Object.keys(dateMap)
+        .map((date) => ({ date, ...dateMap[date] }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+      setChartData(aggregated as unknown as Array<{ date: string; value: number }>)
+    } catch (error) {
+      console.error("Error fetching aggregated history:", error)
+    } finally {
+      setChartLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    // herlaad grafiek wanneer portfolio of periode verandert
+    if (portfolio.length > 0) {
+      fetchAggregatedHistory(portfolio, selectedPeriod)
+    } else {
+      setChartData([])
+    }
+  }, [portfolio, selectedPeriod])
+
+  // Handmatige refresh: haalt actuele koersen en update grafiek
+  const handleRefresh = async () => {
+    if (portfolio.length === 0) return
+    setRefreshingPrices(true)
+    try {
+      await fetchLatestPrices(portfolio)
+      await fetchAggregatedHistory(portfolio, selectedPeriod)
+      toast.success("Koersen en grafiek bijgewerkt")
+    } catch (error) {
+      console.error("Error refreshing prices:", error)
+      toast.error("Fout bij bijwerken koersen")
+    } finally {
+      setRefreshingPrices(false)
+    }
+  }
 
   // Sluit zoekresultaten wanneer er buiten wordt geklikt
   useEffect(() => {
@@ -523,6 +647,25 @@ export function PortfolioPage({
   }
 
   // Als ingelogd, toon portfolio functionaliteit
+  // Bereken totale waarde (aantal × actuele koers)
+  const totalPortfolioValue = portfolio.reduce((sum, item) => {
+    const price = item.lastPrice ?? 0
+    const qty = item.quantity ?? 0
+    return sum + price * qty
+  }, 0)
+
+  // Totale aanschafwaarde (sum van hoeveelheid × gemiddelde aankoopprijs)
+  const totalPurchaseCost = portfolio.reduce((sum, item) => {
+    const avg = item.averagePrice ?? 0
+    const qty = item.quantity ?? 0
+    return sum + avg * qty
+  }, 0)
+
+  const purchaseDiffPercent = totalPurchaseCost > 0 ? ((totalPortfolioValue - totalPurchaseCost) / totalPurchaseCost) * 100 : 0
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(value)
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
@@ -548,6 +691,23 @@ export function PortfolioPage({
                 <>
                   <Bell className="h-4 w-4 mr-2" />
                   Check Alerts
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={refreshingPrices || portfolio.length === 0}
+            >
+              {refreshingPrices ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Bijwerken...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh prijzen
                 </>
               )}
             </Button>
@@ -830,6 +990,99 @@ export function PortfolioPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {portfolio.length > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Totaal portefeuillewaarde:</div>
+                    <div className="text-xs text-muted-foreground">
+                      Aanschafwaarde: {formatCurrency(totalPurchaseCost)} • Verschil:{" "}
+                      <span className={purchaseDiffPercent >= 0 ? "text-green-600 font-medium" : "text-destructive font-medium"}>
+                        {purchaseDiffPercent >= 0 ? "+" : ""}{purchaseDiffPercent.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-xl font-semibold">
+                    {formatCurrency(totalPortfolioValue)}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium">Trendgrafiek</div>
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1D">1D</SelectItem>
+                          <SelectItem value="1W">1W</SelectItem>
+                          <SelectItem value="1M">1M</SelectItem>
+                          <SelectItem value="3M">3M</SelectItem>
+                          <SelectItem value="1Y">1Y</SelectItem>
+                          <SelectItem value="ALL">ALL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={chartMode} onValueChange={(v) => setChartMode(v as "AGGREGATED" | "PER_SYMBOL")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AGGREGATED">Geaggregeerd</SelectItem>
+                          <SelectItem value="PER_SYMBOL">Per aandeel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {selectedSymbol && (
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm">Geselecteerd: <span className="font-medium">{selectedSymbol}</span></div>
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedSymbol(null); setChartMode("AGGREGATED") }}>
+                            Reset
+                          </Button>
+                        </div>
+                      )}
+                      {chartLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                    </div>
+                  </div>
+                  <div className="bg-card p-4 rounded-md border">
+                    {chartData.length === 0 && !chartLoading ? (
+                      <div className="text-sm text-muted-foreground">Geen data beschikbaar voor de geselecteerde periode.</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <AreaChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.07} />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                          <YAxis tickFormatter={(v) => {
+                            try {
+                              return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v)
+                            } catch {
+                              return v.toString()
+                            }
+                          }} />
+                          <RechartTooltip formatter={(value: any, name: any) => [formatCurrency(Number(value || 0)), name || "Waarde"]} labelFormatter={(label) => label} />
+                          <Legend />
+                          {chartMode === "AGGREGATED" ? (
+                            <Area type="monotone" dataKey="total" name="Totaal" stroke="#3b82f6" fill="rgba(59,130,246,0.12)" />
+                          ) : (
+                            (() => {
+                              const first = chartData[0] || {}
+                              let symbolKeys = Object.keys(first).filter(k => k !== "date" && k !== "total")
+                              if (selectedSymbol) {
+                                symbolKeys = symbolKeys.filter(k => k === selectedSymbol)
+                              }
+                              const colors = ["#3b82f6", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#06b6d4", "#f59e0b", "#6366f1"]
+                              return symbolKeys.map((sym, idx) => (
+                                <Area key={sym} type="monotone" dataKey={sym} name={sym} stroke={colors[idx % colors.length]} fill={`${colors[idx % colors.length]}22`} stackId="a" />
+                              ))
+                            })()
+                          )}
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
             {portfolio.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -846,6 +1099,9 @@ export function PortfolioPage({
                     <TableHead>Type</TableHead>
                     <TableHead>Hoeveelheid</TableHead>
                     <TableHead>Gem. prijs</TableHead>
+                    <TableHead>Laatste koers</TableHead>
+                    <TableHead>Δ t.o.v. aankoop</TableHead>
+                    <TableHead>Waarde</TableHead>
                     <TableHead>Alert</TableHead>
                     <TableHead>Notificatie</TableHead>
                     <TableHead className="text-right">Acties</TableHead>
@@ -853,7 +1109,15 @@ export function PortfolioPage({
                 </TableHeader>
                 <TableBody>
                   {portfolio.map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow
+                      key={item.id}
+                      onClick={() => {
+                        // toggle selection: click same symbol again to clear
+                        setSelectedSymbol(prev => prev === item.symbol ? null : item.symbol)
+                        setChartMode("PER_SYMBOL")
+                      }}
+                      className="cursor-pointer"
+                    >
                       <TableCell className="font-medium">{item.symbol}</TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>{item.exchange || "-"}</TableCell>
@@ -862,6 +1126,29 @@ export function PortfolioPage({
                       <TableCell>
                         {item.averagePrice
                           ? `€${item.averagePrice.toFixed(2)}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {item.lastPrice !== null && item.lastPrice !== undefined
+                          ? formatCurrency(item.lastPrice)
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {item.averagePrice ? (() => {
+                          const last = item.lastPrice ?? 0
+                          const avg = item.averagePrice ?? 0
+                          const pct = avg > 0 ? ((last - avg) / avg) * 100 : 0
+                          const formatted = `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`
+                          return (
+                            <span className={pct >= 0 ? "text-green-600" : "text-destructive"}>
+                              {formatted}
+                            </span>
+                          )
+                        })() : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {item.lastPrice !== null && item.lastPrice !== undefined
+                          ? formatCurrency((item.lastPrice ?? 0) * (item.quantity ?? 0))
                           : "-"}
                       </TableCell>
                       <TableCell>
@@ -885,14 +1172,14 @@ export function PortfolioPage({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditClick(item)}
+                            onClick={(e) => { e.stopPropagation(); handleEditClick(item) }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(item.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(item.id) }}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

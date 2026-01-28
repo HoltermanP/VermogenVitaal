@@ -124,9 +124,7 @@ class AuthModalHandlerErrorBoundary extends React.Component<
     }
     return this.props.children
   }
-}
-
-// Hoofdcomponent
+}// Hoofdcomponent
 export function AuthModalHandler() {
   // Als Clerk niet beschikbaar is, render niets
   if (!isClerkAvailable()) {
