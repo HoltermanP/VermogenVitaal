@@ -118,20 +118,32 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
         stack: err instanceof Error ? err.stack : undefined,
       })
 
-      const errorMessage = err instanceof Error ? err.message : "Er is een fout opgetreden"
-      
-      if (errorMessage.includes("form_identifier_exists")) {
+      // Lees de gestructureerde Clerk-foutcode (betrouwbaarder dan err.message).
+      const clerkErr = err as {
+        errors?: Array<{ code?: string; message?: string; longMessage?: string }>
+      }
+      const clerkError = clerkErr?.errors?.[0]
+      const code = clerkError?.code || ""
+      const detail =
+        clerkError?.longMessage ||
+        clerkError?.message ||
+        (err instanceof Error ? err.message : "")
+      const haystack = `${code} ${detail}`
+
+      if (haystack.includes("form_identifier_exists")) {
         setError("Dit e-mailadres is al geregistreerd")
-      } else if (errorMessage.includes("form_password_length_too_short")) {
+      } else if (haystack.includes("form_password_length_too_short")) {
         setError("Wachtwoord moet minimaal 8 tekens lang zijn")
-      } else if (errorMessage.includes("form_password_pwned")) {
+      } else if (haystack.includes("form_password_pwned")) {
         setError("Dit wachtwoord is gecompromitteerd. Gebruik een ander wachtwoord.")
-      } else if (errorMessage.includes("form_password_not_strong_enough")) {
+      } else if (haystack.includes("form_password_not_strong_enough")) {
         setError("Wachtwoord is niet sterk genoeg. Gebruik een combinatie van letters, cijfers en speciale tekens.")
-      } else if (errorMessage.includes("rate_limit")) {
+      } else if (haystack.includes("rate_limit")) {
         setError("Te veel pogingen. Probeer het over een paar minuten opnieuw.")
+      } else if (haystack.includes("captcha")) {
+        setError("Verificatie (CAPTCHA) mislukt. Vernieuw de pagina en probeer opnieuw.")
       } else {
-        setError(`Er is een fout opgetreden bij het aanmaken van je account: ${errorMessage}`)
+        setError(`Er is een fout opgetreden bij het aanmaken van je account: ${detail || code || "onbekende fout"}`)
       }
     } finally {
       setIsLoading(false)
@@ -351,6 +363,14 @@ export function CustomSignUp({ redirectUrl, onSuccess }: CustomSignUpProps) {
               </FormItem>
             )}
           />
+
+          {/*
+            VERPLICHT voor custom sign-up flows: Clerk Smart CAPTCHA hecht zich aan
+            dit element. Op productie-instances staat bot-bescherming standaard AAN,
+            dus zonder dit element faalt signUp.create() met een captcha-fout
+            (werkt lokaal op een dev-instance vaak wel, op productie niet).
+          */}
+          <div id="clerk-captcha" />
 
           <Button
             type="submit"

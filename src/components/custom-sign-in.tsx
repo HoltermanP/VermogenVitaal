@@ -70,12 +70,33 @@ export function CustomSignIn({ redirectUrl, onSuccess }: CustomSignInProps) {
         setError("Er is iets misgegaan. Probeer het opnieuw.")
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Er is een fout opgetreden"
-      setError(errorMessage.includes("form_identifier_not_found") 
-        ? "E-mailadres niet gevonden" 
-        : errorMessage.includes("form_password_incorrect")
-        ? "Onjuist wachtwoord"
-        : "Er is een fout opgetreden bij het inloggen")
+      // Clerk API-fouten bevatten een gestructureerde errors-array met de echte oorzaak.
+      // De oude code keek alleen naar err.message (vaak leeg) waardoor altijd de
+      // generieke melding verscheen en de werkelijke oorzaak verborgen bleef.
+      const clerkErr = err as {
+        errors?: Array<{ code?: string; message?: string; longMessage?: string }>
+      }
+      const clerkError = clerkErr?.errors?.[0]
+      const code = clerkError?.code || ""
+      const detail =
+        clerkError?.longMessage ||
+        clerkError?.message ||
+        (err instanceof Error ? err.message : "")
+
+      console.error("[SignIn] Clerk error:", { code, detail, raw: err })
+
+      if (code === "form_identifier_not_found") {
+        setError("E-mailadres niet gevonden")
+      } else if (code === "form_password_incorrect") {
+        setError("Onjuist wachtwoord")
+      } else if (code === "session_exists") {
+        setError("Je bent al ingelogd. Vernieuw de pagina (F5).")
+      } else if (code === "form_param_format_invalid") {
+        setError("Ongeldig e-mailadres of wachtwoord.")
+      } else {
+        // Toon de echte Clerk-melding (incl. code) zodat de oorzaak zichtbaar is.
+        setError(detail ? `${detail}${code ? ` (${code})` : ""}` : "Er is een fout opgetreden bij het inloggen")
+      }
     } finally {
       setIsLoading(false)
     }
